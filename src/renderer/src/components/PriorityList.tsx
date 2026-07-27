@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { moveItem } from "../reorder.js";
 import { displayDetail, displayName } from "../useAppState.js";
-import { AvailabilityBadge, DefaultBadge } from "./StatusBadge.js";
+import { AvailabilityBadge } from "./StatusBadge.js";
 import { DeviceGlyph } from "./DeviceGlyph.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
 
@@ -84,10 +84,7 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
             </div>
             <div className="strip-tags">
               {device !== undefined ? (
-                <>
-                  <DefaultBadge device={device} />
-                  <AvailabilityBadge device={device} />
-                </>
+                <AvailabilityBadge device={device} />
               ) : (
                 <span className="badge badge-offline">Offline</span>
               )}

@@ -27,9 +27,9 @@ test("launches into the Priority view with both mocked lists", async () => {
   await expect(
     outputs.getByRole("listitem").filter({ hasText: "NVIDIA High Definition Audio" }),
   ).toBeVisible();
-  // Windows default seeds first and carries the amber marker.
+  // Windows default seeds first and carries the amber outline (no badge).
   await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
-  await expect(outputs.getByRole("listitem").first().getByText("Default")).toBeVisible();
+  await expect(outputs.getByRole("listitem").first()).toHaveClass(/is-default/);
   // Non-active endpoints stay out of the ranking. The picker offers only real
   // devices (disconnected AirPods), never disabled endpoints or ghosts.
   await expect(outputs.getByText("Realtek(R) Audio")).toHaveCount(0);
@@ -88,9 +88,9 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   await expect(realtek.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
   await expect(realtek.getByText("Disabled", { exact: true })).toHaveCount(0);
 
-  // Active non-default devices offer Make default.
+  // Active non-default devices offer the temporary switch.
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
-  await expect(tv.getByRole("button", { name: "Make default", exact: true })).toBeVisible();
+  await expect(tv.getByRole("button", { name: "Use now", exact: true })).toBeVisible();
 
   // The notpresent ghost hides until the toggle reveals it. Scope to the
   // device-name element: "Digital output" also appears as a dropdown option.

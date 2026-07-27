@@ -10,7 +10,6 @@ import {
   typeKeyForFormFactor,
 } from "../../../../shared/deviceTypes.js";
 import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
-import { DefaultBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
@@ -123,7 +122,6 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
       </div>
       <div className="strip-tags">
         {saving ? <span className="badge badge-saving">Saving</span> : null}
-        <DefaultBadge device={device} />
       </div>
       <div className="move-controls">
         <select
@@ -161,9 +159,10 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
           <button
             type="button"
             className="btn"
+            title="Switch audio here now; the priority list resumes on the next device event"
             onClick={() => void actions.setDefault(device.id)}
           >
-            Make default
+            Use now
           </button>
         ) : null}
         {device.state === "active" ? (

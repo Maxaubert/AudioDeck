@@ -11,11 +11,6 @@ export function AvailabilityBadge({ device }: { device: DeviceView }) {
   return <span className="badge badge-offline">Offline</span>;
 }
 
-export function DefaultBadge({ device }: { device: DeviceView }) {
-  if (!device.isDefault) return null;
-  return <span className="badge badge-default">Default</span>;
-}
-
 export function StateBadge({ state }: { state: DeviceView["state"] }) {
   const label =
     state === "active"

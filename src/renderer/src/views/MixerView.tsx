@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { displayDetail, displayName } from "../useAppState.js";
-import { AvailabilityBadge, DefaultBadge } from "../components/StatusBadge.js";
+import { AvailabilityBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
@@ -31,8 +31,18 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
   const muted = device.mute === true;
   const offline = device.state !== "active";
   const name = displayName(device);
+  const classes = [
+    "strip",
+    "mixer-strip",
+    "is-plain",
+    offline ? "is-offline" : "",
+    // The amber outline is the one "audio goes here right now" indicator.
+    device.isDefault ? "is-default" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <li className={offline ? "strip mixer-strip is-plain is-offline" : "strip mixer-strip is-plain"}>
+    <li className={classes}>
       <div className="mixer-head">
         <DeviceGlyph formFactor={device.formFactor} />
         <div className="strip-body">
@@ -41,7 +51,6 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
             <div className="device-sub">{displayDetail(device)}</div>
           ) : null}
         </div>
-        <DefaultBadge device={device} />
         {offline ? (
           <AvailabilityBadge device={device} />
         ) : (
