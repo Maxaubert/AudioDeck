@@ -57,13 +57,33 @@ describe("seedPriorityList", () => {
     expect(seedPriorityList([], [endpoint("{mic}", { flow: "capture" })], "render")).toEqual([]);
   });
 
-  it("includes non-active endpoints in the first-run seed", () => {
+  it("seeds only active endpoints, ghosts stay out", () => {
     const endpoints = [
       endpoint("{a}", { isDefault: true }),
       endpoint("{b}", { state: "disabled", volume: null, mute: null }),
       endpoint("{c}", { state: "unplugged", volume: null, mute: null }),
+      endpoint("{d}", { state: "notpresent", volume: null, mute: null }),
     ];
-    expect(seedPriorityList([], endpoints, "render")).toEqual(["{a}", "{b}", "{c}"]);
+    expect(seedPriorityList([], endpoints, "render")).toEqual(["{a}"]);
+  });
+
+  it("does not append non-active endpoints to an existing list", () => {
+    const endpoints = [
+      endpoint("{a}"),
+      endpoint("{ghost}", { state: "notpresent", volume: null, mute: null }),
+    ];
+    expect(seedPriorityList(["{a}"], endpoints, "render")).toEqual(["{a}"]);
+  });
+
+  it("keeps ranked entries even while their endpoint is inactive", () => {
+    const endpoints = [endpoint("{a}", { state: "notpresent", volume: null, mute: null })];
+    expect(seedPriorityList(["{a}"], endpoints, "render")).toEqual(["{a}"]);
+  });
+
+  it("never re-adds excluded devices", () => {
+    const endpoints = [endpoint("{a}"), endpoint("{removed}")];
+    expect(seedPriorityList(["{a}"], endpoints, "render", ["{removed}"])).toEqual(["{a}"]);
+    expect(seedPriorityList([], endpoints, "render", ["{removed}"])).toEqual(["{a}"]);
   });
 
   it("appends new devices to the bottom in enumeration order", () => {

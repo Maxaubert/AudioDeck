@@ -35,6 +35,10 @@ export interface AppState {
 export interface AudioDeckApi {
   getState(): Promise<AppState>;
   setPriority(flow: EndpointFlow, ids: string[]): Promise<void>;
+  /** Append a device to a priority list (and un-exclude it). */
+  addToPriority(flow: EndpointFlow, id: string): Promise<void>;
+  /** Remove a device from a priority list; it stays out until re-added. */
+  removeFromPriority(flow: EndpointFlow, id: string): Promise<void>;
   setDefault(id: string): Promise<void>;
   setVolume(id: string, level: number): Promise<void>;
   setMute(id: string, mute: boolean): Promise<void>;
@@ -49,6 +53,8 @@ export interface AudioDeckApi {
 export const IPC = {
   getState: "audiodeck:get-state",
   setPriority: "audiodeck:set-priority",
+  addToPriority: "audiodeck:add-to-priority",
+  removeFromPriority: "audiodeck:remove-from-priority",
   setDefault: "audiodeck:set-default",
   setVolume: "audiodeck:set-volume",
   setMute: "audiodeck:set-mute",

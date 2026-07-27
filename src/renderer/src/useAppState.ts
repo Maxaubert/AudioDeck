@@ -61,6 +61,8 @@ export function useAppState(): AppStateHook {
     actionsRef.current = {
       getState: () => api.getState(),
       setPriority: wrap((flow, ids) => api.setPriority(flow, ids)),
+      addToPriority: wrap((flow, id) => api.addToPriority(flow, id)),
+      removeFromPriority: wrap((flow, id) => api.removeFromPriority(flow, id)),
       setDefault: wrap((id) => api.setDefault(id)),
       setVolume: wrap((id, level) => api.setVolume(id, level)),
       setMute: wrap((id, mute) => api.setMute(id, mute)),

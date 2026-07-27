@@ -5,6 +5,7 @@
 // backends for the in-memory mock backend.
 
 import { app } from "electron";
+import { installFileLog } from "./filelog.js";
 import { Audioctl } from "./audioctl.js";
 import { audioctlExePath, headsetControlExePath } from "./binaries.js";
 import { HeadsetControl } from "./headsetcontrol.js";
@@ -29,6 +30,9 @@ if (!testMode && !app.requestSingleInstanceLock()) {
 }
 
 async function boot(): Promise<void> {
+  // Packaged builds have no console; mirror daemon logs to a file so field
+  // issues (a switch that never happened) are diagnosable after the fact.
+  if (app.isPackaged) installFileLog();
   await app.whenReady();
 
   let config: AudioDeckConfig = await loadConfig();

@@ -30,8 +30,16 @@ export function seedPriorityList(
   existing: string[],
   endpoints: Endpoint[],
   flow: EndpointFlow,
+  excluded: string[] = [],
 ): string[] {
-  const flowEndpoints = endpoints.filter((e) => e.flow === flow);
+  // Only ACTIVE endpoints enter the list automatically: Windows remembers
+  // every endpoint it has ever seen (ghost HDMI ports, stale duplicates), and
+  // seeding those buries the real devices. Ranked entries keep their slot even
+  // while inactive; excluded ids never come back on their own.
+  const skip = new Set(excluded);
+  const flowEndpoints = endpoints.filter(
+    (e) => e.flow === flow && e.state === "active" && !skip.has(e.id),
+  );
 
   if (existing.length === 0) {
     const defaultId = flowEndpoints.find((e) => e.isDefault)?.id ?? null;

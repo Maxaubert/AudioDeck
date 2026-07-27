@@ -56,6 +56,40 @@ export function registerIpc(deps: IpcDeps): void {
     await poller.refreshNow();
   });
 
+  ipcMain.handle(IPC.addToPriority, async (_e, flow: EndpointFlow, id: string) => {
+    if (typeof id !== "string" || id === "") return;
+    const config = deps.getConfig();
+    const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
+    const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
+    if (config[priorityKey].includes(id)) return;
+    await deps.saveConfig({
+      ...config,
+      [priorityKey]: [...config[priorityKey], id],
+      excluded: {
+        ...config.excluded,
+        [excludedKey]: config.excluded[excludedKey].filter((x) => x !== id),
+      },
+    });
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.removeFromPriority, async (_e, flow: EndpointFlow, id: string) => {
+    if (typeof id !== "string" || id === "") return;
+    const config = deps.getConfig();
+    const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
+    const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
+    const excludedIds = config.excluded[excludedKey];
+    await deps.saveConfig({
+      ...config,
+      [priorityKey]: config[priorityKey].filter((x) => x !== id),
+      excluded: {
+        ...config.excluded,
+        [excludedKey]: excludedIds.includes(id) ? excludedIds : [...excludedIds, id],
+      },
+    });
+    await poller.refreshNow();
+  });
+
   ipcMain.handle(IPC.setDefault, async (_e, id: string) => {
     // A user-chosen default is a manual override; the rules engine sees the
     // deviation on the next tick and engages the hold (design: behavior rules).

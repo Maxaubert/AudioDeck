@@ -79,13 +79,17 @@ export class HeadsetControl implements HeadsetQuerier {
     this.timeoutMs = options.timeoutMs ?? 5000;
   }
 
-  /** One `headsetcontrol -o json` shot. Throws HeadsetControlError on any failure. */
+  /** One `headsetcontrol -b -o json` shot. Throws HeadsetControlError on any failure. */
   async query(): Promise<HeadsetSnapshot> {
     let stdout: string;
     try {
+      // -b queries battery only: querying all capabilities (no flag) makes the
+      // firmware answer for chatmix/EQ too, which fails while the headset is
+      // off and degrades status to "partial". Battery is all we need, and
+      // fewer HID transactions also means less contention with other tools.
       // HeadsetControl exits non-zero when no supported device is connected but
       // still prints valid JSON, so parse stdout before judging the exit code.
-      const result = await execFileAsync(this.exePath, ["-o", "json"], {
+      const result = await execFileAsync(this.exePath, ["-b", "-o", "json"], {
         timeout: this.timeoutMs,
         windowsHide: true,
         encoding: "utf8",
@@ -125,9 +129,15 @@ export class HeadsetControl implements HeadsetQuerier {
  * Is the headset powered on according to its battery status? Returns null for
  * "unknown" (device did not answer, no battery capability, HID error), which
  * callers must treat as powered on (fail open, never switch away wrongly).
+ *
+ * Judged on the battery data alone, NOT device.status: HeadsetControl reports
+ * status "partial" whenever any of the requested capability queries fails
+ * while the battery answer itself is still valid (observed live 2026-07-27 on
+ * a Nova Pro Wireless). Gating on status === "success" turns every partial
+ * answer into fail-open "powered on", which can suppress the off-switch.
  */
 export function headsetPowerState(device: HeadsetDevice): boolean | null {
-  if (device.status !== "success" || device.battery === undefined) return null;
+  if (device.battery === undefined) return null;
   switch (device.battery.status) {
     case "BATTERY_AVAILABLE":
     case "BATTERY_CHARGING":

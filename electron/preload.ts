@@ -10,6 +10,10 @@ const api: AudioDeckApi = {
   getState: () => ipcRenderer.invoke(IPC.getState),
   setPriority: (flow: EndpointFlow, ids: string[]) =>
     ipcRenderer.invoke(IPC.setPriority, flow, ids),
+  addToPriority: (flow: EndpointFlow, id: string) =>
+    ipcRenderer.invoke(IPC.addToPriority, flow, id),
+  removeFromPriority: (flow: EndpointFlow, id: string) =>
+    ipcRenderer.invoke(IPC.removeFromPriority, flow, id),
   setDefault: (id: string) => ipcRenderer.invoke(IPC.setDefault, id),
   setVolume: (id: string, level: number) => ipcRenderer.invoke(IPC.setVolume, id, level),
   setMute: (id: string, mute: boolean) => ipcRenderer.invoke(IPC.setMute, id, mute),

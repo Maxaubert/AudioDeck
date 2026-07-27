@@ -12,9 +12,10 @@ export interface PriorityListProps {
   ids: string[];
   devicesById: Map<string, DeviceView>;
   onReorder: (ids: string[]) => void;
+  onRemove: (id: string) => void;
 }
 
-export function PriorityList({ label, ids, devicesById, onReorder }: PriorityListProps) {
+export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: PriorityListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
@@ -107,6 +108,15 @@ export function PriorityList({ label, ids, devicesById, onReorder }: PriorityLis
                 onClick={() => onReorder(moveItem(ids, index, index + 1))}
               >
                 &#9660;
+              </button>
+              <button
+                type="button"
+                className="btn btn-icon btn-remove"
+                aria-label={`Remove ${device !== undefined ? displayName(device) : "device"} from list`}
+                title="Remove from list"
+                onClick={() => onRemove(id)}
+              >
+                &#10005;
               </button>
             </div>
           </li>

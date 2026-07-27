@@ -197,8 +197,18 @@ export class Poller {
   /** First-run seeding and new-device append, persisted when anything changed. */
   private async seedLists(endpoints: Endpoint[]): Promise<AudioDeckConfig> {
     const config = this.deps.getConfig();
-    const outputPriority = seedPriorityList(config.outputPriority, endpoints, "render");
-    const micPriority = seedPriorityList(config.micPriority, endpoints, "capture");
+    const outputPriority = seedPriorityList(
+      config.outputPriority,
+      endpoints,
+      "render",
+      config.excluded.output,
+    );
+    const micPriority = seedPriorityList(
+      config.micPriority,
+      endpoints,
+      "capture",
+      config.excluded.mic,
+    );
     if (
       sameList(outputPriority, config.outputPriority) &&
       sameList(micPriority, config.micPriority)

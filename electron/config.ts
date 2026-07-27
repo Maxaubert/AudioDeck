@@ -24,6 +24,8 @@ export interface AudioDeckConfig {
   hiddenDevices: string[];
   /** User-chosen display aliases, endpoint ID to alias. */
   aliases: Record<string, string>;
+  /** Endpoint IDs the user removed from the priority lists; never auto re-added. */
+  excluded: { output: string[]; mic: string[] };
 }
 
 export function defaultConfig(): AudioDeckConfig {
@@ -36,6 +38,7 @@ export function defaultConfig(): AudioDeckConfig {
     autostart: true,
     hiddenDevices: [],
     aliases: {},
+    excluded: { output: [], mic: [] },
   };
 }
 
@@ -126,6 +129,10 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
     autostart: typeof partial.autostart === "boolean" ? partial.autostart : base.autostart,
     hiddenDevices: stringArray(partial.hiddenDevices) ?? base.hiddenDevices,
     aliases: stringRecord(partial.aliases) ?? base.aliases,
+    excluded: {
+      output: stringArray(partial.excluded?.output) ?? base.excluded.output,
+      mic: stringArray(partial.excluded?.mic) ?? base.excluded.mic,
+    },
   };
 }
 

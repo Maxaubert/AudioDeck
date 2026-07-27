@@ -22,12 +22,13 @@ test("launches into the Priority view with both mocked lists", async () => {
   const outputs = page.getByRole("list", { name: "Output priority" });
   await expect(outputs.getByText("Speakers (Arctis Nova Pro Wireless)")).toBeVisible();
   await expect(outputs.getByText("LG TV (NVIDIA High Definition Audio)")).toBeVisible();
-  await expect(outputs.getByText("Speakers (Realtek(R) Audio)")).toBeVisible();
   // Windows default seeds first and carries the amber marker.
   await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
   await expect(outputs.getByRole("listitem").first().getByText("Default")).toBeVisible();
-  // The disabled Realtek endpoint is in the list but not available.
-  await expect(outputs.getByRole("listitem").nth(2).getByText("Offline")).toBeVisible();
+  // The disabled Realtek endpoint stays out of the ranking; it waits behind
+  // the collapsed Add-a-device picker instead.
+  await expect(outputs.getByText("Speakers (Realtek(R) Audio)")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Add a device/ }).first()).toBeVisible();
 
   const mics = page.getByRole("list", { name: "Microphone priority" });
   await expect(mics.getByText("Microphone (Arctis Nova Pro Wireless)")).toBeVisible();

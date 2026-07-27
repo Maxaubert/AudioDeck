@@ -528,3 +528,69 @@ input[type="range"].fader::-webkit-slider-thumb {
   color: var(--ink-muted);
   font-size: 1.2rem;
 }
+
+/* ---- Add-a-device picker (collapsed by default; ghosts stay out of the way) ---- */
+
+.btn-add-device {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1rem;
+  color: var(--ink-muted);
+  border: 2px dashed var(--line-strong);
+  background: transparent;
+  padding: 0.6rem 1rem;
+}
+
+.btn-add-device:hover {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+
+.add-device {
+  border: 2px solid var(--line);
+  background: var(--panel);
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.add-device-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.add-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.btn-add-row {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+}
+
+.btn-add-row:hover {
+  border-color: var(--ink-muted);
+}
+
+.btn-remove {
+  color: var(--ink-muted);
+}
+
+.btn-remove:hover {
+  color: #ff9d9d;
+}
