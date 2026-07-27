@@ -640,3 +640,7 @@ input[type="range"].fader::-webkit-slider-thumb {
 @media (prefers-reduced-motion: reduce) {
   .badge-saving { animation: none; }
 }
+
+.mixer-strip.is-offline {
+  opacity: 0.55;
+}
