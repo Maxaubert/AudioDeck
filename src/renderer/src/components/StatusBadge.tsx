@@ -3,9 +3,8 @@
 import type { DeviceView } from "../../../../shared/ipc.js";
 
 export function AvailabilityBadge({ device }: { device: DeviceView }) {
-  if (device.available) {
-    return <span className="badge badge-available">Available</span>;
-  }
+  // Available is the normal state; only the exceptions earn a chip.
+  if (device.available) return null;
   if (device.availabilityReason === "headset-off") {
     return <span className="badge badge-headset-off">Headset off</span>;
   }
