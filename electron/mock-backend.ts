@@ -125,12 +125,13 @@ export class MockAudioctl implements AudioControl {
     e.mute = null;
   }
 
-  async rename(id: string, name: string): Promise<void> {
-    // Mirrors Windows: only the description is writable, the interface
-    // suffix always comes back in the composed name.
+  async rename(id: string, name: string, suffix?: string): Promise<void> {
+    // Mirrors Windows: composed as "name (suffix)"; the parentheses always
+    // come back, but both texts are writable.
     const e = this.get(id);
-    const suffix = /\(([^)]*)\)\s*$/.exec(e.name);
-    e.name = suffix === null ? name : `${name} (${suffix[1]})`;
+    const current = /\(([^)]*)\)\s*$/.exec(e.name);
+    const kept = suffix ?? (current === null ? null : current[1]);
+    e.name = kept === null || kept === undefined ? name : `${name} (${kept})`;
   }
 
   private get(id: string): Endpoint {

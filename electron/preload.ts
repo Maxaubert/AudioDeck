@@ -20,7 +20,8 @@ const api: AudioDeckApi = {
   setEndpointEnabled: (id: string, enabled: boolean) =>
     ipcRenderer.invoke(IPC.setEndpointEnabled, id, enabled),
   setAlias: (id: string, alias: string | null) => ipcRenderer.invoke(IPC.setAlias, id, alias),
-  renameDevice: (id: string, name: string) => ipcRenderer.invoke(IPC.renameDevice, id, name),
+  renameDevice: (id: string, name: string, suffix?: string) =>
+    ipcRenderer.invoke(IPC.renameDevice, id, name, suffix),
   setPaused: (paused: boolean) => ipcRenderer.invoke(IPC.setPaused, paused),
   setAutostart: (enabled: boolean) => ipcRenderer.invoke(IPC.setAutostart, enabled),
   setPollInterval: (ms: number) => ipcRenderer.invoke(IPC.setPollInterval, ms),

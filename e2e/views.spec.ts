@@ -107,11 +107,11 @@ test("renaming changes the device name globally", async () => {
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
   await tv.getByRole("button", { name: "Rename", exact: true }).click();
   await tv.getByLabel(/New name for/).fill("Stue TV");
+  await tv.getByLabel(/New parenthesized text for/).fill("Stua");
   await tv.getByRole("button", { name: "Save name", exact: true }).click();
 
-  // The device shows exactly the typed name, no interface suffix.
-  await expect(page.getByRole("listitem").filter({ hasText: "Stue TV" })).toBeVisible();
-  await expect(
-    page.getByText("Stue TV (NVIDIA High Definition Audio)"),
-  ).toHaveCount(0);
+  // Both parts land: clean title and the custom suffix as the sub line.
+  const renamed = page.getByRole("listitem").filter({ hasText: "Stue TV" });
+  await expect(renamed).toBeVisible();
+  await expect(renamed.getByText("Stua", { exact: true })).toBeVisible();
 });

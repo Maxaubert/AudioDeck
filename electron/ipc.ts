@@ -124,11 +124,13 @@ export function registerIpc(deps: IpcDeps): void {
     await deps.saveConfig({ ...config, aliases });
   });
 
-  ipcMain.handle(IPC.renameDevice, async (_e, id: string, name: string) => {
+  ipcMain.handle(IPC.renameDevice, async (_e, id: string, name: string, suffix?: unknown) => {
     if (typeof id !== "string" || typeof name !== "string" || name.trim() === "") return;
+    const cleanSuffix =
+      typeof suffix === "string" && suffix.trim() !== "" ? suffix.trim() : undefined;
     try {
-      await audioctl.rename(id, name.trim());
-      console.log(`[ipc] renamed ${id} to "${name.trim()}"`);
+      await audioctl.rename(id, name.trim(), cleanSuffix);
+      console.log(`[ipc] renamed ${id} to "${name.trim()}"${cleanSuffix === undefined ? "" : ` (${cleanSuffix})`}`);
     } catch (err) {
       console.error(`[ipc] rename ${id} failed:`, err);
       throw err;

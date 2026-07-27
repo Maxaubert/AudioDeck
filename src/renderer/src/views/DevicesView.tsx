@@ -11,18 +11,23 @@ import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.
 function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [suffixDraft, setSuffixDraft] = useState("");
 
   const startEdit = (): void => {
-    // Prefill with the current clean name so an unchanged save is obvious.
-    setDraft(splitDeviceName(device.name).title);
+    // Prefill with the current parts so an unchanged save is obvious.
+    const parts = splitDeviceName(device.name);
+    setDraft(parts.title);
+    setSuffixDraft(parts.detail ?? "");
     setEditing(true);
   };
   const save = (): void => {
     const trimmed = draft.trim();
+    const suffix = suffixDraft.trim();
     if (trimmed !== "") {
       // Renaming is global by design; the main process also drops any local
-      // alias so the app shows exactly what Windows shows.
-      void actions.renameDevice(device.id, trimmed);
+      // alias so the app shows exactly what Windows shows. An empty suffix
+      // keeps the current one (Windows cannot render without it).
+      void actions.renameDevice(device.id, trimmed, suffix === "" ? undefined : suffix);
     }
     setEditing(false);
   };
@@ -50,6 +55,13 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
               placeholder="New name, shown everywhere in Windows"
               aria-label={`New name for ${device.name}`}
               onChange={(e) => setDraft(e.target.value)}
+            />
+            <input
+              className="rename-input rename-suffix"
+              value={suffixDraft}
+              placeholder="Text in parentheses"
+              aria-label={`New parenthesized text for ${device.name}`}
+              onChange={(e) => setSuffixDraft(e.target.value)}
             />
             <button type="submit" className="btn btn-accent">
               Save name
@@ -145,8 +157,9 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
         Devices
       </h2>
       <p className="view-hint">
-        Renaming a device changes its name in Windows itself. Devices Windows only remembers
-        from the past are tucked behind the toggle below each list.
+        Renaming a device changes its name in Windows itself, including the text in
+        parentheses (Windows insists on the parentheses, but both texts are yours). Devices
+        Windows only remembers from the past are tucked behind the toggle below each list.
       </p>
       <DeviceSection title="Outputs" devices={outputs} actions={actions} />
       <DeviceSection title="Microphones" devices={mics} actions={actions} />

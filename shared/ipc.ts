@@ -44,8 +44,11 @@ export interface AudioDeckApi {
   setMute(id: string, mute: boolean): Promise<void>;
   setEndpointEnabled(id: string, enabled: boolean): Promise<void>;
   setAlias(id: string, alias: string | null): Promise<void>;
-  /** Rename the endpoint in Windows itself (audio picker, Settings, all apps). */
-  renameDevice(id: string, name: string): Promise<void>;
+  /**
+   * Rename the endpoint in Windows itself (audio picker, Settings, all apps).
+   * `suffix` optionally replaces the parenthesized part; omitted keeps it.
+   */
+  renameDevice(id: string, name: string, suffix?: string): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;

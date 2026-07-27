@@ -50,8 +50,17 @@ PKEY_Device_DeviceDesc (fmtid `a45c254e-df1c-4efd-8020-67d146a850e0`, pid 2) as 
 (31) via IPropertyStore::SetValue (method 4 after GetCount/GetAt/GetValue, absolute slot 6)
 then Commit (slot 7). Windows recomposes the picker name as "desc (interface)".
 PKEY_Device_FriendlyName (pid 14) is WRITE-PROTECTED: SetValue returns E_ACCESSDENIED
-(verified live 2026-07-27), so an exact suffix-free name in the Windows picker is not
-achievable; strip the "(interface)" part client-side for clean display instead.
+(verified live 2026-07-27), so a suffix-free picker name is not achievable.
+
+The SUFFIX SOURCE is writable though: `{b3f8fa53-0004-438e-9003-51a46e139bfc},6`
+(the endpoint's interface name) accepts SetValue+Commit without elevation, and the
+composed name follows as "desc (newsuffix)". Rules learned live: NEVER write it empty
+(renders "desc ()") and NEVER delete it with VT_EMPTY (the composed name collapses to
+"(unknown)"). DEVPKEY_DeviceInterface_FriendlyName `{026e516e-...},2` is denied.
+
+The quick-settings flyout (ShellHost.exe) caches endpoint names for its process
+lifetime; kill ShellHost after a rename (it respawns on demand) or the flyout keeps
+showing the old name indefinitely.
 PROPVARIANT must be marshalled as 24 bytes on x64 (vt at 0, data union at 8); a 16-byte
 struct crashes on the SetValue path.
 

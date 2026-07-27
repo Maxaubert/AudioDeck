@@ -15,6 +15,12 @@ internal readonly unsafe struct PropertyStore : IDisposable
     // what the classic Sound control panel's rename does; Windows recomposes the
     // full picker name from it.
     private const uint DeviceDescPid = 2;
+    // The suffix source: the endpoint's interface name, shown as the "(...)" part of
+    // the composed picker name. Writable (proven live 2026-07-27). NEVER delete it
+    // (VT_EMPTY) and never write it empty: deletion collapses the composed name to
+    // "(unknown)" and an empty string renders as "name ()".
+    private static readonly Guid EndpointInterfaceFmtid = new("b3f8fa53-0004-438e-9003-51a46e139bfc");
+    private const uint EndpointInterfacePid = 6;
     private const ushort VtLpwstr = 31;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -39,20 +45,24 @@ internal readonly unsafe struct PropertyStore : IDisposable
 
     // Slot 6: SetValue(ref PROPERTYKEY, ref PROPVARIANT), slot 7: Commit(). Needs a
     // store opened with STGM_READWRITE; works without elevation (audiosrv mediates).
-    // Only the device description (pid 2) is writable; the composed friendly name
-    // (pid 14) is protected (SetValue returns E_ACCESSDENIED, verified live), so
-    // Windows always displays "name (interface)". Callers wanting a clean name
-    // must split the composed form for display themselves.
-    public void SetName(string name)
+    // The composed friendly name (pid 14) is protected (E_ACCESSDENIED, verified
+    // live) and always renders as "desc (interface)"; both ingredients are
+    // writable, so a rename can control everything except the parentheses.
+    public void SetName(string name, string? suffix)
     {
-        SetString(DeviceDescPid, name);
+        SetString(new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = DeviceDescPid }, name);
+        if (!string.IsNullOrWhiteSpace(suffix))
+        {
+            SetString(
+                new PropertyKey { Fmtid = EndpointInterfaceFmtid, Pid = EndpointInterfacePid },
+                suffix.Trim());
+        }
         int hr = ((delegate* unmanaged<IntPtr, int>)ComRuntime.Slot(_ptr, 7))(_ptr);
         ComRuntime.Check(hr, "IPropertyStore.Commit");
     }
 
-    private void SetString(uint pid, string text)
+    private void SetString(PropertyKey key, string text)
     {
-        var key = new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = pid };
         var value = new PropVariant { Vt = VtLpwstr, Ptr = Marshal.StringToCoTaskMemUni(text) };
         try
         {

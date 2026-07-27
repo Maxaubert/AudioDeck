@@ -33,8 +33,11 @@ export interface AudioControl {
   unmute(id: string): Promise<void>;
   enable(id: string): Promise<void>;
   disable(id: string): Promise<void>;
-  /** Rename the endpoint system-wide (PKEY_Device_DeviceDesc). */
-  rename(id: string, name: string): Promise<void>;
+  /**
+   * Rename the endpoint system-wide. `suffix` optionally replaces the
+   * "(...)" part Windows always appends; omitted keeps the current one.
+   */
+  rename(id: string, name: string, suffix?: string): Promise<void>;
 }
 
 export class AudioctlError extends Error {
@@ -118,8 +121,8 @@ export class Audioctl implements AudioControl {
     await this.run(["disable", id]);
   }
 
-  async rename(id: string, name: string): Promise<void> {
-    await this.run(["rename", id, name]);
+  async rename(id: string, name: string, suffix?: string): Promise<void> {
+    await this.run(suffix === undefined ? ["rename", id, name] : ["rename", id, name, suffix]);
   }
 
   /**

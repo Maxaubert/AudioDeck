@@ -71,7 +71,7 @@ export function useAppState(): AppStateHook {
       setMute: wrap((id, mute) => api.setMute(id, mute)),
       setEndpointEnabled: wrap((id, enabled) => api.setEndpointEnabled(id, enabled)),
       setAlias: wrap((id, alias) => api.setAlias(id, alias)),
-      renameDevice: wrap((id, name) => api.renameDevice(id, name)),
+      renameDevice: wrap((id, name, suffix) => api.renameDevice(id, name, suffix)),
       setPaused: wrap((paused) => api.setPaused(paused)),
       setAutostart: wrap((enabled) => api.setAutostart(enabled)),
       setPollInterval: wrap((ms) => api.setPollInterval(ms)),

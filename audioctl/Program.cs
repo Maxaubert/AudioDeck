@@ -14,7 +14,7 @@ internal static class Program
         "  set-volume <id> <0-100>  set endpoint master volume\n" +
         "  mute <id> | unmute <id>  set endpoint mute state\n" +
         "  enable <id> | disable <id>  set endpoint visibility\n" +
-        "  rename <id> <name>       rename endpoint system-wide";
+        "  rename <id> <name> [suffix]  rename endpoint system-wide (suffix = text in parentheses)";
 
     private static int Main(string[] args)
     {
@@ -31,6 +31,7 @@ internal static class Program
                 ["enable", var id] => VisibilityCommand.Run(id, visible: true),
                 ["disable", var id] => VisibilityCommand.Run(id, visible: false),
                 ["rename", var id, var name] => RenameCommand.Run(id, name),
+                ["rename", var id, var name, var suffix] => RenameCommand.Run(id, name, suffix),
                 _ => JsonOut.Error(Usage),
             };
         }
