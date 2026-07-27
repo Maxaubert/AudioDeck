@@ -20,11 +20,9 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   const save = (): void => {
     const trimmed = draft.trim();
     if (trimmed !== "") {
-      // Renaming is global by design: Windows keeps the "(interface)" part
-      // and shows the new name everywhere. Any old local alias is dropped so
-      // the app shows exactly what Windows shows.
+      // Renaming is global by design; the main process also drops any local
+      // alias so the app shows exactly what Windows shows.
       void actions.renameDevice(device.id, trimmed);
-      void actions.setAlias(device.id, null);
     }
     setEditing(false);
   };

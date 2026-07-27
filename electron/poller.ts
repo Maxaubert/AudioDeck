@@ -38,7 +38,8 @@ export class Poller {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private paused = false;
-  private ticking = false;
+  /** Tail of the tick chain; every tick() call appends exactly one gather. */
+  private chain: Promise<void> = Promise.resolve();
   /** Last poll's availability snapshot; null before the first completed tick. */
   private previous: DeviceAvailability[] | null = null;
   /**
@@ -80,7 +81,12 @@ export class Poller {
     return this.last;
   }
 
-  /** Run one tick immediately (after a UI mutation); no-op if one is running. */
+  /**
+   * Run one tick immediately (after a UI mutation). Ticks are serialized, so
+   * this always performs a fresh gather even when one is mid-flight, and
+   * resolves only after that gather completes; callers can rely on the
+   * snapshot reflecting their mutation.
+   */
   async refreshNow(): Promise<void> {
     try {
       await this.tick();
@@ -100,14 +106,11 @@ export class Poller {
     this.timer = setTimeout(() => void this.tickAndReschedule(), this.deps.getConfig().pollIntervalMs);
   }
 
-  private async tick(): Promise<void> {
-    if (this.ticking) return;
-    this.ticking = true;
-    try {
-      await this.evaluateOnce();
-    } finally {
-      this.ticking = false;
-    }
+  /** Serialized: a call during a running tick queues one more full gather. */
+  private tick(): Promise<void> {
+    const run = this.chain.then(() => this.evaluateOnce());
+    this.chain = run.catch(() => undefined);
+    return run;
   }
 
   private async evaluateOnce(): Promise<void> {

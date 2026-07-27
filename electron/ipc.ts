@@ -1,6 +1,7 @@
 // ipcMain handlers backing the AudioDeckApi contract. Maps renderer requests
 // onto the daemon's services; owns no state of its own.
 
+import { execFile } from "node:child_process";
 import { ipcMain } from "electron";
 import { evaluateAvailability } from "./availability.js";
 import { IPC } from "../shared/ipc.js";
@@ -132,11 +133,21 @@ export function registerIpc(deps: IpcDeps): void {
       console.error(`[ipc] rename ${id} failed:`, err);
       throw err;
     }
+    // A rename replaces any local alias; the device now IS the new name.
+    const config = deps.getConfig();
+    if (config.aliases[id] !== undefined) {
+      const aliases = { ...config.aliases };
+      delete aliases[id];
+      await deps.saveConfig({ ...config, aliases });
+    }
+    // Windows recomposes the display name asynchronously (~350 ms measured);
+    // wait it out so the refresh below already carries the new name.
+    await new Promise((resolve) => setTimeout(resolve, 700));
     await poller.refreshNow();
-    // Windows recomposes the display name asynchronously (sub-second, but a
-    // refresh racing a mid-flight tick can miss it); one delayed follow-up
-    // keeps the UI from showing the old name.
-    setTimeout(() => void poller.refreshNow(), 1200);
+    // The quick-settings flyout (ShellHost) only re-reads device names when
+    // its process restarts; bounce it so the rename shows up there too. It
+    // respawns on demand and holds no user state.
+    restartShellHost();
   });
 
   ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
@@ -154,6 +165,15 @@ export function registerIpc(deps: IpcDeps): void {
     if (typeof ms !== "number" || !Number.isFinite(ms)) return;
     const clamped = Math.min(60_000, Math.max(500, Math.round(ms)));
     await deps.saveConfig({ ...deps.getConfig(), pollIntervalMs: clamped });
+  });
+}
+
+/** Kill ShellHost (quick-settings host); Windows respawns it on demand. */
+function restartShellHost(): void {
+  // Never touch the real shell from e2e/screenshot runs.
+  if (process.env.AUDIODECK_TEST_MODE === "1") return;
+  execFile("taskkill", ["/F", "/IM", "ShellHost.exe"], { windowsHide: true }, (err) => {
+    if (err !== null) console.log("[ipc] ShellHost restart skipped:", err.message);
   });
 }
 
