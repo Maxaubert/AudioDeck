@@ -11,7 +11,16 @@ import type { DeviceView } from "../../../../shared/ipc.js";
 function candidatesFor(state: AppState, flow: DeviceView["flow"], ranked: string[]): DeviceView[] {
   const rankedSet = new Set(ranked);
   return state.devices
-    .filter((d) => d.flow === flow && !rankedSet.has(d.id))
+    .filter(
+      (d) =>
+        d.flow === flow &&
+        !rankedSet.has(d.id) &&
+        // Same split as the Windows sound panel: connected and disconnected
+        // devices are real; "not present" endpoints are ghosts Windows
+        // remembers forever (old HDMI ports, uninstalled drivers) and
+        // disabled ones are managed in the Devices view.
+        (d.state === "active" || d.state === "unplugged"),
+    )
     .sort((a, b) => {
       if ((a.state === "active") !== (b.state === "active")) {
         return a.state === "active" ? -1 : 1;
