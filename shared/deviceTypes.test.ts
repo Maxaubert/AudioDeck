@@ -2,7 +2,13 @@
 // flow filtering and the reverse lookup the UI relies on.
 
 import { describe, expect, it } from "vitest";
-import { deviceTypeByKey, typeKeyForFormFactor, typesForFlow, DEVICE_TYPES } from "./deviceTypes.js";
+import {
+  deviceTypeByKey,
+  offeredTypesForFlow,
+  typeKeyForFormFactor,
+  typesForFlow,
+  DEVICE_TYPES,
+} from "./deviceTypes.js";
 
 describe("deviceTypes", () => {
   it("every type has a distinct key and an mmres icon", () => {
@@ -19,6 +25,15 @@ describe("deviceTypes", () => {
     expect(captureKeys).toContain("microphone");
     expect(captureKeys).toContain("headset");
     expect(captureKeys).not.toContain("tv");
+  });
+
+  it("only offers types the Windows picker visibly distinguishes", () => {
+    expect(offeredTypesForFlow("render").map((t) => t.key)).toEqual([
+      "speakers",
+      "headphones",
+      "headset",
+    ]);
+    expect(offeredTypesForFlow("capture").map((t) => t.key)).toEqual(["headset", "microphone"]);
   });
 
   it("maps form factors back to type keys per flow", () => {

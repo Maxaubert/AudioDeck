@@ -4,7 +4,11 @@
 // remembers (state notpresent) hide behind a toggle.
 
 import { useState } from "react";
-import { typeKeyForFormFactor, typesForFlow } from "../../../../shared/deviceTypes.js";
+import {
+  deviceTypeByKey,
+  offeredTypesForFlow,
+  typeKeyForFormFactor,
+} from "../../../../shared/deviceTypes.js";
 import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
 import { DefaultBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
@@ -90,8 +94,14 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
             <option value="custom" disabled>
               Custom
             </option>
+          ) : deviceTypeByKey(currentType)?.offered === false ? (
+            // The device already carries a type we do not offer (TV, digital,
+            // line in); show it truthfully without promoting it to a choice.
+            <option value={currentType} disabled>
+              {deviceTypeByKey(currentType)?.label}
+            </option>
           ) : null}
-          {typesForFlow(device.flow).map((t) => (
+          {offeredTypesForFlow(device.flow).map((t) => (
             <option key={t.key} value={t.key}>
               {t.label}
             </option>
