@@ -8,11 +8,17 @@ export interface TrayActions {
   quit: () => void;
 }
 
+export interface TrayHandle {
+  tray: Tray;
+  /** Keep the menu checkbox in sync when pause is toggled from the UI. */
+  setPausedChecked: (paused: boolean) => void;
+}
+
 // 16x16 speaker glyph, embedded so the daemon needs no asset files on disk.
 const TRAY_ICON_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAANUlEQVR4nGNgGAVEgQ8fvv7HxsaqEIbRxXAZiNcAbAYSbQA6pr8BFHsBXYwoA3ABoqNxhAIAbbywGbuf4qAAAAAASUVORK5CYII=";
 
-export function createTray(actions: TrayActions): Tray {
+export function createTray(actions: TrayActions): TrayHandle {
   const icon = nativeImage.createFromDataURL(`data:image/png;base64,${TRAY_ICON_PNG_BASE64}`);
   const tray = new Tray(icon);
   tray.setToolTip("AudioDeck");
@@ -23,6 +29,7 @@ export function createTray(actions: TrayActions): Tray {
       click: () => actions.openWindow(),
     },
     {
+      id: "pause",
       label: "Pause automation",
       type: "checkbox",
       checked: false,
@@ -36,5 +43,12 @@ export function createTray(actions: TrayActions): Tray {
   ]);
   tray.setContextMenu(menu);
   tray.on("click", () => actions.openWindow());
-  return tray;
+
+  const pauseItem = menu.getMenuItemById("pause");
+  return {
+    tray,
+    setPausedChecked: (paused) => {
+      if (pauseItem !== null) pauseItem.checked = paused;
+    },
+  };
 }

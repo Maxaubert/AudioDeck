@@ -10,7 +10,8 @@
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test --pass-with-no-tests"
+    "e2e": "playwright test --pass-with-no-tests",
+    "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",

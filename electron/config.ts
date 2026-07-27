@@ -22,6 +22,8 @@ export interface AudioDeckConfig {
   autostart: boolean;
   /** Endpoint IDs the user has hidden from AudioDeck's lists. */
   hiddenDevices: string[];
+  /** User-chosen display aliases, endpoint ID to alias. */
+  aliases: Record<string, string>;
 }
 
 export function defaultConfig(): AudioDeckConfig {
@@ -33,6 +35,7 @@ export function defaultConfig(): AudioDeckConfig {
     pollIntervalMs: 2000,
     autostart: true,
     hiddenDevices: [],
+    aliases: {},
   };
 }
 
@@ -103,7 +106,17 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
         : base.pollIntervalMs,
     autostart: typeof partial.autostart === "boolean" ? partial.autostart : base.autostart,
     hiddenDevices: stringArray(partial.hiddenDevices) ?? base.hiddenDevices,
+    aliases: stringRecord(partial.aliases) ?? base.aliases,
   };
+}
+
+function stringRecord(value: unknown): Record<string, string> | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
 }
 
 function stringArray(value: unknown): string[] | undefined {

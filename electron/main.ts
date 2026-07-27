@@ -1,5 +1,7 @@
-// Main-process entry: wiring only. Boots config, tray, poller, and autostart.
-// The on-demand renderer window is wired in when Stage 3 lands.
+// Main-process entry: wiring only. Boots config, tray, poller, autostart,
+// IPC, and the on-demand renderer window.
+// AUDIODECK_TEST_MODE=1 (e2e and screenshots): no tray, no registry writes,
+// window opens immediately.
 
 import { app } from "electron";
 import { Audioctl } from "./audioctl.js";
@@ -8,11 +10,15 @@ import { Poller } from "./poller.js";
 import { createTray } from "./tray.js";
 import { loadConfig, saveConfig } from "./config.js";
 import { setAutostart } from "./autostart.js";
+import { registerIpc } from "./ipc.js";
+import { WindowManager } from "./window.js";
 import type { AudioDeckConfig } from "./config.js";
-import type { Tray } from "electron";
+import type { TrayHandle } from "./tray.js";
+
+const testMode = process.env.AUDIODECK_TEST_MODE === "1";
 
 // One tray daemon per machine; a second launch just exits.
-if (!app.requestSingleInstanceLock()) {
+if (!testMode && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   void boot();
@@ -23,8 +29,9 @@ async function boot(): Promise<void> {
 
   let config: AudioDeckConfig = await loadConfig();
 
+  const audioctl = new Audioctl();
   const poller = new Poller({
-    audioctl: new Audioctl(),
+    audioctl,
     headsetControl: new HeadsetControl(),
     getConfig: () => config,
     saveConfig: async (next) => {
@@ -33,26 +40,46 @@ async function boot(): Promise<void> {
     },
   });
 
-  // Keep the tray reference alive for the process lifetime.
-  let tray: Tray | null = null;
-  tray = createTray({
-    openWindow: () => {
-      // Stage 3 wires the renderer window in here.
-      console.log("[main] Open AudioDeck requested; UI lands in Stage 3");
-    },
-    setPaused: (paused) => poller.setPaused(paused),
-    quit: () => app.quit(),
-  });
-  void tray;
+  const windows = new WindowManager();
 
-  try {
-    await setAutostart(config.autostart);
-  } catch (err) {
-    console.error("[main] autostart sync failed:", err);
+  let tray: TrayHandle | null = null;
+  const setPaused = (paused: boolean): void => {
+    poller.setPaused(paused);
+    tray?.setPausedChecked(paused);
+  };
+
+  if (!testMode) {
+    tray = createTray({
+      openWindow: () => windows.open(),
+      setPaused,
+      quit: () => app.quit(),
+    });
+  }
+
+  registerIpc({
+    audioctl,
+    poller,
+    getConfig: () => config,
+    saveConfig: async (next) => {
+      config = next;
+      await saveConfig(next);
+    },
+    setPaused,
+    applyAutostart: (enabled) => (testMode ? Promise.resolve() : setAutostart(enabled)),
+  });
+
+  if (!testMode) {
+    try {
+      await setAutostart(config.autostart);
+    } catch (err) {
+      console.error("[main] autostart sync failed:", err);
+    }
   }
 
   poller.start();
   console.log(`[main] AudioDeck daemon up, poll interval ${config.pollIntervalMs} ms`);
+
+  if (testMode) windows.open();
 
   app.on("before-quit", () => poller.stop());
 }

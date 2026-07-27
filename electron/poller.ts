@@ -28,6 +28,12 @@ const FLOWS: FlowKeys[] = [
   { flow: "capture", priorityKey: "micPriority", overrideKey: "mic" },
 ];
 
+/** The daemon's latest view of the machine, for the UI via IPC. */
+export interface PollSnapshot {
+  endpoints: Endpoint[];
+  availability: DeviceAvailability[];
+}
+
 export class Poller {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
@@ -35,6 +41,8 @@ export class Poller {
   private ticking = false;
   /** Last poll's availability snapshot; null before the first completed tick. */
   private previous: DeviceAvailability[] | null = null;
+  /** Last successful gather, kept for the UI even while paused. */
+  private last: PollSnapshot | null = null;
 
   constructor(private readonly deps: PollerDeps) {}
 
@@ -59,6 +67,20 @@ export class Poller {
 
   isPaused(): boolean {
     return this.paused;
+  }
+
+  /** Latest gathered state, or null before the first completed tick. */
+  snapshot(): PollSnapshot | null {
+    return this.last;
+  }
+
+  /** Run one tick immediately (after a UI mutation); no-op if one is running. */
+  async refreshNow(): Promise<void> {
+    try {
+      await this.tick();
+    } catch (err) {
+      console.error("[poller] refresh failed:", err);
+    }
   }
 
   private async tickAndReschedule(): Promise<void> {
@@ -100,6 +122,7 @@ export class Poller {
     }
 
     const availability = evaluateAvailability(endpoints, headsets);
+    this.last = { endpoints, availability };
     const config = await this.seedLists(endpoints);
 
     // While paused, keep the snapshot fresh so unpausing does not replay

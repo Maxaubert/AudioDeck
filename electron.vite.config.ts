@@ -9,6 +9,13 @@ export default defineConfig({
       },
     },
   },
+  preload: {
+    build: {
+      lib: {
+        entry: "electron/preload.ts",
+      },
+    },
+  },
   renderer: {
     root: "src/renderer",
     build: {
