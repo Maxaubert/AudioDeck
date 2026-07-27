@@ -104,9 +104,14 @@ export function diffEvents(
  * - Any availability event releases an override hold and re-applies the list.
  * - An active override with no event holds: do nothing.
  * - With no override and no event, a default that deviates from the winner is
- *   an external manual change when that default is itself available (engage
- *   the hold); a default sitting on an unavailable device is repaired by
- *   applying the winner (never leave audio stranded).
+ *   an external manual change when that default is itself available AND it
+ *   moved since the last observed tick (engage the hold); a deviation that did
+ *   not move (for example our own set-default failed last tick) is re-applied,
+ *   never mistaken for a user choice. A default sitting on an unavailable
+ *   device is repaired by applying the winner (never leave audio stranded).
+ *
+ * `defaultMoved` is whether the current default differs from the one observed
+ * on the previous tick; pass true when there is no previous observation.
  */
 export function decide(
   priority: string[],
@@ -114,6 +119,7 @@ export function decide(
   events: AvailabilityEvent[],
   currentDefaultId: string | null,
   overrideActive: boolean,
+  defaultMoved: boolean = true,
 ): Decision {
   const winner = pickWinner(priority, availability);
 
@@ -136,7 +142,7 @@ export function decide(
   const currentIsAvailable = availability.some(
     (a) => a.endpoint.id === currentDefaultId && a.available,
   );
-  if (currentIsAvailable) {
+  if (currentIsAvailable && defaultMoved) {
     return { setDefaultTo: null, engageOverride: true, releaseOverride: false };
   }
 

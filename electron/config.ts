@@ -65,18 +65,37 @@ export async function loadConfig(file: string = configPath()): Promise<AudioDeck
   return migrateConfig(JSON.parse(raw));
 }
 
+/** In-flight write per target file, so concurrent saves serialize in order. */
+const pendingWrites = new Map<string, Promise<void>>();
+let writeSeq = 0;
+
 /**
  * Atomic write: write a temp file in the same directory, then rename over the
  * target. Node's rename replaces the destination on Windows, so a crash never
- * leaves a half-written config.json behind.
+ * leaves a half-written config.json behind. Saves to the same file are chained
+ * (the poller and IPC handlers can save concurrently); each write gets a unique
+ * temp name so two writers can never interleave inside one temp file, and
+ * chaining keeps the last call's state the one that lands.
  */
 export async function saveConfig(
   config: AudioDeckConfig,
   file: string = configPath(),
 ): Promise<void> {
+  const previous = pendingWrites.get(file) ?? Promise.resolve();
+  const write = previous.catch(() => undefined).then(() => writeConfigFile(config, file));
+  pendingWrites.set(file, write);
+  try {
+    await write;
+  } finally {
+    if (pendingWrites.get(file) === write) pendingWrites.delete(file);
+  }
+}
+
+async function writeConfigFile(config: AudioDeckConfig, file: string): Promise<void> {
   const dir = path.dirname(file);
   await mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, `.config.json.tmp-${process.pid}`);
+  writeSeq += 1;
+  const tmp = path.join(dir, `.config.json.tmp-${process.pid}-${writeSeq}`);
   await writeFile(tmp, JSON.stringify(config, null, 2) + "\n", "utf8");
   await rename(tmp, file);
 }

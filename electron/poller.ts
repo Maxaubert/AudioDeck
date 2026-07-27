@@ -41,6 +41,12 @@ export class Poller {
   private ticking = false;
   /** Last poll's availability snapshot; null before the first completed tick. */
   private previous: DeviceAvailability[] | null = null;
+  /**
+   * Default endpoint observed on the previous acted-on tick, per flow. Lets the
+   * rules engine tell an external default change (moved between ticks, engage
+   * the override hold) from our own failed set-default (did not move, retry).
+   */
+  private lastDefaults = new Map<EndpointFlow, string | null>();
   /** Last successful gather, kept for the UI even while paused. */
   private last: PollSnapshot | null = null;
 
@@ -149,12 +155,16 @@ export class Poller {
 
       const currentDefaultId =
         endpoints.find((e) => e.flow === flow && e.isDefault)?.id ?? null;
+      const defaultMoved =
+        !this.lastDefaults.has(flow) || this.lastDefaults.get(flow) !== currentDefaultId;
+      this.lastDefaults.set(flow, currentDefaultId);
       const decision = decide(
         config[priorityKey],
         flowAvailability,
         events,
         currentDefaultId,
         override[overrideKey],
+        defaultMoved,
       );
 
       if (decision.engageOverride && !override[overrideKey]) {

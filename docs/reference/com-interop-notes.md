@@ -29,12 +29,14 @@ the session that produced the v1 design. audioctl MUST use these exact GUIDs and
 
 - CLSID CPolicyConfigClient: `870af99c-171d-4f9e-af0d-e63df40c2bc9`
 - IID IPolicyConfig: `f8679f50-850a-41cf-9c72-430f290290c8`
-- Vtable: 11 methods precede the ones we use. Declare 11 placeholder slots
-  (GetMixFormat, GetDeviceFormat, ResetDeviceFormat, SetDeviceFormat, GetProcessingPeriod,
-  SetProcessingPeriod, GetShareMode, SetShareMode, GetPropertyValue, SetPropertyValue,
-  SetDefaultEndpoint), then:
-  - slot 11 (0-based): `SetDefaultEndpoint([MarshalAs(LPWStr)] string deviceId, int role)` - call for roles 0,1,2
-  - slot 12: `SetEndpointVisibility([MarshalAs(LPWStr)] string deviceId, int visible)` - 0 disables, 1 enables. Returned S_OK and took effect immediately when tested.
+- Vtable: 10 placeholder methods precede the ones we use (GetMixFormat, GetDeviceFormat,
+  ResetDeviceFormat, SetDeviceFormat, GetProcessingPeriod, SetProcessingPeriod, GetShareMode,
+  SetShareMode, GetPropertyValue, SetPropertyValue), then:
+  - 11th method (absolute vtable slot 13 counting IUnknown's 3): `SetDefaultEndpoint([MarshalAs(LPWStr)] string deviceId, int role)` - call for roles 0,1,2
+  - 12th method (absolute slot 14): `SetEndpointVisibility([MarshalAs(LPWStr)] string deviceId, int visible)` - 0 disables, 1 enables. Returned S_OK and took effect immediately when tested.
+  (An earlier revision of these notes labeled the methods "slot 11/12 (0-based)" while also
+  listing SetDefaultEndpoint among the placeholders; that was 1-based counting. Re-proven live
+  on 2026-07-27: set-default and visibility both work at absolute slots 13/14.)
 
 Caution: `Disable-PnpDevice` on the SWD\MMDEVAPI endpoint device does NOT remove the endpoint
 from the audio engine (verified: endpoint stayed ACTIVE). Endpoint enable/disable must go

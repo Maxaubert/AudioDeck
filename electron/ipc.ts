@@ -50,8 +50,9 @@ export function registerIpc(deps: IpcDeps): void {
   });
 
   ipcMain.handle(IPC.setPriority, async (_e, flow: EndpointFlow, ids: string[]) => {
-    const key = flow === "render" ? "outputPriority" : "micPriority";
-    await deps.saveConfig({ ...deps.getConfig(), [key]: ids });
+    const key = flow === "capture" ? "micPriority" : "outputPriority";
+    const cleaned = Array.isArray(ids) ? ids.filter((id) => typeof id === "string") : [];
+    await deps.saveConfig({ ...deps.getConfig(), [key]: cleaned });
     await poller.refreshNow();
   });
 
@@ -98,6 +99,9 @@ export function registerIpc(deps: IpcDeps): void {
   });
 
   ipcMain.handle(IPC.setPollInterval, async (_e, ms: number) => {
+    // Reject non-finite input: NaN would survive min/max clamping, persist to
+    // config, and turn the poller's setTimeout into a busy loop.
+    if (typeof ms !== "number" || !Number.isFinite(ms)) return;
     const clamped = Math.min(60_000, Math.max(500, Math.round(ms)));
     await deps.saveConfig({ ...deps.getConfig(), pollIntervalMs: clamped });
   });

@@ -263,6 +263,17 @@ describe("decide", () => {
     });
   });
 
+  it("retries the winner instead of engaging when the deviating default did not move", () => {
+    // Our own set-default failed last tick: the default deviates but has not
+    // moved since the previous observation, so this is not a manual change.
+    const availability = [avail("{headset}", true), avail("{speakers}", true)];
+    expect(decide(["{headset}", "{speakers}"], availability, [], "{speakers}", false, false)).toEqual({
+      setDefaultTo: "{headset}",
+      engageOverride: false,
+      releaseOverride: false,
+    });
+  });
+
   it("engages the override for a manual pick outside the priority list", () => {
     const availability = [avail("{headset}", true), avail("{stranger}", true)];
     expect(decide(["{headset}"], availability, [], "{stranger}", false)).toEqual({

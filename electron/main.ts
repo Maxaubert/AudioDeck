@@ -71,10 +71,13 @@ async function boot(): Promise<void> {
       await saveConfig(next);
     },
     setPaused,
-    applyAutostart: (enabled) => (testMode ? Promise.resolve() : setAutostart(enabled)),
+    // Only a packaged build may touch the Run key: in dev process.execPath is
+    // the bare electron.exe, which would autostart an empty Electron shell.
+    applyAutostart: (enabled) =>
+      testMode || !app.isPackaged ? Promise.resolve() : setAutostart(enabled),
   });
 
-  if (!testMode) {
+  if (!testMode && app.isPackaged) {
     try {
       await setAutostart(config.autostart);
     } catch (err) {
