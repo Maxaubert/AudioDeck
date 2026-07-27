@@ -1,7 +1,7 @@
 // Merge Windows endpoint states with headset power into per-device availability.
-// Stage 2 stub: interfaces are final, implementation lands with the daemon core.
 
 import type { Endpoint } from "./audioctl.js";
+import { headsetPowerState, matchesEndpointName } from "./headsetcontrol.js";
 import type { HeadsetSnapshot } from "./headsetcontrol.js";
 
 /** How a device's availability was decided, for logging and the UI badges. */
@@ -27,7 +27,25 @@ export function evaluateAvailability(
   endpoints: Endpoint[],
   headsets: HeadsetSnapshot | null,
 ): DeviceAvailability[] {
-  void endpoints;
-  void headsets;
-  throw new Error("availability.evaluateAvailability: Stage 2 stub, implemented with the daemon core");
+  return endpoints.map((endpoint) => {
+    if (endpoint.state !== "active") {
+      return { endpoint, available: false, reason: "endpoint-inactive" as const };
+    }
+
+    const headset = headsets?.devices.find((d) => matchesEndpointName(d, endpoint.name));
+    if (headset === undefined) {
+      return { endpoint, available: true, reason: "endpoint-active" as const };
+    }
+
+    const power = headsetPowerState(headset);
+    if (power === true) {
+      return { endpoint, available: true, reason: "headset-on" as const };
+    }
+    if (power === false) {
+      return { endpoint, available: false, reason: "headset-off" as const };
+    }
+    // Power unknown (HID error, no battery capability): fail open, never
+    // switch away wrongly.
+    return { endpoint, available: true, reason: "headset-unknown-fail-open" as const };
+  });
 }
