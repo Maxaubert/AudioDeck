@@ -17,7 +17,8 @@ export interface AppStateHook {
 
 export function useAppState(): AppStateHook {
   const [state, setState] = useState<AppState | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [pollError, setPollError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const alive = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -25,10 +26,12 @@ export function useAppState(): AppStateHook {
       const next = await api.getState();
       if (!alive.current) return;
       setState(next);
-      setError(null);
+      // Only clears poll errors: an action error must stay visible until the
+      // user acts again, or the background poll wipes it before it is read.
+      setPollError(null);
     } catch (err) {
       if (!alive.current) return;
-      setError(err instanceof Error ? err.message : String(err));
+      setPollError(err instanceof Error ? err.message : String(err));
     }
   }, []);
 
@@ -47,9 +50,9 @@ export function useAppState(): AppStateHook {
       async (...args: A): Promise<void> => {
         try {
           await fn(...args);
-          setError(null);
+          setActionError(null);
         } catch (err) {
-          setError(err instanceof Error ? err.message : String(err));
+          setActionError(err instanceof Error ? err.message : String(err));
         }
         await refresh();
       },
@@ -75,7 +78,7 @@ export function useAppState(): AppStateHook {
     };
   }
 
-  return { state, error, refresh, actions: actionsRef.current };
+  return { state, error: actionError ?? pollError, refresh, actions: actionsRef.current };
 }
 
 /**
