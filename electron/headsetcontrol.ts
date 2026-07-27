@@ -1,11 +1,8 @@
 // Typed wrapper around vendor/headsetcontrol.exe: spawn `-o json`, parse, map errors.
 // Consumers treat any HeadsetControlError as "power unknown" and fail open.
 
-import { execFile } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { execQuiet } from "./spawn-quiet.js";
 
 /** Battery statuses HeadsetControl 4.x reports. */
 export type BatteryStatus =
@@ -89,11 +86,7 @@ export class HeadsetControl implements HeadsetQuerier {
       // fewer HID transactions also means less contention with other tools.
       // HeadsetControl exits non-zero when no supported device is connected but
       // still prints valid JSON, so parse stdout before judging the exit code.
-      const result = await execFileAsync(this.exePath, ["-b", "-o", "json"], {
-        timeout: this.timeoutMs,
-        windowsHide: true,
-        encoding: "utf8",
-      });
+      const result = await execQuiet(this.exePath, ["-b", "-o", "json"], this.timeoutMs);
       stdout = result.stdout;
     } catch (err) {
       const e = err as NodeJS.ErrnoException & { stdout?: string; stderr?: string; code?: unknown };

@@ -1,10 +1,7 @@
 // Typed wrapper around the audioctl.exe helper: spawn, parse JSON, map errors.
 
-import { execFile } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { execQuiet } from "./spawn-quiet.js";
 
 export type EndpointFlow = "render" | "capture";
 export type EndpointState = "active" | "disabled" | "notpresent" | "unplugged";
@@ -143,11 +140,7 @@ export class Audioctl implements AudioControl {
     let stderr = "";
     let exitCode: number | null = 0;
     try {
-      const result = await execFileAsync(this.exePath, args, {
-        timeout: this.timeoutMs,
-        windowsHide: true,
-        encoding: "utf8",
-      });
+      const result = await execQuiet(this.exePath, args, this.timeoutMs);
       stdout = result.stdout;
       stderr = result.stderr;
     } catch (err) {
