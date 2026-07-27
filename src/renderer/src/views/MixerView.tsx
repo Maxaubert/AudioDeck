@@ -35,10 +35,12 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
     <li className={offline ? "strip mixer-strip is-plain is-offline" : "strip mixer-strip is-plain"}>
       <div className="mixer-head">
         <DeviceGlyph formFactor={device.formFactor} />
-        <div className="device-name">{name}</div>
-        {displayDetail(device) !== null ? (
-          <div className="device-sub">{displayDetail(device)}</div>
-        ) : null}
+        <div className="strip-body">
+          <div className="device-name">{name}</div>
+          {displayDetail(device) !== null ? (
+            <div className="device-sub">{displayDetail(device)}</div>
+          ) : null}
+        </div>
         <DefaultBadge device={device} />
         {offline ? (
           <AvailabilityBadge device={device} />

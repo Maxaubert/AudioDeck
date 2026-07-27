@@ -356,7 +356,7 @@ select {
   gap: 1rem;
 }
 
-.mixer-head .device-name {
+.mixer-head .strip-body {
   flex: 1;
 }
 
@@ -644,3 +644,4 @@ input[type="range"].fader::-webkit-slider-thumb {
 .mixer-strip.is-offline {
   opacity: 0.55;
 }
+
