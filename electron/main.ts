@@ -6,6 +6,7 @@
 
 import { app } from "electron";
 import { Audioctl } from "./audioctl.js";
+import { audioctlExePath, headsetControlExePath } from "./binaries.js";
 import { HeadsetControl } from "./headsetcontrol.js";
 import { MockAudioctl, MockHeadsetControl } from "./mock-backend.js";
 import { Poller } from "./poller.js";
@@ -32,10 +33,12 @@ async function boot(): Promise<void> {
 
   let config: AudioDeckConfig = await loadConfig();
 
-  const audioctl = mockDevices ? new MockAudioctl() : new Audioctl();
+  const audioctl = mockDevices ? new MockAudioctl() : new Audioctl({ exePath: audioctlExePath() });
   const poller = new Poller({
     audioctl,
-    headsetControl: mockDevices ? new MockHeadsetControl() : new HeadsetControl(),
+    headsetControl: mockDevices
+      ? new MockHeadsetControl()
+      : new HeadsetControl({ exePath: headsetControlExePath() }),
     getConfig: () => config,
     saveConfig: async (next) => {
       config = next;

@@ -1,0 +1,31 @@
+# electron-builder configuration: Windows NSIS installer + portable exe.
+# The two helper executables ship as extraResources (outside the asar) so the
+# daemon can spawn them; electron/binaries.ts resolves these paths at runtime.
+# Run scripts/check-bundle-inputs.mjs (wired into `npm run dist`) before
+# building so a missing helper fails with a clear message.
+
+appId: com.audiodeck.app
+productName: AudioDeck
+directories:
+  output: dist
+files:
+  - out/**
+  - package.json
+  - "!node_modules/**"
+asar: true
+extraResources:
+  - from: audioctl/bin/x64/Release/net8.0/win-x64/publish/audioctl.exe
+    to: bin/audioctl.exe
+  - from: vendor/headsetcontrol.exe
+    to: vendor/headsetcontrol.exe
+win:
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Tray-resident Windows audio manager: priority auto-switch, volume mixer, device manager",
   "type": "module",
+  "author": "Max",
   "main": "out/main/main.js",
   "license": "MIT",
   "scripts": {
@@ -11,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "electron-vite build && playwright test",
+    "dist": "node scripts/check-bundle-inputs.mjs && electron-vite build && electron-builder --win",
     "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
@@ -24,6 +26,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
