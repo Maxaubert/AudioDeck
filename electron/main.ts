@@ -60,6 +60,9 @@ async function boot(): Promise<void> {
       setPaused,
       quit: () => app.quit(),
     });
+    // Launching the exe while the daemon is already running opens the window,
+    // so users are never stranded hunting for the tray icon.
+    app.on("second-instance", () => windows.open());
   }
 
   registerIpc({
