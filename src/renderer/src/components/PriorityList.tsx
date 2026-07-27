@@ -16,6 +16,8 @@ export interface PriorityListProps {
   manualOverride: boolean;
   onReorder: (ids: string[]) => void;
   onRemove: (id: string) => void;
+  /** Switch audio to this device now (manual override until the next event). */
+  onUseNow: (id: string) => void;
 }
 
 export function PriorityList({
@@ -25,6 +27,7 @@ export function PriorityList({
   manualOverride,
   onReorder,
   onRemove,
+  onUseNow,
 }: PriorityListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -101,7 +104,19 @@ export function PriorityList({
             </div>
             <div className="strip-tags">
               {device !== undefined ? (
-                <AvailabilityBadge device={device} />
+                <>
+                  {device.available && !device.isDefault ? (
+                    <button
+                      type="button"
+                      className="btn btn-use-now"
+                      title="Switch audio here now; the priority list resumes on the next device event"
+                      onClick={() => onUseNow(id)}
+                    >
+                      Use now
+                    </button>
+                  ) : null}
+                  <AvailabilityBadge device={device} />
+                </>
               ) : (
                 <span className="badge badge-offline">Offline</span>
               )}

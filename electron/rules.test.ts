@@ -218,6 +218,17 @@ describe("decide", () => {
     expect(decide(["{a}", "{b}"], availability, [], "{a}", false)).toEqual(noop);
   });
 
+  it("dissolves a held override once the default is the winner again", () => {
+    const availability = [avail("{a}", true), avail("{b}", true)];
+    expect(decide(["{a}", "{b}"], availability, [], "{a}", true)).toEqual({
+      setDefaultTo: null,
+      engageOverride: false,
+      releaseOverride: true,
+    });
+    // Still deviating: the hold stays.
+    expect(decide(["{a}", "{b}"], availability, [], "{b}", true)).toEqual(noop);
+  });
+
   it("applies the winner when an availability event changes the picture", () => {
     const availability = [avail("{headset}", true), avail("{speakers}", true)];
     const events = [{ endpointId: "{headset}", flow: "render" as const, becameAvailable: true }];

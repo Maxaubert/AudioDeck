@@ -140,7 +140,11 @@ export function decide(
   }
 
   if (overrideActive) {
-    return { setDefaultTo: null, engageOverride: false, releaseOverride: false };
+    // A hold only means something while the default deviates from the list.
+    // Landing back on the winner (the user switched back by hand, or ranked
+    // the current device to the top) dissolves the override immediately.
+    const releaseOverride = winner !== null && winner === currentDefaultId;
+    return { setDefaultTo: null, engageOverride: false, releaseOverride };
   }
 
   if (winner === null || winner === currentDefaultId) {

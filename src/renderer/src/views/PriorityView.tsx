@@ -48,6 +48,7 @@ export function PriorityView({ state, actions }: { state: AppState; actions: Aud
         manualOverride={state.override.output}
         onReorder={(ids) => void actions.setPriority("render", ids)}
         onRemove={(id) => void actions.removeFromPriority("render", id)}
+        onUseNow={(id) => void actions.setDefault(id)}
       />
       <AddDevicePicker
         label="Add an output device"
@@ -62,6 +63,7 @@ export function PriorityView({ state, actions }: { state: AppState; actions: Aud
         manualOverride={state.override.mic}
         onReorder={(ids) => void actions.setPriority("capture", ids)}
         onRemove={(id) => void actions.removeFromPriority("capture", id)}
+        onUseNow={(id) => void actions.setDefault(id)}
       />
       <AddDevicePicker
         label="Add a microphone"
