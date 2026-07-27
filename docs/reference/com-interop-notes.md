@@ -1,0 +1,48 @@
+# Windows Core Audio COM interop - proven definitions
+
+These interop signatures were verified working on this machine (Windows 11, 2026-07-27) during
+the session that produced the v1 design. audioctl MUST use these exact GUIDs and vtable layouts.
+
+## IMMDeviceEnumerator / IMMDevice / IPropertyStore
+
+- CLSID MMDeviceEnumerator: `BCDE0395-E52F-467C-8E3D-C4579291692E`
+- IID IMMDeviceEnumerator: `A95664D2-9614-4F35-A746-DE8DB63617E6`
+  - `EnumAudioEndpoints(int dataFlow, int stateMask, out IMMDeviceCollection)` (dataFlow: 0=render, 1=capture; stateMask: 1=ACTIVE, 2=DISABLED, 4=NOTPRESENT, 8=UNPLUGGED, 0xF=ALL)
+  - `GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice)`
+- IID IMMDeviceCollection: `0BD7A1BE-7A1A-44DB-8397-CC5392387B5E` (`GetCount`, `Item`)
+- IID IMMDevice: `D666063F-1587-4E43-81F1-B948E807363F`
+  - `Activate(ref Guid iid, int clsCtx, IntPtr, out interface)` - clsCtx 1 (INPROC) works
+  - `OpenPropertyStore(int access, out IPropertyStore)` - access 0 = STGM_READ
+  - `GetId(out string id)` - IDs look like `{0.0.0.00000000}.{guid}`
+- IID IPropertyStore: `886d8eeb-8cf2-4446-8d02-cdba1dbdcf99`
+- PKEY_Device_FriendlyName: fmtid `a45c254e-df1c-4efd-8020-67d146a850e0`, pid 14
+  (PROPVARIANT: vt at offset 0, pointer union at offset 8; friendly name is LPWSTR)
+
+## IAudioEndpointVolume
+
+- IID: `5CDF2C82-841E-4546-9722-0CF74078229A`, obtained via `IMMDevice.Activate`
+- Vtable order: RegisterControlChangeNotify, UnregisterControlChangeNotify, GetChannelCount,
+  SetMasterVolumeLevel, SetMasterVolumeLevelScalar, GetMasterVolumeLevel,
+  GetMasterVolumeLevelScalar, ... (mute methods follow further down the standard vtable)
+
+## IPolicyConfig (undocumented but stable; same API the Sound control panel uses)
+
+- CLSID CPolicyConfigClient: `870af99c-171d-4f9e-af0d-e63df40c2bc9`
+- IID IPolicyConfig: `f8679f50-850a-41cf-9c72-430f290290c8`
+- Vtable: 11 methods precede the ones we use. Declare 11 placeholder slots
+  (GetMixFormat, GetDeviceFormat, ResetDeviceFormat, SetDeviceFormat, GetProcessingPeriod,
+  SetProcessingPeriod, GetShareMode, SetShareMode, GetPropertyValue, SetPropertyValue,
+  SetDefaultEndpoint), then:
+  - slot 11 (0-based): `SetDefaultEndpoint([MarshalAs(LPWStr)] string deviceId, int role)` - call for roles 0,1,2
+  - slot 12: `SetEndpointVisibility([MarshalAs(LPWStr)] string deviceId, int visible)` - 0 disables, 1 enables. Returned S_OK and took effect immediately when tested.
+
+Caution: `Disable-PnpDevice` on the SWD\MMDEVAPI endpoint device does NOT remove the endpoint
+from the audio engine (verified: endpoint stayed ACTIVE). Endpoint enable/disable must go
+through SetEndpointVisibility. The MMDevices registry keys are not writable even elevated.
+
+## HeadsetControl
+
+`vendor/headsetcontrol.exe -o json` (v4.0.0): `devices[].battery.status` is
+`BATTERY_AVAILABLE` when the headset is on, `BATTERY_UNAVAILABLE` when off. Transition
+latency observed: ~2-4 s with 2 s polling. Exit is fast; safe to call each poll tick.
+Device seen in test: SteelSeries Arctis Nova Pro Wireless (0x1038:0x12e0).
