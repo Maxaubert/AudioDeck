@@ -4,5 +4,7 @@ out/
 vendor/
 audioctl/bin/
 audioctl/obj/
+test-results/
+playwright-report/
 *.log
 .superpowers/
