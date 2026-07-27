@@ -1,10 +1,10 @@
 // ipcMain handlers backing the AudioDeckApi contract. Maps renderer requests
 // onto the daemon's services; owns no state of its own.
 
-import { execFile } from "node:child_process";
 import { ipcMain } from "electron";
 import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
+import { restartShellHost } from "./reapply.js";
 import { IPC } from "../shared/ipc.js";
 import type { AudioControl, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
@@ -138,13 +138,19 @@ export function registerIpc(deps: IpcDeps): void {
       console.error(`[ipc] rename ${id} failed:`, err);
       throw err;
     }
-    // A rename replaces any local alias; the device now IS the new name.
+    // A rename replaces any local alias, and the intent is remembered so the
+    // daemon re-applies it when a driver re-enumeration resets the endpoint.
     const config = deps.getConfig();
-    if (config.aliases[id] !== undefined) {
-      const aliases = { ...config.aliases };
-      delete aliases[id];
-      await deps.saveConfig({ ...config, aliases });
-    }
+    const aliases = { ...config.aliases };
+    delete aliases[id];
+    const customizations = { ...config.customizations };
+    customizations[id] = {
+      ...fingerprintFor(id, config, poller),
+      ...customizations[id],
+      name: name.trim(),
+      ...(cleanSuffix === undefined ? {} : { suffix: cleanSuffix }),
+    };
+    await deps.saveConfig({ ...config, aliases, customizations });
     // Windows recomposes the display name asynchronously (~350 ms measured);
     // wait it out so the refresh below already carries the new name.
     await new Promise((resolve) => setTimeout(resolve, 700));
@@ -166,6 +172,18 @@ export function registerIpc(deps: IpcDeps): void {
       console.error(`[ipc] set-type ${id} failed:`, err);
       throw err;
     }
+    const config = deps.getConfig();
+    await deps.saveConfig({
+      ...config,
+      customizations: {
+        ...config.customizations,
+        [id]: {
+          ...fingerprintFor(id, config, poller),
+          ...config.customizations[id],
+          typeKey: type.key,
+        },
+      },
+    });
     await poller.refreshNow();
     // The flyout caches glyphs the same way it caches names.
     restartShellHost();
@@ -189,13 +207,19 @@ export function registerIpc(deps: IpcDeps): void {
   });
 }
 
-/** Kill ShellHost (quick-settings host); Windows respawns it on demand. */
-function restartShellHost(): void {
-  // Never touch the real shell from e2e/screenshot runs.
-  if (process.env.AUDIODECK_TEST_MODE === "1") return;
-  execFile("taskkill", ["/F", "/IM", "ShellHost.exe"], { windowsHide: true }, (err) => {
-    if (err !== null) console.log("[ipc] ShellHost restart skipped:", err.message);
-  });
+/**
+ * On the FIRST customization of a device, remember the name the driver gave
+ * it: recreated endpoints come back under a new id wearing exactly this name,
+ * which is how identity migration finds them. Existing entries keep theirs.
+ */
+function fingerprintFor(
+  id: string,
+  config: AudioDeckConfig,
+  poller: Poller,
+): { fingerprint?: string } {
+  if (config.customizations[id] !== undefined) return {};
+  const name = poller.snapshot()?.endpoints.find((e) => e.id === id)?.name;
+  return name === undefined ? {} : { fingerprint: name };
 }
 
 /** Direct gather for the rare window-open before the poller's first tick. */

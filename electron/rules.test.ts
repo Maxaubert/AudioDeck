@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decide, diffEvents, pickWinner, seedPriorityList } from "./rules.js";
+import { decide, diffEvents, pickWinner, pruneMissing, seedPriorityList } from "./rules.js";
 import type { DeviceAvailability } from "./availability.js";
 import type { Endpoint, EndpointFlow, EndpointState } from "./audioctl.js";
 
@@ -79,6 +79,26 @@ describe("seedPriorityList", () => {
   it("keeps ranked entries even while their endpoint is inactive", () => {
     const endpoints = [endpoint("{a}", { state: "notpresent", volume: null, mute: null })];
     expect(seedPriorityList(["{a}"], endpoints, "render")).toEqual(["{a}"]);
+  });
+
+  it("prunes ids Windows has deleted, but only after sustained absence", () => {
+    const present = new Set(["{a}"]);
+    const missing = new Map<string, number>();
+    // Two absences below the threshold keep the rank.
+    expect(pruneMissing(["{a}", "{gone}"], present, missing, 3)).toEqual(["{a}", "{gone}"]);
+    expect(pruneMissing(["{a}", "{gone}"], present, missing, 3)).toEqual(["{a}", "{gone}"]);
+    // Third consecutive absence prunes it and clears the counter.
+    expect(pruneMissing(["{a}", "{gone}"], present, missing, 3)).toEqual(["{a}"]);
+    expect(missing.has("{gone}")).toBe(false);
+  });
+
+  it("a reappearing endpoint resets its absence counter", () => {
+    const missing = new Map<string, number>();
+    pruneMissing(["{x}"], new Set<string>(), missing, 3);
+    pruneMissing(["{x}"], new Set(["{x}"]), missing, 3);
+    expect(missing.has("{x}")).toBe(false);
+    // Disconnected-but-enumerable devices (AirPods in their case) are always
+    // "present": Windows still lists them, so they are never prune candidates.
   });
 
   it("never re-adds excluded devices", () => {

@@ -26,6 +26,39 @@ export interface Decision {
  * (absent devices keep their slot) and appends unseen devices at the bottom
  * in enumeration order.
  */
+/**
+ * Drop ranked ids whose endpoints Windows has deleted outright (absent from
+ * every state, unlike a disconnected device which stays enumerable). Virtual
+ * devices (VR streaming, per-session endpoints) create fresh ids per session
+ * and delete them afterwards; without pruning those orphans pile up as
+ * nameless rows. `missingTicks` carries the consecutive-absence count per id
+ * between calls; an id must be gone for `threshold` consecutive calls before
+ * it is pruned, so an enumeration hiccup never deletes a real rank.
+ */
+export function pruneMissing(
+  priority: string[],
+  presentIds: ReadonlySet<string>,
+  missingTicks: Map<string, number>,
+  threshold: number,
+): string[] {
+  const kept: string[] = [];
+  for (const id of priority) {
+    if (presentIds.has(id)) {
+      missingTicks.delete(id);
+      kept.push(id);
+      continue;
+    }
+    const count = (missingTicks.get(id) ?? 0) + 1;
+    if (count >= threshold) {
+      missingTicks.delete(id);
+    } else {
+      missingTicks.set(id, count);
+      kept.push(id);
+    }
+  }
+  return kept;
+}
+
 export function seedPriorityList(
   existing: string[],
   endpoints: Endpoint[],

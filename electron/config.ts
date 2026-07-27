@@ -26,6 +26,28 @@ export interface AudioDeckConfig {
   aliases: Record<string, string>;
   /** Endpoint IDs the user removed from the priority lists; never auto re-added. */
   excluded: { output: string[]; mic: string[] };
+  /**
+   * User customizations applied to Windows itself, kept so the daemon can
+   * re-apply them when a driver re-enumeration resets the endpoint (HDMI
+   * displays and virtual devices do this routinely).
+   */
+  customizations: Record<string, DeviceCustomization>;
+}
+
+export interface DeviceCustomization {
+  /** Desired clean name (the part before the parentheses). */
+  name?: string;
+  /** Desired parenthesized text. */
+  suffix?: string;
+  /** Desired device type key (see shared/deviceTypes). */
+  typeKey?: string;
+  /**
+   * The driver-given full name captured before the first customization.
+   * Some drivers (HDMI, VR virtual devices) delete and recreate endpoints
+   * under new ids; a recreated endpoint comes back wearing this name, which
+   * lets the daemon migrate ranks and customizations to the new id.
+   */
+  fingerprint?: string;
 }
 
 export function defaultConfig(): AudioDeckConfig {
@@ -39,6 +61,7 @@ export function defaultConfig(): AudioDeckConfig {
     hiddenDevices: [],
     aliases: {},
     excluded: { output: [], mic: [] },
+    customizations: {},
   };
 }
 
@@ -133,7 +156,24 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
       output: stringArray(partial.excluded?.output) ?? base.excluded.output,
       mic: stringArray(partial.excluded?.mic) ?? base.excluded.mic,
     },
+    customizations: customizationRecord(partial.customizations) ?? base.customizations,
   };
+}
+
+function customizationRecord(value: unknown): Record<string, DeviceCustomization> | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const out: Record<string, DeviceCustomization> = {};
+  for (const [id, raw] of Object.entries(value)) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const c = raw as Partial<DeviceCustomization>;
+    const entry: DeviceCustomization = {};
+    if (typeof c.name === "string" && c.name !== "") entry.name = c.name;
+    if (typeof c.suffix === "string" && c.suffix !== "") entry.suffix = c.suffix;
+    if (typeof c.typeKey === "string" && c.typeKey !== "") entry.typeKey = c.typeKey;
+    if (typeof c.fingerprint === "string" && c.fingerprint !== "") entry.fingerprint = c.fingerprint;
+    if (Object.keys(entry).length > 0) out[id] = entry;
+  }
+  return out;
 }
 
 function stringRecord(value: unknown): Record<string, string> | undefined {

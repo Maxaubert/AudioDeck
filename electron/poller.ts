@@ -4,7 +4,9 @@
 // override hold, and this loop persists it.
 
 import { evaluateAvailability } from "./availability.js";
-import { decide, diffEvents, seedPriorityList } from "./rules.js";
+import { decide, diffEvents, pruneMissing, seedPriorityList } from "./rules.js";
+import { migrateIdentities } from "./identity.js";
+import { reapplyCustomizations } from "./reapply.js";
 import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { DeviceAvailability } from "./availability.js";
@@ -50,6 +52,8 @@ export class Poller {
   private lastDefaults = new Map<EndpointFlow, string | null>();
   /** Last successful gather, kept for the UI even while paused. */
   private last: PollSnapshot | null = null;
+  /** Consecutive ticks each ranked id has been missing from Windows entirely. */
+  private missingTicks = new Map<string, number>();
 
   constructor(private readonly deps: PollerDeps) {}
 
@@ -132,7 +136,17 @@ export class Poller {
 
     const availability = evaluateAvailability(endpoints, headsets);
     this.last = { endpoints, availability };
+
+    // Recreated endpoints (new id, driver-default name) inherit the dead
+    // id's rank and customizations before seeding treats them as strangers.
+    const migrated = migrateIdentities(this.deps.getConfig(), endpoints);
+    if (migrated !== null) await this.deps.saveConfig(migrated);
+
     const config = await this.seedLists(endpoints);
+
+    // Keep the user's Windows-side customizations alive: drivers reset names,
+    // suffixes, and types on re-enumeration (HDMI handshakes, VR services).
+    await reapplyCustomizations(this.deps.audioctl, config.customizations, endpoints);
 
     // While paused, keep the snapshot fresh so unpausing does not replay
     // stale availability transitions, but take no action.
@@ -197,20 +211,24 @@ export class Poller {
     this.previous = availability;
   }
 
-  /** First-run seeding and new-device append, persisted when anything changed. */
+  /** Ticks an id must be gone from Windows entirely before its rank is pruned. */
+  private static readonly PRUNE_TICKS = 90;
+
+  /** First-run seeding, new-device append, orphan pruning; persisted on change. */
   private async seedLists(endpoints: Endpoint[]): Promise<AudioDeckConfig> {
     const config = this.deps.getConfig();
-    const outputPriority = seedPriorityList(
-      config.outputPriority,
-      endpoints,
-      "render",
-      config.excluded.output,
+    const presentIds = new Set(endpoints.map((e) => e.id));
+    const outputPriority = pruneMissing(
+      seedPriorityList(config.outputPriority, endpoints, "render", config.excluded.output),
+      presentIds,
+      this.missingTicks,
+      Poller.PRUNE_TICKS,
     );
-    const micPriority = seedPriorityList(
-      config.micPriority,
-      endpoints,
-      "capture",
-      config.excluded.mic,
+    const micPriority = pruneMissing(
+      seedPriorityList(config.micPriority, endpoints, "capture", config.excluded.mic),
+      presentIds,
+      this.missingTicks,
+      Poller.PRUNE_TICKS,
     );
     if (
       sameList(outputPriority, config.outputPriority) &&
