@@ -125,8 +125,18 @@ export function registerIpc(deps: IpcDeps): void {
 
   ipcMain.handle(IPC.renameDevice, async (_e, id: string, name: string) => {
     if (typeof id !== "string" || typeof name !== "string" || name.trim() === "") return;
-    await audioctl.rename(id, name.trim());
+    try {
+      await audioctl.rename(id, name.trim());
+      console.log(`[ipc] renamed ${id} to "${name.trim()}"`);
+    } catch (err) {
+      console.error(`[ipc] rename ${id} failed:`, err);
+      throw err;
+    }
     await poller.refreshNow();
+    // Windows recomposes the display name asynchronously (sub-second, but a
+    // refresh racing a mid-flight tick can miss it); one delayed follow-up
+    // keeps the UI from showing the old name.
+    setTimeout(() => void poller.refreshNow(), 1200);
   });
 
   ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {

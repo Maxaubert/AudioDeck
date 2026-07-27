@@ -62,7 +62,7 @@ test("Mixer view shows a fader and mute per active mocked device", async () => {
   await expect(page.getByRole("button", { name: "Mute", exact: true })).toHaveCount(4);
 });
 
-test("Devices view lists every endpoint including the disabled one", async () => {
+test("Devices view shows real endpoints, ghosts behind the toggle", async () => {
   const { page } = ctx;
   await page.getByRole("button", { name: "Devices", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Devices", exact: true })).toBeVisible();
@@ -70,26 +70,30 @@ test("Devices view lists every endpoint including the disabled one", async () =>
   await expect(page.getByText("Speakers (Arctis Nova Pro Wireless)")).toBeVisible();
   await expect(page.getByText("Microphone (Logitech BRIO)")).toBeVisible();
 
-  // The disabled Realtek endpoint renders with its state badge and an Enable button.
+  // Disabled endpoints show with an Enable button as their state cue; no badges.
   const realtek = page
     .getByRole("listitem")
     .filter({ hasText: "Speakers (Realtek(R) Audio)" });
-  await expect(realtek.getByText("Disabled", { exact: true })).toBeVisible();
   await expect(realtek.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
+  await expect(realtek.getByText("Disabled", { exact: true })).toHaveCount(0);
 
   // Active non-default devices offer Make default.
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
   await expect(tv.getByRole("button", { name: "Make default", exact: true })).toBeVisible();
+
+  // The notpresent ghost hides until the toggle reveals it.
+  await expect(page.getByText("Digital Output (High Definition Audio Device)")).toHaveCount(0);
+  await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
+  await expect(page.getByText("Digital Output (High Definition Audio Device)")).toBeVisible();
 });
 
-test("renaming with the Windows checkbox changes the device name globally", async () => {
+test("renaming changes the device name globally", async () => {
   const { page } = ctx;
   await page.getByRole("button", { name: "Devices", exact: true }).click();
 
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
   await tv.getByRole("button", { name: "Rename", exact: true }).click();
   await tv.getByLabel(/New name for/).fill("Stue TV");
-  await tv.getByRole("checkbox").check();
   await tv.getByRole("button", { name: "Save name", exact: true }).click();
 
   // The mock backend renames the description and keeps the interface suffix,

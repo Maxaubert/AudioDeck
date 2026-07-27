@@ -1,30 +1,29 @@
-// Devices view: every endpoint including disabled ones. Enable/disable,
-// make default, and rename (a local alias stored in AudioDeck's config).
+// Devices view: manage endpoints. Rename changes the name in Windows itself
+// (picker, Settings, all apps); Enable/Disable is the state control, so no
+// extra state badges clutter the rows. Ghost endpoints Windows merely
+// remembers (state notpresent) hide behind a toggle.
 
 import { useState } from "react";
 import { displayName } from "../useAppState.js";
-import { DefaultBadge, StateBadge } from "../components/StatusBadge.js";
+import { DefaultBadge } from "../components/StatusBadge.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
 function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
-  const [renameInWindows, setRenameInWindows] = useState(false);
 
   const startEdit = (): void => {
-    setDraft(device.alias ?? "");
-    setRenameInWindows(false);
+    setDraft("");
     setEditing(true);
   };
   const save = (): void => {
     const trimmed = draft.trim();
-    if (renameInWindows && trimmed !== "") {
-      // Windows keeps the "(interface)" part and shows "trimmed (interface)"
-      // everywhere; no AudioDeck alias needed on top of that.
+    if (trimmed !== "") {
+      // Renaming is global by design: Windows keeps the "(interface)" part
+      // and shows the new name everywhere. Any old local alias is dropped so
+      // the app shows exactly what Windows shows.
       void actions.renameDevice(device.id, trimmed);
       void actions.setAlias(device.id, null);
-    } else {
-      void actions.setAlias(device.id, trimmed === "" ? null : trimmed);
     }
     setEditing(false);
   };
@@ -47,18 +46,10 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
               className="rename-input"
               value={draft}
               autoFocus
-              placeholder="New name (empty restores the Windows name)"
+              placeholder="New name, shown everywhere in Windows"
               aria-label={`New name for ${device.name}`}
               onChange={(e) => setDraft(e.target.value)}
             />
-            <label className="rename-scope">
-              <input
-                type="checkbox"
-                checked={renameInWindows}
-                onChange={(e) => setRenameInWindows(e.target.checked)}
-              />
-              Also rename in Windows (shows everywhere, keeps the part in parentheses)
-            </label>
             <button type="submit" className="btn btn-accent">
               Save name
             </button>
@@ -70,7 +61,6 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
       </div>
       <div className="strip-tags">
         <DefaultBadge device={device} />
-        <StateBadge state={device.state} />
       </div>
       <div className="move-controls">
         {!editing ? (
@@ -109,6 +99,42 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   );
 }
 
+function DeviceSection({
+  title,
+  devices,
+  actions,
+}: {
+  title: string;
+  devices: DeviceView[];
+  actions: AudioDeckApi;
+}) {
+  const [showGhosts, setShowGhosts] = useState(false);
+  const real = devices.filter((d) => d.state !== "notpresent");
+  const ghosts = devices.filter((d) => d.state === "notpresent");
+  const shown = showGhosts ? [...real, ...ghosts] : real;
+  return (
+    <>
+      <h3 className="section-label">{title}</h3>
+      <ul className="strip-list">
+        {shown.map((d) => (
+          <DeviceRow key={d.id} device={d} actions={actions} />
+        ))}
+      </ul>
+      {ghosts.length > 0 ? (
+        <button
+          type="button"
+          className="btn btn-add-device"
+          onClick={() => setShowGhosts((v) => !v)}
+        >
+          {showGhosts
+            ? "Hide remembered devices"
+            : `Show remembered devices (${ghosts.length})`}
+        </button>
+      ) : null}
+    </>
+  );
+}
+
 export function DevicesView({ state, actions }: { state: AppState; actions: AudioDeckApi }) {
   const outputs = state.devices.filter((d) => d.flow === "render");
   const mics = state.devices.filter((d) => d.flow === "capture");
@@ -118,22 +144,11 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
         Devices
       </h2>
       <p className="view-hint">
-        Every endpoint Windows knows about, including disabled ones. Renames change how
-        AudioDeck shows the device; tick the checkbox while renaming to change the name in
-        Windows itself.
+        Renaming a device changes its name in Windows itself. Devices Windows only remembers
+        from the past are tucked behind the toggle below each list.
       </p>
-      <h3 className="section-label">Outputs</h3>
-      <ul className="strip-list">
-        {outputs.map((d) => (
-          <DeviceRow key={d.id} device={d} actions={actions} />
-        ))}
-      </ul>
-      <h3 className="section-label">Microphones</h3>
-      <ul className="strip-list">
-        {mics.map((d) => (
-          <DeviceRow key={d.id} device={d} actions={actions} />
-        ))}
-      </ul>
+      <DeviceSection title="Outputs" devices={outputs} actions={actions} />
+      <DeviceSection title="Microphones" devices={mics} actions={actions} />
     </section>
   );
 }
