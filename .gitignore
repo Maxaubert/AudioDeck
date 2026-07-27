@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+vendor/
+audioctl/bin/
+audioctl/obj/
+*.log
+.superpowers/
