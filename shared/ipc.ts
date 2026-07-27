@@ -28,6 +28,8 @@ export interface AppState {
   devices: DeviceView[];
   outputPriority: string[];
   micPriority: string[];
+  /** Manual-override hold per flow: audio was pointed somewhere by hand. */
+  override: { output: boolean; mic: boolean };
   paused: boolean;
   autostart: boolean;
   pollIntervalMs: number;

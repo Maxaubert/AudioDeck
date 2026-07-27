@@ -46,6 +46,7 @@ export function registerIpc(deps: IpcDeps): void {
       devices,
       outputPriority: config.outputPriority,
       micPriority: config.micPriority,
+      override: { ...config.override },
       paused: poller.isPaused(),
       autostart: config.autostart,
       pollIntervalMs: config.pollIntervalMs,

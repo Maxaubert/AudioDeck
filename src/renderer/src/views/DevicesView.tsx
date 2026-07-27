@@ -13,7 +13,15 @@ import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
-function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
+function DeviceRow({
+  device,
+  manualOverride,
+  actions,
+}: {
+  device: DeviceView;
+  manualOverride: boolean;
+  actions: AudioDeckApi;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [suffixDraft, setSuffixDraft] = useState("");
@@ -76,8 +84,15 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   const name = pendingName ?? displayName(device);
   const detail = pendingDetail ?? currentDetail;
   const currentType = pendingType ?? liveType;
+  const rowClasses = [
+    "strip",
+    device.isDefault ? "is-default" : "",
+    device.isDefault && manualOverride ? "is-manual" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <li className={device.isDefault ? "strip is-default" : "strip"}>
+    <li className={rowClasses}>
       <DeviceGlyph
         formFactor={
           pendingType !== null
@@ -190,10 +205,12 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
 function DeviceSection({
   title,
   devices,
+  manualOverride,
   actions,
 }: {
   title: string;
   devices: DeviceView[];
+  manualOverride: boolean;
   actions: AudioDeckApi;
 }) {
   const [showGhosts, setShowGhosts] = useState(false);
@@ -205,7 +222,7 @@ function DeviceSection({
       <h3 className="section-label">{title}</h3>
       <ul className="strip-list">
         {shown.map((d) => (
-          <DeviceRow key={d.id} device={d} actions={actions} />
+          <DeviceRow key={d.id} device={d} manualOverride={manualOverride} actions={actions} />
         ))}
       </ul>
       {ghosts.length > 0 ? (
@@ -239,8 +256,18 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
         else, while the full set shows here and in the classic control panel. Devices
         Windows only remembers from the past sit behind the toggle below each list.
       </p>
-      <DeviceSection title="Outputs" devices={outputs} actions={actions} />
-      <DeviceSection title="Microphones" devices={mics} actions={actions} />
+      <DeviceSection
+        title="Outputs"
+        devices={outputs}
+        manualOverride={state.override.output}
+        actions={actions}
+      />
+      <DeviceSection
+        title="Microphones"
+        devices={mics}
+        manualOverride={state.override.mic}
+        actions={actions}
+      />
     </section>
   );
 }

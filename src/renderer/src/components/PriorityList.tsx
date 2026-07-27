@@ -12,11 +12,20 @@ export interface PriorityListProps {
   label: string;
   ids: string[];
   devicesById: Map<string, DeviceView>;
+  /** True while a manual override holds this flow's default. */
+  manualOverride: boolean;
   onReorder: (ids: string[]) => void;
   onRemove: (id: string) => void;
 }
 
-export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: PriorityListProps) {
+export function PriorityList({
+  label,
+  ids,
+  devicesById,
+  manualOverride,
+  onReorder,
+  onRemove,
+}: PriorityListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
@@ -36,9 +45,12 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
     <ol className="strip-list" aria-label={label}>
       {ids.map((id, index) => {
         const device = devicesById.get(id);
+        const isManual = device?.isDefault === true && manualOverride;
         const classes = [
           "strip",
           device?.isDefault ? "is-default" : "",
+          isManual ? "is-manual" : "",
+          device === undefined || !device.available ? "is-offline" : "",
           dragIndex === index ? "is-dragging" : "",
           overIndex === index && dragIndex !== null && dragIndex !== index
             ? "is-drop-target"
@@ -50,6 +62,11 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
           <li
             key={id}
             className={classes}
+            title={
+              isManual
+                ? "Manually switched; the priority list resumes on the next device event"
+                : undefined
+            }
             draggable
             onDragStart={(e) => {
               e.dataTransfer.effectAllowed = "move";

@@ -12,6 +12,7 @@
   --ink: #f5f7fa;
   --ink-muted: #b9c3d1;
   --amber: #ffb454;
+  --blue: #6db2ff;
   --amber-ink: #201200;
   --green: #4ce0a3;
   --green-ink: #06231a;
@@ -191,6 +192,16 @@ select {
 .strip.is-default {
   border-color: var(--amber);
   border-left-color: var(--amber);
+}
+
+/* Manual override: audio was pointed here by hand, priority is on hold. */
+.strip.is-default.is-manual {
+  border-color: var(--blue);
+  border-left-color: var(--blue);
+}
+
+.strip.is-offline {
+  opacity: 0.55;
 }
 
 .strip.is-dragging {
@@ -644,4 +655,5 @@ input[type="range"].fader::-webkit-slider-thumb {
 .mixer-strip.is-offline {
   opacity: 0.55;
 }
+
 

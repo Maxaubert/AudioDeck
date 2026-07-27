@@ -10,7 +10,15 @@ import { AvailabilityBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
-function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
+function MixerStrip({
+  device,
+  manualOverride,
+  actions,
+}: {
+  device: DeviceView;
+  manualOverride: boolean;
+  actions: AudioDeckApi;
+}) {
   const [local, setLocal] = useState(device.volume ?? 0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -36,13 +44,22 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
     "mixer-strip",
     "is-plain",
     offline ? "is-offline" : "",
-    // The amber outline is the one "audio goes here right now" indicator.
+    // The amber outline is the one "audio goes here right now" indicator;
+    // blue means it was pointed here by hand and priority is on hold.
     device.isDefault ? "is-default" : "",
+    device.isDefault && manualOverride ? "is-manual" : "",
   ]
     .filter(Boolean)
     .join(" ");
   return (
-    <li className={classes}>
+    <li
+      className={classes}
+      title={
+        device.isDefault && manualOverride
+          ? "Manually switched; the priority list resumes on the next device event"
+          : undefined
+      }
+    >
       <div className="mixer-head">
         <DeviceGlyph formFactor={device.formFactor} />
         <div className="strip-body">
@@ -109,7 +126,12 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
       ) : (
         <ul className="strip-list">
           {outputs.map((d) => (
-            <MixerStrip key={d.id} device={d} actions={actions} />
+            <MixerStrip
+              key={d.id}
+              device={d}
+              manualOverride={state.override.output}
+              actions={actions}
+            />
           ))}
         </ul>
       )}
@@ -119,7 +141,12 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
       ) : (
         <ul className="strip-list">
           {mics.map((d) => (
-            <MixerStrip key={d.id} device={d} actions={actions} />
+            <MixerStrip
+              key={d.id}
+              device={d}
+              manualOverride={state.override.mic}
+              actions={actions}
+            />
           ))}
         </ul>
       )}
