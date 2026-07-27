@@ -180,8 +180,10 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
       <p className="view-hint">
         Renaming a device changes its name in Windows itself, including the text in
         parentheses (Windows insists on the parentheses, but both texts are yours). The type
-        dropdown changes the device icon everywhere, including the Windows audio picker.
-        Devices Windows only remembers from the past sit behind the toggle below each list.
+        dropdown changes the device icon system-wide; note the modern Windows picker only
+        draws two of them, headphones for Headphones/Headset and a speaker for everything
+        else, while the full set shows here and in the classic control panel. Devices
+        Windows only remembers from the past sit behind the toggle below each list.
       </p>
       <DeviceSection title="Outputs" devices={outputs} actions={actions} />
       <DeviceSection title="Microphones" devices={mics} actions={actions} />
