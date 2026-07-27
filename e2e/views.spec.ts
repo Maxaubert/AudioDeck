@@ -88,9 +88,7 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   await expect(realtek.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
   await expect(realtek.getByText("Disabled", { exact: true })).toHaveCount(0);
 
-  // Active non-default devices offer the temporary switch.
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
-  await expect(tv.getByRole("button", { name: "Use now", exact: true })).toBeVisible();
 
   // The notpresent ghost hides until the toggle reveals it. Scope to the
   // device-name element: "Digital output" also appears as a dropdown option.
@@ -105,6 +103,17 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   await expect(tvType).toHaveValue("tv");
   await tvType.selectOption("speakers");
   await expect(tvType).toHaveValue("speakers");
+});
+
+test("clicking a priority row switches audio to it", async () => {
+  const { page } = ctx;
+  const outputs = page.getByRole("list", { name: "Output priority" });
+  const tvRow = outputs.getByRole("listitem").filter({ hasText: "NVIDIA High Definition Audio" });
+  await expect(outputs.getByRole("listitem").first()).toHaveClass(/is-default/);
+  await tvRow.click();
+  // The clicked device becomes the one in use, marked as a manual override.
+  await expect(tvRow).toHaveClass(/is-default/, { timeout: 5000 });
+  await expect(tvRow).toHaveClass(/is-manual/, { timeout: 5000 });
 });
 
 test("renaming changes the device name globally", async () => {

@@ -658,8 +658,12 @@ input[type="range"].fader::-webkit-slider-thumb {
 
 
 
-.btn-use-now {
-  font-size: 1rem;
-  padding: 0.45rem 0.8rem;
-  white-space: nowrap;
+.strip.is-clickable {
+  cursor: pointer;
 }
+
+.strip.is-clickable:hover {
+  border-color: var(--line-strong);
+  background: #232936;
+}
+

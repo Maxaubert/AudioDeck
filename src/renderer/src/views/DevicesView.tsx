@@ -170,16 +170,6 @@ function DeviceRow({
             Rename
           </button>
         ) : null}
-        {device.state === "active" && !device.isDefault ? (
-          <button
-            type="button"
-            className="btn"
-            title="Switch audio here now; the priority list resumes on the next device event"
-            onClick={() => void actions.setDefault(device.id)}
-          >
-            Use now
-          </button>
-        ) : null}
         {device.state === "active" ? (
           <button
             type="button"

@@ -1,7 +1,7 @@
 // One drag-to-reorder priority list (channel strips with rank numerals).
 // Reordering works by drag AND by big up/down buttons (keyboard friendly).
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { moveItem } from "../reorder.js";
 import { displayDetail, displayName } from "../useAppState.js";
 import { AvailabilityBadge } from "./StatusBadge.js";
@@ -31,6 +31,9 @@ export function PriorityList({
 }: PriorityListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // A completed drag suppresses the click that some browsers fire after drop,
+  // so dragging to reorder never doubles as "use this device".
+  const dragHappened = useRef(false);
 
   const drop = (target: number): void => {
     if (dragIndex !== null && dragIndex !== target) {
@@ -49,11 +52,13 @@ export function PriorityList({
       {ids.map((id, index) => {
         const device = devicesById.get(id);
         const isManual = device?.isDefault === true && manualOverride;
+        const clickable = device !== undefined && device.available && !device.isDefault;
         const classes = [
           "strip",
           device?.isDefault ? "is-default" : "",
           isManual ? "is-manual" : "",
           device === undefined || !device.available ? "is-offline" : "",
+          clickable ? "is-clickable" : "",
           dragIndex === index ? "is-dragging" : "",
           overIndex === index && dragIndex !== null && dragIndex !== index
             ? "is-drop-target"
@@ -68,11 +73,29 @@ export function PriorityList({
             title={
               isManual
                 ? "Manually switched; the priority list resumes on the next device event"
-                : undefined
+                : clickable
+                  ? "Click to switch audio here now; drag to reorder"
+                  : undefined
             }
+            tabIndex={clickable ? 0 : undefined}
+            onClick={(e) => {
+              if (!clickable || dragHappened.current) return;
+              // Clicks on the row's own controls are not device switches.
+              if ((e.target as HTMLElement).closest("button") !== null) return;
+              onUseNow(id);
+            }}
+            onKeyDown={(e) => {
+              if (!clickable) return;
+              if (e.key === "Enter" || e.key === " ") {
+                if ((e.target as HTMLElement).closest("button") !== null) return;
+                e.preventDefault();
+                onUseNow(id);
+              }
+            }}
             draggable
             onDragStart={(e) => {
               e.dataTransfer.effectAllowed = "move";
+              dragHappened.current = true;
               setDragIndex(index);
             }}
             onDragOver={(e) => {
@@ -88,6 +111,10 @@ export function PriorityList({
             onDragEnd={() => {
               setDragIndex(null);
               setOverIndex(null);
+              // Cleared next tick so the post-drop click (if any) is ignored.
+              setTimeout(() => {
+                dragHappened.current = false;
+              }, 0);
             }}
           >
             <span className="rank" aria-hidden="true">
@@ -104,19 +131,7 @@ export function PriorityList({
             </div>
             <div className="strip-tags">
               {device !== undefined ? (
-                <>
-                  {device.available && !device.isDefault ? (
-                    <button
-                      type="button"
-                      className="btn btn-use-now"
-                      title="Switch audio here now; the priority list resumes on the next device event"
-                      onClick={() => onUseNow(id)}
-                    >
-                      Use now
-                    </button>
-                  ) : null}
-                  <AvailabilityBadge device={device} />
-                </>
+                <AvailabilityBadge device={device} />
               ) : (
                 <span className="badge badge-offline">Offline</span>
               )}
