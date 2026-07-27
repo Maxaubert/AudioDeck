@@ -78,7 +78,24 @@ export function useAppState(): AppStateHook {
   return { state, error, refresh, actions: actionsRef.current };
 }
 
-/** Display name: user alias wins over the Windows friendly name. */
+/**
+ * Split a Windows endpoint name "Desc (Interface)" into its parts. Windows
+ * always composes names this way and the composed form is write-protected,
+ * so clean display means splitting client-side.
+ */
+export function splitDeviceName(name: string): { title: string; detail: string | null } {
+  const match = /^(.*\S)\s+\(([^()]+)\)$/.exec(name);
+  if (match === null) return { title: name, detail: null };
+  return { title: match[1] ?? name, detail: match[2] ?? null };
+}
+
+/** Display name: user alias wins, then the clean part of the Windows name. */
 export function displayName(device: { name: string; alias: string | null }): string {
-  return device.alias ?? device.name;
+  return device.alias ?? splitDeviceName(device.name).title;
+}
+
+/** Secondary line under a device title: the technical part of the name. */
+export function displayDetail(device: { name: string; alias: string | null }): string | null {
+  if (device.alias !== null) return device.name;
+  return splitDeviceName(device.name).detail;
 }

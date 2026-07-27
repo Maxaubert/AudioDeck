@@ -3,7 +3,7 @@
 // Collapsed to a single button so ghost endpoints never crowd the ranking.
 
 import { useState } from "react";
-import { displayName } from "../useAppState.js";
+import { displayDetail, displayName } from "../useAppState.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
 
 export interface AddDevicePickerProps {
@@ -46,7 +46,8 @@ export function AddDevicePicker({ label, candidates, onAdd }: AddDevicePickerPro
             >
               <span className="device-name">{displayName(device)}</span>
               <span className="device-sub">
-                {device.state === "active" ? "connected" : device.state}
+                {device.state === "active" ? "connected" : "disconnected"}
+                {displayDetail(device) !== null ? ` · ${displayDetail(device)}` : ""}
               </span>
             </button>
           </li>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { displayName } from "../useAppState.js";
+import { displayDetail, displayName } from "../useAppState.js";
 import { DefaultBadge } from "../components/StatusBadge.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
@@ -30,6 +30,9 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
     <li className="strip mixer-strip is-plain">
       <div className="mixer-head">
         <div className="device-name">{name}</div>
+        {displayDetail(device) !== null ? (
+          <div className="device-sub">{displayDetail(device)}</div>
+        ) : null}
         <DefaultBadge device={device} />
         <span className={muted ? "volume-value is-muted" : "volume-value"}>{local}%</span>
       </div>
@@ -43,7 +46,7 @@ function MixerStrip({ device, actions }: { device: DeviceView; actions: AudioDec
           step={1}
           value={local}
           style={{ "--fill": `${local}%` } as CSSProperties}
-          aria-label={`${name} volume`}
+          aria-label={`${device.name} volume`}
           onChange={(e) => setLocal(Number(e.target.value))}
         />
         <button

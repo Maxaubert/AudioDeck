@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { moveItem } from "../reorder.js";
-import { displayName } from "../useAppState.js";
+import { displayDetail, displayName } from "../useAppState.js";
 import { AvailabilityBadge, DefaultBadge } from "./StatusBadge.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
 
@@ -76,8 +76,8 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
               <div className="device-name">
                 {device !== undefined ? displayName(device) : "Not connected"}
               </div>
-              {device?.alias !== null && device !== undefined ? (
-                <div className="device-sub">{device.name}</div>
+              {device !== undefined && displayDetail(device) !== null ? (
+                <div className="device-sub">{displayDetail(device)}</div>
               ) : null}
             </div>
             <div className="strip-tags">
@@ -94,7 +94,7 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
               <button
                 type="button"
                 className="btn btn-icon"
-                aria-label={`Move ${device !== undefined ? displayName(device) : "device"} up`}
+                aria-label={`Move ${device !== undefined ? device.name : "device"} up`}
                 disabled={index === 0}
                 onClick={() => onReorder(moveItem(ids, index, index - 1))}
               >
@@ -103,7 +103,7 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
               <button
                 type="button"
                 className="btn btn-icon"
-                aria-label={`Move ${device !== undefined ? displayName(device) : "device"} down`}
+                aria-label={`Move ${device !== undefined ? device.name : "device"} down`}
                 disabled={index === ids.length - 1}
                 onClick={() => onReorder(moveItem(ids, index, index + 1))}
               >
@@ -112,7 +112,7 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
               <button
                 type="button"
                 className="btn btn-icon btn-remove"
-                aria-label={`Remove ${device !== undefined ? displayName(device) : "device"} from list`}
+                aria-label={`Remove ${device !== undefined ? device.name : "device"} from list`}
                 title="Remove from list"
                 onClick={() => onRemove(id)}
               >
@@ -125,3 +125,4 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
     </ol>
   );
 }
+

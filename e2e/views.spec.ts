@@ -19,23 +19,32 @@ test("launches into the Priority view with both mocked lists", async () => {
   const { page } = ctx;
   await expect(page.getByRole("heading", { name: "Priority", exact: true })).toBeVisible();
 
+  // Names render split: clean title, technical part as the sub line.
   const outputs = page.getByRole("list", { name: "Output priority" });
-  await expect(outputs.getByText("Speakers (Arctis Nova Pro Wireless)")).toBeVisible();
-  await expect(outputs.getByText("LG TV (NVIDIA High Definition Audio)")).toBeVisible();
+  await expect(
+    outputs.getByRole("listitem").filter({ hasText: "Arctis Nova Pro Wireless" }),
+  ).toBeVisible();
+  await expect(
+    outputs.getByRole("listitem").filter({ hasText: "NVIDIA High Definition Audio" }),
+  ).toBeVisible();
   // Windows default seeds first and carries the amber marker.
   await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
   await expect(outputs.getByRole("listitem").first().getByText("Default")).toBeVisible();
   // Non-active endpoints stay out of the ranking. The picker offers only real
   // devices (disconnected AirPods), never disabled endpoints or ghosts.
-  await expect(outputs.getByText("Speakers (Realtek(R) Audio)")).toHaveCount(0);
+  await expect(outputs.getByText("Realtek(R) Audio")).toHaveCount(0);
   await page.getByRole("button", { name: /Add a device \(1 more\)/ }).click();
   await expect(page.getByRole("button", { name: /AirPods Pro/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Realtek\(R\) Audio/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Digital Output/ })).toHaveCount(0);
 
   const mics = page.getByRole("list", { name: "Microphone priority" });
-  await expect(mics.getByText("Microphone (Arctis Nova Pro Wireless)")).toBeVisible();
-  await expect(mics.getByText("Microphone (Logitech BRIO)")).toBeVisible();
+  await expect(
+    mics.getByRole("listitem").filter({ hasText: "Arctis Nova Pro Wireless" }),
+  ).toBeVisible();
+  await expect(
+    mics.getByRole("listitem").filter({ hasText: "Logitech BRIO" }),
+  ).toBeVisible();
 });
 
 test("Mixer view shows a fader and mute per active mocked device", async () => {
@@ -67,13 +76,15 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   await page.getByRole("button", { name: "Devices", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Devices", exact: true })).toBeVisible();
 
-  await expect(page.getByText("Speakers (Arctis Nova Pro Wireless)")).toBeVisible();
-  await expect(page.getByText("Microphone (Logitech BRIO)")).toBeVisible();
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "Speakers" }).filter({ hasText: "Arctis" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "Logitech BRIO" }),
+  ).toBeVisible();
 
   // Disabled endpoints show with an Enable button as their state cue; no badges.
-  const realtek = page
-    .getByRole("listitem")
-    .filter({ hasText: "Speakers (Realtek(R) Audio)" });
+  const realtek = page.getByRole("listitem").filter({ hasText: "Realtek(R) Audio" });
   await expect(realtek.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
   await expect(realtek.getByText("Disabled", { exact: true })).toHaveCount(0);
 
@@ -82,9 +93,11 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   await expect(tv.getByRole("button", { name: "Make default", exact: true })).toBeVisible();
 
   // The notpresent ghost hides until the toggle reveals it.
-  await expect(page.getByText("Digital Output (High Definition Audio Device)")).toHaveCount(0);
+  await expect(page.getByText("Digital Output")).toHaveCount(0);
   await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
-  await expect(page.getByText("Digital Output (High Definition Audio Device)")).toBeVisible();
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "Digital Output" }),
+  ).toBeVisible();
 });
 
 test("renaming changes the device name globally", async () => {
@@ -96,9 +109,9 @@ test("renaming changes the device name globally", async () => {
   await tv.getByLabel(/New name for/).fill("Stue TV");
   await tv.getByRole("button", { name: "Save name", exact: true }).click();
 
-  // The mock backend renames the description and keeps the interface suffix,
-  // mirroring what Windows does; the new name flows back through the poller.
+  // The device shows exactly the typed name, no interface suffix.
+  await expect(page.getByRole("listitem").filter({ hasText: "Stue TV" })).toBeVisible();
   await expect(
-    page.getByRole("listitem").filter({ hasText: "Stue TV (NVIDIA High Definition Audio)" }),
-  ).toBeVisible();
+    page.getByText("Stue TV (NVIDIA High Definition Audio)"),
+  ).toHaveCount(0);
 });

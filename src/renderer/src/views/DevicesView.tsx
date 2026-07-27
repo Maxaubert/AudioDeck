@@ -4,7 +4,7 @@
 // remembers (state notpresent) hide behind a toggle.
 
 import { useState } from "react";
-import { displayName } from "../useAppState.js";
+import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
 import { DefaultBadge } from "../components/StatusBadge.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
@@ -13,7 +13,8 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   const [draft, setDraft] = useState("");
 
   const startEdit = (): void => {
-    setDraft("");
+    // Prefill with the current clean name so an unchanged save is obvious.
+    setDraft(splitDeviceName(device.name).title);
     setEditing(true);
   };
   const save = (): void => {
@@ -33,7 +34,9 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
     <li className={device.isDefault ? "strip is-default" : "strip"}>
       <div className="strip-body">
         <div className="device-name">{name}</div>
-        {device.alias !== null ? <div className="device-sub">{device.name}</div> : null}
+        {displayDetail(device) !== null ? (
+          <div className="device-sub">{displayDetail(device)}</div>
+        ) : null}
         {editing ? (
           <form
             className="rename-form"

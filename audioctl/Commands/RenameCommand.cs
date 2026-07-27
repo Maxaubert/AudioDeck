@@ -16,7 +16,7 @@ internal static class RenameCommand
         Endpoints.WithDevice(id, device =>
         {
             using PropertyStore store = device.OpenPropertyStoreWritable();
-            store.SetDeviceDescription(trimmed);
+            store.SetName(trimmed);
             return 0;
         });
         return JsonOut.Success("rename", id);

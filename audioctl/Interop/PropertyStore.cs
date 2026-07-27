@@ -39,17 +39,26 @@ internal readonly unsafe struct PropertyStore : IDisposable
 
     // Slot 6: SetValue(ref PROPERTYKEY, ref PROPVARIANT), slot 7: Commit(). Needs a
     // store opened with STGM_READWRITE; works without elevation (audiosrv mediates).
-    public void SetDeviceDescription(string name)
+    // Only the device description (pid 2) is writable; the composed friendly name
+    // (pid 14) is protected (SetValue returns E_ACCESSDENIED, verified live), so
+    // Windows always displays "name (interface)". Callers wanting a clean name
+    // must split the composed form for display themselves.
+    public void SetName(string name)
     {
-        var key = new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = DeviceDescPid };
-        var value = new PropVariant { Vt = VtLpwstr, Ptr = Marshal.StringToCoTaskMemUni(name) };
+        SetString(DeviceDescPid, name);
+        int hr = ((delegate* unmanaged<IntPtr, int>)ComRuntime.Slot(_ptr, 7))(_ptr);
+        ComRuntime.Check(hr, "IPropertyStore.Commit");
+    }
+
+    private void SetString(uint pid, string text)
+    {
+        var key = new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = pid };
+        var value = new PropVariant { Vt = VtLpwstr, Ptr = Marshal.StringToCoTaskMemUni(text) };
         try
         {
             int hr = ((delegate* unmanaged<IntPtr, PropertyKey*, PropVariant*, int>)ComRuntime.Slot(_ptr, 6))(
                 _ptr, &key, &value);
             ComRuntime.Check(hr, "IPropertyStore.SetValue");
-            hr = ((delegate* unmanaged<IntPtr, int>)ComRuntime.Slot(_ptr, 7))(_ptr);
-            ComRuntime.Check(hr, "IPropertyStore.Commit");
         }
         finally
         {
@@ -77,3 +86,4 @@ internal readonly unsafe struct PropertyStore : IDisposable
 
     public void Dispose() => ComRuntime.Release(_ptr);
 }
+

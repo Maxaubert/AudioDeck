@@ -126,7 +126,8 @@ export class MockAudioctl implements AudioControl {
   }
 
   async rename(id: string, name: string): Promise<void> {
-    // Mirrors Windows: the description is renamed, the interface part sticks.
+    // Mirrors Windows: only the description is writable, the interface
+    // suffix always comes back in the composed name.
     const e = this.get(id);
     const suffix = /\(([^)]*)\)\s*$/.exec(e.name);
     e.name = suffix === null ? name : `${name} (${suffix[1]})`;
