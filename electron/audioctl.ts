@@ -21,6 +21,20 @@ export interface Endpoint {
   mute: boolean | null;
 }
 
+/**
+ * The audio-control surface the daemon consumes. Audioctl implements it by
+ * spawning audioctl.exe; the e2e mock backend implements it in memory.
+ */
+export interface AudioControl {
+  list(): Promise<Endpoint[]>;
+  setDefault(id: string): Promise<void>;
+  setVolume(id: string, level: number): Promise<void>;
+  mute(id: string): Promise<void>;
+  unmute(id: string): Promise<void>;
+  enable(id: string): Promise<void>;
+  disable(id: string): Promise<void>;
+}
+
 export class AudioctlError extends Error {
   constructor(
     message: string,
@@ -58,7 +72,7 @@ export interface AudioctlOptions {
   timeoutMs?: number;
 }
 
-export class Audioctl {
+export class Audioctl implements AudioControl {
   private readonly exePath: string;
   private readonly timeoutMs: number;
 

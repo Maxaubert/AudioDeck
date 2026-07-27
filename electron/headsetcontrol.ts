@@ -39,6 +39,15 @@ export interface HeadsetSnapshot {
   devices: HeadsetDevice[];
 }
 
+/**
+ * The headset-power query surface the daemon consumes. HeadsetControl
+ * implements it by spawning the vendor binary; the e2e mock backend
+ * implements it in memory.
+ */
+export interface HeadsetQuerier {
+  query(): Promise<HeadsetSnapshot>;
+}
+
 export class HeadsetControlError extends Error {
   constructor(
     message: string,
@@ -61,7 +70,7 @@ export interface HeadsetControlOptions {
   timeoutMs?: number;
 }
 
-export class HeadsetControl {
+export class HeadsetControl implements HeadsetQuerier {
   private readonly exePath: string;
   private readonly timeoutMs: number;
 

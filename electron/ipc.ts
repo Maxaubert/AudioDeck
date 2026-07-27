@@ -4,13 +4,13 @@
 import { ipcMain } from "electron";
 import { evaluateAvailability } from "./availability.js";
 import { IPC } from "../shared/ipc.js";
-import type { Audioctl, EndpointFlow } from "./audioctl.js";
+import type { AudioControl, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { Poller, PollSnapshot } from "./poller.js";
 import type { AppState, DeviceView } from "../shared/ipc.js";
 
 export interface IpcDeps {
-  audioctl: Audioctl;
+  audioctl: AudioControl;
   poller: Poller;
   getConfig: () => AudioDeckConfig;
   saveConfig: (config: AudioDeckConfig) => Promise<void>;
@@ -104,7 +104,7 @@ export function registerIpc(deps: IpcDeps): void {
 }
 
 /** Direct gather for the rare window-open before the poller's first tick. */
-async function freshSnapshot(audioctl: Audioctl): Promise<PollSnapshot> {
+async function freshSnapshot(audioctl: AudioControl): Promise<PollSnapshot> {
   const endpoints = await audioctl.list();
   return { endpoints, availability: evaluateAvailability(endpoints, null) };
 }

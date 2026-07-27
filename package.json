@@ -10,7 +10,7 @@
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test --pass-with-no-tests",
+    "e2e": "electron-vite build && playwright test",
     "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs"
   },
   "dependencies": {

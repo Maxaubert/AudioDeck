@@ -1,11 +1,13 @@
 // Main-process entry: wiring only. Boots config, tray, poller, autostart,
 // IPC, and the on-demand renderer window.
 // AUDIODECK_TEST_MODE=1 (e2e and screenshots): no tray, no registry writes,
-// window opens immediately.
+// window opens immediately. AUDIODECK_MOCK_DEVICES=1 swaps the spawn-based
+// backends for the in-memory mock backend.
 
 import { app } from "electron";
 import { Audioctl } from "./audioctl.js";
 import { HeadsetControl } from "./headsetcontrol.js";
+import { MockAudioctl, MockHeadsetControl } from "./mock-backend.js";
 import { Poller } from "./poller.js";
 import { createTray } from "./tray.js";
 import { loadConfig, saveConfig } from "./config.js";
@@ -16,6 +18,7 @@ import type { AudioDeckConfig } from "./config.js";
 import type { TrayHandle } from "./tray.js";
 
 const testMode = process.env.AUDIODECK_TEST_MODE === "1";
+const mockDevices = process.env.AUDIODECK_MOCK_DEVICES === "1";
 
 // One tray daemon per machine; a second launch just exits.
 if (!testMode && !app.requestSingleInstanceLock()) {
@@ -29,10 +32,10 @@ async function boot(): Promise<void> {
 
   let config: AudioDeckConfig = await loadConfig();
 
-  const audioctl = new Audioctl();
+  const audioctl = mockDevices ? new MockAudioctl() : new Audioctl();
   const poller = new Poller({
     audioctl,
-    headsetControl: new HeadsetControl(),
+    headsetControl: mockDevices ? new MockHeadsetControl() : new HeadsetControl(),
     getConfig: () => config,
     saveConfig: async (next) => {
       config = next;

@@ -1,8 +1,11 @@
 import { defineConfig } from "@playwright/test";
 
-// Electron e2e tests land in Stage 4; the directory exists so `npm run e2e` is
-// wired up from day one (it passes with no tests until then).
+// Electron e2e suite: each test boots the built app (test mode + mock backend)
+// with its own temp APPDATA. One worker, one Electron instance at a time.
 export default defineConfig({
   testDir: "e2e",
   timeout: 60_000,
+  workers: 1,
+  fullyParallel: false,
+  reporter: [["list"]],
 });

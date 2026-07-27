@@ -5,14 +5,14 @@
 
 import { evaluateAvailability } from "./availability.js";
 import { decide, diffEvents, seedPriorityList } from "./rules.js";
-import type { Audioctl, Endpoint, EndpointFlow } from "./audioctl.js";
+import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { DeviceAvailability } from "./availability.js";
-import type { HeadsetControl, HeadsetSnapshot } from "./headsetcontrol.js";
+import type { HeadsetQuerier, HeadsetSnapshot } from "./headsetcontrol.js";
 
 export interface PollerDeps {
-  audioctl: Audioctl;
-  headsetControl: HeadsetControl;
+  audioctl: AudioControl;
+  headsetControl: HeadsetQuerier;
   getConfig: () => AudioDeckConfig;
   saveConfig: (config: AudioDeckConfig) => Promise<void>;
 }
