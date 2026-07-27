@@ -92,12 +92,19 @@ test("Devices view shows real endpoints, ghosts behind the toggle", async () => 
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
   await expect(tv.getByRole("button", { name: "Make default", exact: true })).toBeVisible();
 
-  // The notpresent ghost hides until the toggle reveals it.
-  await expect(page.getByText("Digital Output")).toHaveCount(0);
+  // The notpresent ghost hides until the toggle reveals it. Scope to the
+  // device-name element: "Digital output" also appears as a dropdown option.
+  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toHaveCount(0);
   await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
   await expect(
-    page.getByRole("listitem").filter({ hasText: "Digital Output" }),
+    page.locator(".device-name", { hasText: "Digital Output" }),
   ).toBeVisible();
+
+  // The type dropdown reflects the form factor and changes it globally.
+  const tvType = tv.getByRole("combobox", { name: /Device type/ });
+  await expect(tvType).toHaveValue("tv");
+  await tvType.selectOption("speakers");
+  await expect(tvType).toHaveValue("speakers");
 });
 
 test("renaming changes the device name globally", async () => {

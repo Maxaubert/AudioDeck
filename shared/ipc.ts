@@ -14,6 +14,8 @@ export interface DeviceView {
   state: EndpointState;
   isDefault: boolean;
   isDefaultComms: boolean;
+  /** Endpoint form factor (device kind); null when unreadable. */
+  formFactor: number | null;
   /** 0-100, null for non-active endpoints. */
   volume: number | null;
   mute: boolean | null;
@@ -49,6 +51,8 @@ export interface AudioDeckApi {
    * `suffix` optionally replaces the parenthesized part; omitted keeps it.
    */
   renameDevice(id: string, name: string, suffix?: string): Promise<void>;
+  /** Change what kind of device Windows shows this endpoint as (see deviceTypes). */
+  setDeviceType(id: string, typeKey: string): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;
@@ -66,6 +70,7 @@ export const IPC = {
   setEndpointEnabled: "audiodeck:set-endpoint-enabled",
   setAlias: "audiodeck:set-alias",
   renameDevice: "audiodeck:rename-device",
+  setDeviceType: "audiodeck:set-device-type",
   setPaused: "audiodeck:set-paused",
   setAutostart: "audiodeck:set-autostart",
   setPollInterval: "audiodeck:set-poll-interval",

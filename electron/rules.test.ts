@@ -17,6 +17,7 @@ function endpoint(
     volume: 50,
     mute: false,
     ...overrides,
+    formFactor: overrides.formFactor ?? 1,
   };
 }
 

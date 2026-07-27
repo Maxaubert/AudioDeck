@@ -21,7 +21,15 @@ internal readonly unsafe struct PropertyStore : IDisposable
     // "(unknown)" and an empty string renders as "name ()".
     private static readonly Guid EndpointInterfaceFmtid = new("b3f8fa53-0004-438e-9003-51a46e139bfc");
     private const uint EndpointInterfacePid = 6;
+    // PKEY_AudioEndpoint_FormFactor: drives which glyph the modern flyout shows.
+    // PKEY_DeviceClass_IconPath: the classic icon ("%windir%\system32\mmres.dll,-3010").
+    // Both writable without elevation (proven live 2026-07-27).
+    private static readonly Guid FormFactorFmtid = new("1da5d803-d492-4edd-8c23-e0c0ffee7f0e");
+    private const uint FormFactorPid = 0;
+    private static readonly Guid IconPathFmtid = new("259abffc-50a7-47ce-af08-68c9a7d73366");
+    private const uint IconPathPid = 12;
     private const ushort VtLpwstr = 31;
+    private const ushort VtUi4 = 19;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct PropertyKey
@@ -37,6 +45,7 @@ internal readonly unsafe struct PropertyStore : IDisposable
     {
         [FieldOffset(0)] public ushort Vt;
         [FieldOffset(8)] public IntPtr Ptr;
+        [FieldOffset(8)] public uint Ui4;
     }
 
     private readonly IntPtr _ptr;
@@ -59,6 +68,29 @@ internal readonly unsafe struct PropertyStore : IDisposable
         }
         int hr = ((delegate* unmanaged<IntPtr, int>)ComRuntime.Slot(_ptr, 7))(_ptr);
         ComRuntime.Check(hr, "IPropertyStore.Commit");
+    }
+
+    // Set the endpoint's type: flyout glyph (form factor) plus classic icon.
+    public void SetType(uint formFactor, string iconPath)
+    {
+        var ffKey = new PropertyKey { Fmtid = FormFactorFmtid, Pid = FormFactorPid };
+        var ffValue = new PropVariant { Vt = VtUi4, Ui4 = formFactor };
+        int hr = ((delegate* unmanaged<IntPtr, PropertyKey*, PropVariant*, int>)ComRuntime.Slot(_ptr, 6))(
+            _ptr, &ffKey, &ffValue);
+        ComRuntime.Check(hr, "IPropertyStore.SetValue(FormFactor)");
+        SetString(new PropertyKey { Fmtid = IconPathFmtid, Pid = IconPathPid }, iconPath);
+        hr = ((delegate* unmanaged<IntPtr, int>)ComRuntime.Slot(_ptr, 7))(_ptr);
+        ComRuntime.Check(hr, "IPropertyStore.Commit");
+    }
+
+    public uint? GetFormFactor()
+    {
+        var key = new PropertyKey { Fmtid = FormFactorFmtid, Pid = FormFactorPid };
+        var value = default(PropVariant);
+        int hr = ((delegate* unmanaged<IntPtr, PropertyKey*, PropVariant*, int>)ComRuntime.Slot(_ptr, 5))(
+            _ptr, &key, &value);
+        if (hr < 0 || value.Vt != VtUi4) return null;
+        return value.Ui4;
     }
 
     private void SetString(PropertyKey key, string text)

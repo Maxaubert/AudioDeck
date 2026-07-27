@@ -15,6 +15,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "active",
       isDefault: true,
       isDefaultComms: true,
+      formFactor: 3,
       volume: 40,
       mute: false,
     },
@@ -25,6 +26,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "active",
       isDefault: false,
       isDefaultComms: false,
+      formFactor: 9,
       volume: 25,
       mute: false,
     },
@@ -35,6 +37,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "disabled",
       isDefault: false,
       isDefaultComms: false,
+      formFactor: 1,
       volume: null,
       mute: null,
     },
@@ -45,6 +48,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "unplugged",
       isDefault: false,
       isDefaultComms: false,
+      formFactor: 3,
       volume: null,
       mute: null,
     },
@@ -55,6 +59,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "notpresent",
       isDefault: false,
       isDefaultComms: false,
+      formFactor: 9,
       volume: null,
       mute: null,
     },
@@ -65,6 +70,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "active",
       isDefault: true,
       isDefaultComms: true,
+      formFactor: 4,
       volume: 80,
       mute: false,
     },
@@ -75,6 +81,7 @@ function fixtureEndpoints(): Endpoint[] {
       state: "active",
       isDefault: false,
       isDefaultComms: false,
+      formFactor: 4,
       volume: 65,
       mute: false,
     },
@@ -125,6 +132,10 @@ export class MockAudioctl implements AudioControl {
     e.mute = null;
   }
 
+  async setType(id: string, formFactor: number): Promise<void> {
+    this.get(id).formFactor = formFactor;
+  }
+
   async rename(id: string, name: string, suffix?: string): Promise<void> {
     // Mirrors Windows: composed as "name (suffix)"; the parentheses always
     // come back, but both texts are writable.
@@ -161,3 +172,4 @@ export class MockHeadsetControl implements HeadsetQuerier {
     };
   }
 }
+

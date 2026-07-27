@@ -5,6 +5,7 @@ import { useState } from "react";
 import { moveItem } from "../reorder.js";
 import { displayDetail, displayName } from "../useAppState.js";
 import { AvailabilityBadge, DefaultBadge } from "./StatusBadge.js";
+import { DeviceGlyph } from "./DeviceGlyph.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
 
 export interface PriorityListProps {
@@ -72,6 +73,7 @@ export function PriorityList({ label, ids, devicesById, onReorder, onRemove }: P
             <span className="rank" aria-hidden="true">
               {index + 1}
             </span>
+            <DeviceGlyph formFactor={device?.formFactor ?? null} />
             <div className="strip-body">
               <div className="device-name">
                 {device !== undefined ? displayName(device) : "Not connected"}

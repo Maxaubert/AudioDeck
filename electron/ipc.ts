@@ -3,6 +3,7 @@
 
 import { execFile } from "node:child_process";
 import { ipcMain } from "electron";
+import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
 import { IPC } from "../shared/ipc.js";
 import type { AudioControl, EndpointFlow } from "./audioctl.js";
@@ -35,6 +36,7 @@ export function registerIpc(deps: IpcDeps): void {
       state: a.endpoint.state,
       isDefault: a.endpoint.isDefault,
       isDefaultComms: a.endpoint.isDefaultComms,
+      formFactor: a.endpoint.formFactor ?? null,
       volume: a.endpoint.volume,
       mute: a.endpoint.mute,
       available: a.available,
@@ -149,6 +151,22 @@ export function registerIpc(deps: IpcDeps): void {
     // The quick-settings flyout (ShellHost) only re-reads device names when
     // its process restarts; bounce it so the rename shows up there too. It
     // respawns on demand and holds no user state.
+    restartShellHost();
+  });
+
+  ipcMain.handle(IPC.setDeviceType, async (_e, id: string, typeKey: string) => {
+    if (typeof id !== "string" || typeof typeKey !== "string") return;
+    const type = deviceTypeByKey(typeKey);
+    if (type === undefined) return;
+    try {
+      await audioctl.setType(id, type.formFactor, type.iconPath);
+      console.log(`[ipc] set type of ${id} to ${type.key}`);
+    } catch (err) {
+      console.error(`[ipc] set-type ${id} failed:`, err);
+      throw err;
+    }
+    await poller.refreshNow();
+    // The flyout caches glyphs the same way it caches names.
     restartShellHost();
   });
 

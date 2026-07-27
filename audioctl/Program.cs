@@ -14,7 +14,8 @@ internal static class Program
         "  set-volume <id> <0-100>  set endpoint master volume\n" +
         "  mute <id> | unmute <id>  set endpoint mute state\n" +
         "  enable <id> | disable <id>  set endpoint visibility\n" +
-        "  rename <id> <name> [suffix]  rename endpoint system-wide (suffix = text in parentheses)";
+        "  rename <id> <name> [suffix]  rename endpoint system-wide (suffix = text in parentheses)\n" +
+        "  set-type <id> <formfactor> <iconpath>  set device kind (flyout glyph + classic icon)";
 
     private static int Main(string[] args)
     {
@@ -32,6 +33,7 @@ internal static class Program
                 ["disable", var id] => VisibilityCommand.Run(id, visible: false),
                 ["rename", var id, var name] => RenameCommand.Run(id, name),
                 ["rename", var id, var name, var suffix] => RenameCommand.Run(id, name, suffix),
+                ["set-type", var id, var ff, var icon] => SetTypeCommand.Run(id, ff, icon),
                 _ => JsonOut.Error(Usage),
             };
         }

@@ -57,6 +57,8 @@ internal static class ListCommand
         w.WriteString("state", state);
         w.WriteBoolean("isDefault", id == defaultId);
         w.WriteBoolean("isDefaultComms", id == defaultCommsId);
+        uint? formFactor = ReadFormFactor(device);
+        if (formFactor is uint ff) w.WriteNumber("formFactor", ff); else w.WriteNull("formFactor");
 
         int? volume = null;
         bool? mute = null;
@@ -83,6 +85,19 @@ internal static class ListCommand
         catch
         {
             return "(unknown)";
+        }
+    }
+
+    private static uint? ReadFormFactor(Device device)
+    {
+        try
+        {
+            using var store = device.OpenPropertyStore();
+            return store.GetFormFactor();
+        }
+        catch
+        {
+            return null;
         }
     }
 }

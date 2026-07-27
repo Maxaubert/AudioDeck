@@ -4,8 +4,10 @@
 // remembers (state notpresent) hide behind a toggle.
 
 import { useState } from "react";
+import { typeKeyForFormFactor, typesForFlow } from "../../../../shared/deviceTypes.js";
 import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
 import { DefaultBadge } from "../components/StatusBadge.js";
+import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
 function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
@@ -33,8 +35,10 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   };
 
   const name = displayName(device);
+  const currentType = typeKeyForFormFactor(device.formFactor, device.flow);
   return (
     <li className={device.isDefault ? "strip is-default" : "strip"}>
+      <DeviceGlyph formFactor={device.formFactor} />
       <div className="strip-body">
         <div className="device-name">{name}</div>
         {displayDetail(device) !== null ? (
@@ -76,6 +80,23 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
         <DefaultBadge device={device} />
       </div>
       <div className="move-controls">
+        <select
+          className="type-select"
+          aria-label={`Device type for ${device.name}`}
+          value={currentType ?? "custom"}
+          onChange={(e) => void actions.setDeviceType(device.id, e.target.value)}
+        >
+          {currentType === null ? (
+            <option value="custom" disabled>
+              Custom
+            </option>
+          ) : null}
+          {typesForFlow(device.flow).map((t) => (
+            <option key={t.key} value={t.key}>
+              {t.label}
+            </option>
+          ))}
+        </select>
         {!editing ? (
           <button type="button" className="btn" onClick={startEdit}>
             Rename
@@ -158,8 +179,9 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
       </h2>
       <p className="view-hint">
         Renaming a device changes its name in Windows itself, including the text in
-        parentheses (Windows insists on the parentheses, but both texts are yours). Devices
-        Windows only remembers from the past are tucked behind the toggle below each list.
+        parentheses (Windows insists on the parentheses, but both texts are yours). The type
+        dropdown changes the device icon everywhere, including the Windows audio picker.
+        Devices Windows only remembers from the past sit behind the toggle below each list.
       </p>
       <DeviceSection title="Outputs" devices={outputs} actions={actions} />
       <DeviceSection title="Microphones" devices={mics} actions={actions} />

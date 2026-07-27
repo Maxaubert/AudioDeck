@@ -609,3 +609,18 @@ input[type="range"].fader::-webkit-slider-thumb {
   height: 1.25rem;
   accent-color: var(--line-strong);
 }
+
+.device-glyph {
+  flex-shrink: 0;
+  color: var(--ink-muted);
+  align-self: center;
+}
+
+.type-select {
+  font-size: 1rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--panel);
+  color: var(--ink);
+  border: 2px solid var(--line-strong);
+  min-height: 44px;
+}

@@ -17,6 +17,8 @@ export interface Endpoint {
   state: EndpointState;
   isDefault: boolean;
   isDefaultComms: boolean;
+  /** PKEY_AudioEndpoint_FormFactor value; null when unreadable. */
+  formFactor: number | null;
   volume: number | null;
   mute: boolean | null;
 }
@@ -38,6 +40,8 @@ export interface AudioControl {
    * "(...)" part Windows always appends; omitted keeps the current one.
    */
   rename(id: string, name: string, suffix?: string): Promise<void>;
+  /** Change the device kind: flyout glyph (form factor) + classic icon. */
+  setType(id: string, formFactor: number, iconPath: string): Promise<void>;
 }
 
 export class AudioctlError extends Error {
@@ -123,6 +127,10 @@ export class Audioctl implements AudioControl {
 
   async rename(id: string, name: string, suffix?: string): Promise<void> {
     await this.run(suffix === undefined ? ["rename", id, name] : ["rename", id, name, suffix]);
+  }
+
+  async setType(id: string, formFactor: number, iconPath: string): Promise<void> {
+    await this.run(["set-type", id, String(formFactor), iconPath]);
   }
 
   /**

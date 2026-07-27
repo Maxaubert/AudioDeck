@@ -61,6 +61,20 @@ composed name follows as "desc (newsuffix)". Rules learned live: NEVER write it 
 The quick-settings flyout (ShellHost.exe) caches endpoint names for its process
 lifetime; kill ShellHost after a rename (it respawns on demand) or the flyout keeps
 showing the old name indefinitely.
+
+## Device kind: form factor + icon (proven live 2026-07-27)
+
+Both writable via the endpoint property store without elevation:
+- PKEY_AudioEndpoint_FormFactor `{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},0` (VT_UI4=19):
+  drives the glyph in the modern flyout/Settings. Values seen: 1 Speakers, 2 LineLevel,
+  3 Headphones, 4 Microphone, 5 Headset, 8 SPDIF, 9 DigitalAudioDisplayDevice (HDMI),
+  10 UnknownFormFactor.
+- PKEY_DeviceClass_IconPath `{259abffc-50a7-47ce-af08-68c9a7d73366},12` (VT_LPWSTR):
+  classic icon, format `%windir%\system32\mmres.dll,-3010`. Harvested pairs:
+  speakers -3010, headphones -3011, line -3012, SPDIF -3013, mic -3014, headset -3015,
+  HDMI/TV -3017, stereo mix -3018, alt speakers -3030, alt headphones -3031, AirPods -3051.
+The flyout caches glyphs like names: bounce ShellHost after writing. PROPVARIANT for
+VT_UI4 carries the value in the union at offset 8.
 PROPVARIANT must be marshalled as 24 bytes on x64 (vt at 0, data union at 8); a 16-byte
 struct crashes on the SetValue path.
 
