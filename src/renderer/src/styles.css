@@ -624,3 +624,19 @@ input[type="range"].fader::-webkit-slider-thumb {
   border: 2px solid var(--line-strong);
   min-height: 44px;
 }
+
+.badge-saving {
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px dashed var(--ink-muted);
+  animation: saving-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes saving-pulse {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-saving { animation: none; }
+}

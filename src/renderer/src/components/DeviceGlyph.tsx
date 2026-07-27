@@ -5,7 +5,8 @@ const SIZE = 30;
 
 function pathFor(formFactor: number | null): string {
   switch (formFactor) {
-    case 1: // Speakers
+    case 1: // Speakers: cabinet with tweeter + woofer, like the Windows picker glyph
+      return "M9 3h12a2 2 0 0 1 2 2v20a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M15 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z M15 15a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z";
     case 2: // Line level
       return "M4 11h5l6-5v18l-6-5H4z M18 9a6 6 0 0 1 0 12";
     case 3: // Headphones

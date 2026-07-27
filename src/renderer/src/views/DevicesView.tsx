@@ -3,7 +3,7 @@
 // extra state badges clutter the rows. Ghost endpoints Windows merely
 // remembers (state notpresent) hide behind a toggle.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   deviceTypeByKey,
   offeredTypesForFlow,
@@ -18,6 +18,32 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [suffixDraft, setSuffixDraft] = useState("");
+  // Optimistic state: Windows takes a second or two to confirm a rename or
+  // type change; show the requested value with a "Saving" chip immediately so
+  // a save never looks like it was ignored.
+  const [pendingName, setPendingName] = useState<string | null>(null);
+  const [pendingType, setPendingType] = useState<string | null>(null);
+
+  const currentTitle = splitDeviceName(device.name).title;
+  useEffect(() => {
+    if (pendingName !== null && currentTitle === pendingName) setPendingName(null);
+  }, [pendingName, currentTitle]);
+
+  const liveType = typeKeyForFormFactor(device.formFactor, device.flow);
+  useEffect(() => {
+    if (pendingType !== null && liveType === pendingType) setPendingType(null);
+  }, [pendingType, liveType]);
+
+  // Failed saves surface in the error banner; do not show stale optimistic
+  // values forever on top of that.
+  useEffect(() => {
+    if (pendingName === null && pendingType === null) return;
+    const timer = setTimeout(() => {
+      setPendingName(null);
+      setPendingType(null);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [pendingName, pendingType]);
 
   const startEdit = (): void => {
     // Prefill with the current parts so an unchanged save is obvious.
@@ -33,16 +59,26 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
       // Renaming is global by design; the main process also drops any local
       // alias so the app shows exactly what Windows shows. An empty suffix
       // keeps the current one (Windows cannot render without it).
+      if (trimmed !== currentTitle || (suffix !== "" && suffix !== displayDetail(device))) {
+        setPendingName(trimmed);
+      }
       void actions.renameDevice(device.id, trimmed, suffix === "" ? undefined : suffix);
     }
     setEditing(false);
   };
 
-  const name = displayName(device);
-  const currentType = typeKeyForFormFactor(device.formFactor, device.flow);
+  const saving = pendingName !== null || pendingType !== null;
+  const name = pendingName ?? displayName(device);
+  const currentType = pendingType ?? liveType;
   return (
     <li className={device.isDefault ? "strip is-default" : "strip"}>
-      <DeviceGlyph formFactor={device.formFactor} />
+      <DeviceGlyph
+        formFactor={
+          pendingType !== null
+            ? deviceTypeByKey(pendingType)?.formFactor ?? device.formFactor
+            : device.formFactor
+        }
+      />
       <div className="strip-body">
         <div className="device-name">{name}</div>
         {displayDetail(device) !== null ? (
@@ -81,6 +117,7 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
         ) : null}
       </div>
       <div className="strip-tags">
+        {saving ? <span className="badge badge-saving">Saving</span> : null}
         <DefaultBadge device={device} />
       </div>
       <div className="move-controls">
@@ -88,7 +125,10 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
           className="type-select"
           aria-label={`Device type for ${device.name}`}
           value={currentType ?? "custom"}
-          onChange={(e) => void actions.setDeviceType(device.id, e.target.value)}
+          onChange={(e) => {
+            setPendingType(e.target.value);
+            void actions.setDeviceType(device.id, e.target.value);
+          }}
         >
           {currentType === null ? (
             <option value="custom" disabled>
