@@ -22,12 +22,18 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   // type change; show the requested value with a "Saving" chip immediately so
   // a save never looks like it was ignored.
   const [pendingName, setPendingName] = useState<string | null>(null);
+  const [pendingDetail, setPendingDetail] = useState<string | null>(null);
   const [pendingType, setPendingType] = useState<string | null>(null);
 
   const currentTitle = splitDeviceName(device.name).title;
   useEffect(() => {
     if (pendingName !== null && currentTitle === pendingName) setPendingName(null);
   }, [pendingName, currentTitle]);
+
+  const currentDetail = displayDetail(device);
+  useEffect(() => {
+    if (pendingDetail !== null && currentDetail === pendingDetail) setPendingDetail(null);
+  }, [pendingDetail, currentDetail]);
 
   const liveType = typeKeyForFormFactor(device.formFactor, device.flow);
   useEffect(() => {
@@ -37,13 +43,14 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
   // Failed saves surface in the error banner; do not show stale optimistic
   // values forever on top of that.
   useEffect(() => {
-    if (pendingName === null && pendingType === null) return;
+    if (pendingName === null && pendingType === null && pendingDetail === null) return;
     const timer = setTimeout(() => {
       setPendingName(null);
+      setPendingDetail(null);
       setPendingType(null);
     }, 8000);
     return () => clearTimeout(timer);
-  }, [pendingName, pendingType]);
+  }, [pendingName, pendingType, pendingDetail]);
 
   const startEdit = (): void => {
     // Prefill with the current parts so an unchanged save is obvious.
@@ -59,16 +66,16 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
       // Renaming is global by design; the main process also drops any local
       // alias so the app shows exactly what Windows shows. An empty suffix
       // keeps the current one (Windows cannot render without it).
-      if (trimmed !== currentTitle || (suffix !== "" && suffix !== displayDetail(device))) {
-        setPendingName(trimmed);
-      }
+      if (trimmed !== currentTitle) setPendingName(trimmed);
+      if (suffix !== "" && suffix !== currentDetail) setPendingDetail(suffix);
       void actions.renameDevice(device.id, trimmed, suffix === "" ? undefined : suffix);
     }
     setEditing(false);
   };
 
-  const saving = pendingName !== null || pendingType !== null;
+  const saving = pendingName !== null || pendingType !== null || pendingDetail !== null;
   const name = pendingName ?? displayName(device);
+  const detail = pendingDetail ?? currentDetail;
   const currentType = pendingType ?? liveType;
   return (
     <li className={device.isDefault ? "strip is-default" : "strip"}>
@@ -81,9 +88,7 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
       />
       <div className="strip-body">
         <div className="device-name">{name}</div>
-        {displayDetail(device) !== null ? (
-          <div className="device-sub">{displayDetail(device)}</div>
-        ) : null}
+        {detail !== null ? <div className="device-sub">{detail}</div> : null}
         {editing ? (
           <form
             className="rename-form"
