@@ -42,6 +42,17 @@ Caution: `Disable-PnpDevice` on the SWD\MMDEVAPI endpoint device does NOT remove
 from the audio engine (verified: endpoint stayed ACTIVE). Endpoint enable/disable must go
 through SetEndpointVisibility. The MMDevices registry keys are not writable even elevated.
 
+## Global endpoint rename (proven live 2026-07-27)
+
+`IMMDevice.OpenPropertyStore(STGM_READWRITE = 2)` succeeds WITHOUT elevation (audiosrv
+mediates the write; direct registry writes to the same keys fail even elevated). Write
+PKEY_Device_DeviceDesc (fmtid `a45c254e-df1c-4efd-8020-67d146a850e0`, pid 2) as VT_LPWSTR
+(31) via IPropertyStore::SetValue (method 4 after GetCount/GetAt/GetValue, absolute slot 6)
+then Commit (slot 7). Windows recomposes the full picker name as "desc (interface)"
+immediately; this is the same write the classic Sound control panel rename performs.
+PROPVARIANT must be marshalled as 24 bytes on x64 (vt at 0, data union at 8); a 16-byte
+struct crashes on the SetValue path.
+
 ## HeadsetControl
 
 `vendor/headsetcontrol.exe -o json` (v4.0.0): `devices[].battery.status` is

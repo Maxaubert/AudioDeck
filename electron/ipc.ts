@@ -123,6 +123,12 @@ export function registerIpc(deps: IpcDeps): void {
     await deps.saveConfig({ ...config, aliases });
   });
 
+  ipcMain.handle(IPC.renameDevice, async (_e, id: string, name: string) => {
+    if (typeof id !== "string" || typeof name !== "string" || name.trim() === "") return;
+    await audioctl.rename(id, name.trim());
+    await poller.refreshNow();
+  });
+
   ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
     deps.setPaused(paused);
   });

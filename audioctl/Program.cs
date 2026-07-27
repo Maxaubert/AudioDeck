@@ -13,7 +13,8 @@ internal static class Program
         "  set-default <id>         make endpoint the default for all roles\n" +
         "  set-volume <id> <0-100>  set endpoint master volume\n" +
         "  mute <id> | unmute <id>  set endpoint mute state\n" +
-        "  enable <id> | disable <id>  set endpoint visibility";
+        "  enable <id> | disable <id>  set endpoint visibility\n" +
+        "  rename <id> <name>       rename endpoint system-wide";
 
     private static int Main(string[] args)
     {
@@ -29,6 +30,7 @@ internal static class Program
                 ["unmute", var id] => VolumeCommand.RunSetMute(id, mute: false),
                 ["enable", var id] => VisibilityCommand.Run(id, visible: true),
                 ["disable", var id] => VisibilityCommand.Run(id, visible: false),
+                ["rename", var id, var name] => RenameCommand.Run(id, name),
                 _ => JsonOut.Error(Usage),
             };
         }

@@ -44,6 +44,8 @@ export interface AudioDeckApi {
   setMute(id: string, mute: boolean): Promise<void>;
   setEndpointEnabled(id: string, enabled: boolean): Promise<void>;
   setAlias(id: string, alias: string | null): Promise<void>;
+  /** Rename the endpoint in Windows itself (audio picker, Settings, all apps). */
+  renameDevice(id: string, name: string): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;
@@ -60,6 +62,7 @@ export const IPC = {
   setMute: "audiodeck:set-mute",
   setEndpointEnabled: "audiodeck:set-endpoint-enabled",
   setAlias: "audiodeck:set-alias",
+  renameDevice: "audiodeck:rename-device",
   setPaused: "audiodeck:set-paused",
   setAutostart: "audiodeck:set-autostart",
   setPollInterval: "audiodeck:set-poll-interval",

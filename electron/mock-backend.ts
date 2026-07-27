@@ -125,6 +125,13 @@ export class MockAudioctl implements AudioControl {
     e.mute = null;
   }
 
+  async rename(id: string, name: string): Promise<void> {
+    // Mirrors Windows: the description is renamed, the interface part sticks.
+    const e = this.get(id);
+    const suffix = /\(([^)]*)\)\s*$/.exec(e.name);
+    e.name = suffix === null ? name : `${name} (${suffix[1]})`;
+  }
+
   private get(id: string): Endpoint {
     const endpoint = this.endpoints.find((e) => e.id === id);
     if (endpoint === undefined) throw new Error(`mock backend: unknown endpoint ${id}`);

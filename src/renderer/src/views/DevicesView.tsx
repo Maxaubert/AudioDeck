@@ -9,13 +9,23 @@ import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.
 function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeckApi }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [renameInWindows, setRenameInWindows] = useState(false);
 
   const startEdit = (): void => {
     setDraft(device.alias ?? "");
+    setRenameInWindows(false);
     setEditing(true);
   };
   const save = (): void => {
-    void actions.setAlias(device.id, draft.trim() === "" ? null : draft.trim());
+    const trimmed = draft.trim();
+    if (renameInWindows && trimmed !== "") {
+      // Windows keeps the "(interface)" part and shows "trimmed (interface)"
+      // everywhere; no AudioDeck alias needed on top of that.
+      void actions.renameDevice(device.id, trimmed);
+      void actions.setAlias(device.id, null);
+    } else {
+      void actions.setAlias(device.id, trimmed === "" ? null : trimmed);
+    }
     setEditing(false);
   };
 
@@ -41,6 +51,14 @@ function DeviceRow({ device, actions }: { device: DeviceView; actions: AudioDeck
               aria-label={`New name for ${device.name}`}
               onChange={(e) => setDraft(e.target.value)}
             />
+            <label className="rename-scope">
+              <input
+                type="checkbox"
+                checked={renameInWindows}
+                onChange={(e) => setRenameInWindows(e.target.checked)}
+              />
+              Also rename in Windows (shows everywhere, keeps the part in parentheses)
+            </label>
             <button type="submit" className="btn btn-accent">
               Save name
             </button>
@@ -100,8 +118,9 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
         Devices
       </h2>
       <p className="view-hint">
-        Every endpoint Windows knows about, including disabled ones. Renames only change how
-        AudioDeck shows the device.
+        Every endpoint Windows knows about, including disabled ones. Renames change how
+        AudioDeck shows the device; tick the checkbox while renaming to change the name in
+        Windows itself.
       </p>
       <h3 className="section-label">Outputs</h3>
       <ul className="strip-list">

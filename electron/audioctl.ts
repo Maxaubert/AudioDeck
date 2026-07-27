@@ -33,6 +33,8 @@ export interface AudioControl {
   unmute(id: string): Promise<void>;
   enable(id: string): Promise<void>;
   disable(id: string): Promise<void>;
+  /** Rename the endpoint system-wide (PKEY_Device_DeviceDesc). */
+  rename(id: string, name: string): Promise<void>;
 }
 
 export class AudioctlError extends Error {
@@ -114,6 +116,10 @@ export class Audioctl implements AudioControl {
 
   async disable(id: string): Promise<void> {
     await this.run(["disable", id]);
+  }
+
+  async rename(id: string, name: string): Promise<void> {
+    await this.run(["rename", id, name]);
   }
 
   /**

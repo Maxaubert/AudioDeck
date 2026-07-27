@@ -594,3 +594,18 @@ input[type="range"].fader::-webkit-slider-thumb {
 .btn-remove:hover {
   color: #ff9d9d;
 }
+
+.rename-scope {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: var(--ink-muted);
+  width: 100%;
+}
+
+.rename-scope input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--line-strong);
+}

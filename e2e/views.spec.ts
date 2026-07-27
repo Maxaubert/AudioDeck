@@ -81,3 +81,20 @@ test("Devices view lists every endpoint including the disabled one", async () =>
   const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
   await expect(tv.getByRole("button", { name: "Make default", exact: true })).toBeVisible();
 });
+
+test("renaming with the Windows checkbox changes the device name globally", async () => {
+  const { page } = ctx;
+  await page.getByRole("button", { name: "Devices", exact: true }).click();
+
+  const tv = page.getByRole("listitem").filter({ hasText: "LG TV" });
+  await tv.getByRole("button", { name: "Rename", exact: true }).click();
+  await tv.getByLabel(/New name for/).fill("Stue TV");
+  await tv.getByRole("checkbox").check();
+  await tv.getByRole("button", { name: "Save name", exact: true }).click();
+
+  // The mock backend renames the description and keeps the interface suffix,
+  // mirroring what Windows does; the new name flows back through the poller.
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "Stue TV (NVIDIA High Definition Audio)" }),
+  ).toBeVisible();
+});

@@ -7,6 +7,7 @@ internal readonly unsafe struct Device : IDisposable
 {
     private const int ClsCtxInproc = 1; // "clsCtx 1 (INPROC) works" per the reference notes
     private const int StgmRead = 0;
+    private const int StgmReadWrite = 2;
 
     private readonly IntPtr _ptr;
 
@@ -30,10 +31,16 @@ internal readonly unsafe struct Device : IDisposable
     }
 
     // Slot 4: OpenPropertyStore(int access, out IPropertyStore), access 0 = STGM_READ
-    public PropertyStore OpenPropertyStore()
+    public PropertyStore OpenPropertyStore() => OpenPropertyStore(StgmRead);
+
+    // STGM_READWRITE succeeds without elevation; the audio service mediates the
+    // write (proven live 2026-07-27, see docs/reference/com-interop-notes.md).
+    public PropertyStore OpenPropertyStoreWritable() => OpenPropertyStore(StgmReadWrite);
+
+    private PropertyStore OpenPropertyStore(int access)
     {
         IntPtr storePtr;
-        int hr = ((delegate* unmanaged<IntPtr, int, IntPtr*, int>)ComRuntime.Slot(_ptr, 4))(_ptr, StgmRead, &storePtr);
+        int hr = ((delegate* unmanaged<IntPtr, int, IntPtr*, int>)ComRuntime.Slot(_ptr, 4))(_ptr, access, &storePtr);
         ComRuntime.Check(hr, "IMMDevice.OpenPropertyStore");
         return new PropertyStore(storePtr);
     }
