@@ -12,6 +12,7 @@ import {
 import { displayDetail, displayName, splitDeviceName } from "../useAppState.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
+import { SectionLabel } from "../components/SectionLabel.js";
 
 function DeviceRow({
   device,
@@ -86,6 +87,7 @@ function DeviceRow({
   const currentType = pendingType ?? liveType;
   const rowClasses = [
     "strip",
+    "device-strip",
     device.isDefault ? "is-default" : "",
     device.isDefault && manualOverride ? "is-manual" : "",
   ]
@@ -209,7 +211,7 @@ function DeviceSection({
   const shown = showGhosts ? [...real, ...ghosts] : real;
   return (
     <>
-      <h3 className="section-label">{title}</h3>
+      <SectionLabel title={title} note={`${real.length} shown`} />
       <ul className="strip-list">
         {shown.map((d) => (
           <DeviceRow key={d.id} device={d} manualOverride={manualOverride} actions={actions} />
@@ -239,12 +241,7 @@ export function DevicesView({ state, actions }: { state: AppState; actions: Audi
         Devices
       </h2>
       <p className="view-hint">
-        Renaming a device changes its name in Windows itself, including the text in
-        parentheses (Windows insists on the parentheses, but both texts are yours). The type
-        dropdown changes the device icon system-wide; note the modern Windows picker only
-        draws two of them, headphones for Headphones/Headset and a speaker for everything
-        else, while the full set shows here and in the classic control panel. Devices
-        Windows only remembers from the past sit behind the toggle below each list.
+        Renaming applies to Windows itself. The type dropdown sets the device icon.
       </p>
       <DeviceSection
         title="Outputs"

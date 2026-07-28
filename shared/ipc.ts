@@ -33,6 +33,8 @@ export interface AppState {
   paused: boolean;
   autostart: boolean;
   pollIntervalMs: number;
+  /** Shown on the Settings page. */
+  appVersion: string;
 }
 
 /** The surface preload exposes as `window.audiodeck`. */

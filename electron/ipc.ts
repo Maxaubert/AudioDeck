@@ -1,7 +1,7 @@
 // ipcMain handlers backing the AudioDeckApi contract. Maps renderer requests
 // onto the daemon's services; owns no state of its own.
 
-import { ipcMain } from "electron";
+import { app, ipcMain } from "electron";
 import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
 import { restartShellHost } from "./reapply.js";
@@ -50,6 +50,7 @@ export function registerIpc(deps: IpcDeps): void {
       paused: poller.isPaused(),
       autostart: config.autostart,
       pollIntervalMs: config.pollIntervalMs,
+      appVersion: app.getVersion(),
     };
   });
 

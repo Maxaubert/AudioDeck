@@ -9,6 +9,7 @@ import { displayDetail, displayName } from "../useAppState.js";
 import { AvailabilityBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
+import { SectionLabel } from "../components/SectionLabel.js";
 
 function MixerStrip({
   device,
@@ -117,10 +118,8 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
       <h2 className="view-title" id="mixer-title">
         Mixer
       </h2>
-      <p className="view-hint">
-        Volume and mute for the devices in your priority lists, in priority order.
-      </p>
-      <h3 className="section-label">Outputs</h3>
+      <p className="view-hint">Volume and mute for your ranked devices.</p>
+      <SectionLabel title="Outputs" note={`${outputs.length} ranked`} />
       {outputs.length === 0 ? (
         <p className="empty-note">No ranked outputs yet.</p>
       ) : (
@@ -135,7 +134,7 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
           ))}
         </ul>
       )}
-      <h3 className="section-label">Microphones</h3>
+      <SectionLabel title="Microphones" note={`${mics.length} ranked`} />
       {mics.length === 0 ? (
         <p className="empty-note">No ranked microphones yet.</p>
       ) : (

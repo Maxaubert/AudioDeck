@@ -131,3 +131,31 @@ test("renaming changes the device name globally", async () => {
   await expect(renamed).toBeVisible();
   await expect(renamed.getByText("Stua", { exact: true })).toBeVisible();
 });
+
+test("Settings tab exposes the working controls and hides the old footer", async () => {
+  const { page } = ctx;
+
+  // The settings strip that used to sit under every page is gone.
+  await expect(page.locator(".settings-strip")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+
+  // Only controls that actually change behaviour are offered.
+  const pause = page.getByRole("switch", { name: "Pause automation" });
+  const autostart = page.getByRole("switch", { name: "Start with Windows" });
+  await expect(pause).toBeVisible();
+  await expect(autostart).toBeVisible();
+  await expect(page.getByLabel("Check devices every")).toBeVisible();
+
+  // Toggling pause reaches the daemon and comes back in state.
+  await expect(pause).toHaveAttribute("aria-checked", "false");
+  await pause.click();
+  await expect(pause).toHaveAttribute("aria-checked", "true", { timeout: 5000 });
+  await expect(page.locator(".paused-banner")).toBeVisible();
+  await pause.click();
+  await expect(pause).toHaveAttribute("aria-checked", "false", { timeout: 5000 });
+
+  // The device pages are still reachable from here.
+  await page.getByRole("button", { name: "Priority", exact: true }).click();
+  await expect(page.getByRole("list", { name: "Output priority" })).toBeVisible();
+});

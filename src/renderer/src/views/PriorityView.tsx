@@ -7,6 +7,7 @@ import { AddDevicePicker } from "../components/AddDevicePicker.js";
 import { PriorityList } from "../components/PriorityList.js";
 import type { AppState, AudioDeckApi } from "../../../../shared/ipc.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
+import { SectionLabel } from "../components/SectionLabel.js";
 
 function candidatesFor(state: AppState, flow: DeviceView["flow"], ranked: string[]): DeviceView[] {
   const rankedSet = new Set(ranked);
@@ -37,10 +38,9 @@ export function PriorityView({ state, actions }: { state: AppState; actions: Aud
         Priority
       </h2>
       <p className="view-hint">
-        Drag or use the arrows to reorder. The highest device that is available becomes the
-        Windows default automatically.
+        Click a row to switch to it now. Drag or use the arrows to reorder.
       </p>
-      <h3 className="section-label">Outputs</h3>
+      <SectionLabel title="Outputs" note={`${state.outputPriority.length} ranked`} />
       <PriorityList
         label="Output priority"
         ids={state.outputPriority}
@@ -55,7 +55,7 @@ export function PriorityView({ state, actions }: { state: AppState; actions: Aud
         candidates={candidatesFor(state, "render", state.outputPriority)}
         onAdd={(id) => void actions.addToPriority("render", id)}
       />
-      <h3 className="section-label">Microphones</h3>
+      <SectionLabel title="Microphones" note={`${state.micPriority.length} ranked`} />
       <PriorityList
         label="Microphone priority"
         ids={state.micPriority}
