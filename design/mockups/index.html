@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AudioDeck punk variations</title>
+<title>AudioDeck palette round</title>
 <style>
   :root {
     --chrome: #16181d;
@@ -131,7 +131,7 @@
 </head>
 <body>
   <header>
-    <div class="brand">Punk<span>Deck</span> variations</div>
+    <div class="brand">Punk<span>Deck</span> palettes</div>
     <div class="picker">
       <button id="prev" type="button" aria-label="Previous variation">&#9664;</button>
       <select id="pick" aria-label="Choose a variation"></select>
@@ -152,8 +152,32 @@
 
 <script>
 const MOCKUPS = [
-  { file: "punk-marker.html", name: "Marker mix (favourite)", by: "claude", kind: "mix",
-    desc: "Hardcore layout and severity with the tear-off palette: cream stock, ink, marker yellow. Settings tab included." },
+  { file: "punk-marker.html", name: "Marker yellow (base)", by: "claude", kind: "palette",
+    desc: "The agreed layout: hardcore structure, tear-off logo, yellow as accent ink on black." },
+  { file: "pal-safety.html", name: "Safety orange", by: "claude", kind: "palette",
+    desc: "Construction orange. Warmer and louder than the yellow, still reads as warning language." },
+  { file: "pal-amber.html", name: "Amber", by: "claude", kind: "palette",
+    desc: "Softer gold. Closest to the yellow but calmer, less high-vis." },
+  { file: "pal-flare.html", name: "Flare red", by: "claude", kind: "palette",
+    desc: "Emergency red. Most aggressive of the set, in-use reads as alarm." },
+  { file: "pal-shock.html", name: "Shock pink", by: "claude", kind: "palette",
+    desc: "Riso pink. Keeps the punk print reference without the hazard connotation." },
+  { file: "pal-violet.html", name: "Violet", by: "claude", kind: "palette",
+    desc: "Cool and unusual for audio tooling; the only non-warm, non-tech option here." },
+  { file: "pal-cyan.html", name: "Electric cyan", by: "claude", kind: "palette",
+    desc: "Cold and technical. Reads more instrument panel than street poster." },
+  { file: "pal-mint.html", name: "Mint", by: "claude", kind: "palette",
+    desc: "Bright green-cyan. Signals live and healthy rather than warning." },
+  { file: "pal-acid.html", name: "Acid green", by: "claude", kind: "palette",
+    desc: "Harsh screen green. The most abrasive option, closest to terminal phosphor." },
+  { file: "pal-bone.html", name: "Bone, no colour", by: "claude", kind: "palette",
+    desc: "Accent removed entirely: pure black and white, states carried by weight alone." },
+  { file: "pal-dark-marker.html", name: "Dark stock, marker", by: "claude", kind: "dark",
+    desc: "Same layout on black paper. Yellow accent, cream ink, inverted rank slabs." },
+  { file: "pal-dark-cyan.html", name: "Dark stock, cyan", by: "claude", kind: "dark",
+    desc: "Dark polarity with the cold accent; the most night-friendly of the set." },
+  { file: "pal-dark-flare.html", name: "Dark stock, flare", by: "claude", kind: "dark",
+    desc: "Dark polarity with emergency red. Heaviest, most severe combination." },
   { file: "punk-hardcore.html", name: "Hardcore monochrome", by: "claude", kind: "major",
     desc: "Black and newsprint only, plus one blood red for the override. Now with a Settings tab." },
   { file: "punk-tight.html", name: "Tight cleanup", by: "claude", kind: "minor",
