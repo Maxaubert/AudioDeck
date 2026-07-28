@@ -6,7 +6,16 @@ import path from "node:path";
 const dir = "C:/Users/Admin/Documents/Claude/Github/AudioDeck/design/mockups";
 
 const ENTRIES = [
-  ["tw-folder.html", "Shipped base (folder tabs)", "claude", "base", "The title bar currently in the real app: folder tabs, amber active plate, brand divider."],
+  ["wc-merged.html", "One strip (no extra row)", "claude", "window", "Window controls at the far right of the tab bar, split by an amber rule. Costs no vertical space."],
+  ["wc-slimtop.html", "Slim caption above", "claude", "window", "A 34px caption strip over the tabs: small wordmark left, controls right, hairline amber between."],
+  ["wc-statusbar.html", "Caption with live status", "claude", "window", "The strip earns its height: AUTO ON plus the current output device beside the controls."],
+  ["wc-bigkeys.html", "Oversized keys", "claude", "window", "Blunt 56px square keys flush to the window edge, with a knurled grip marking the drag zone."],
+  ["wc-plate.html", "Engraved nameplate", "claude", "window", "Centred riveted plate with the wordmark; controls sunk into a machined pocket at the right."],
+  ["wc-leftlights.html", "Left cluster", "claude", "window", "Controls move to the left as three punk squares, colour coded on hover only."],
+  ["wc-stencil.html", "Stencil controls", "claude", "window", "Stencil-cut glyphs with bridges and overspray; hover fills solid, close fills red."],
+  ["wc-ticket.html", "Perforated caption", "claude", "window", "Ticket edge with a dashed tear line and the controls boxed in their own stub."],
+  ["wc-tape.html", "Label tape caption", "claude", "window", "Embossed tape with the name punched in; controls as punched cells in the same language."],
+  ["wc-marquee.html", "Marquee caption", "claude", "window", "Bulb-edged strip with the controls in their own small bulb-framed plate."],
 
   ["tb-faceplate.html", "Hardware faceplate", "claude", "titlebar", "Rack panel: corner screws, engraved brand plate, amber status LED, machined tab buttons."],
   ["tb-vu.html", "Live VU strip", "claude", "titlebar", "Segmented L/R meters animate in the spare space with a scale and a peak readout."],
