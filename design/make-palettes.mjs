@@ -54,8 +54,8 @@ body{background:#000;background-image:repeating-linear-gradient(45deg,rgba(255,2
 .wordmark{color:var(--ink)}
 .tab{color:var(--ink)}
 .tab:hover::after{background:var(--ink)}
-.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
-.tab[aria-selected="true"]::after{background:var(--paper)}
+.tab[aria-selected="true"]{background:var(--marker);color:#000}
+.tab[aria-selected="true"]::after{background:#000}
 main{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 1px,transparent 1px 4px)}
 .blockhead h2{background:var(--ink);color:var(--paper)}
 .blockhead .bar{background:var(--ink)}
