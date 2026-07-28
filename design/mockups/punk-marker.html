@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AudioDeck - punk-hardcore</title>
+<title>AudioDeck - punk-marker</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#000000;
-  --paper:#F2F0EA;
-  --sheet:#FFFFFF;
-  --dead:#E3E0D8;
-  --dead-ink:#46463F;
+  --ink:#171715;
+  --paper:#EEE8D2;
+  --sheet:#F8F3DF;
+  --dead:#D8D1B9;
+  --dead-ink:#5A574C;
+  --marker:#F2E51B;
+  --pole:#343531;
   --red:#B3000C;
   --rule:6px;
   --display:"Anton","Arial Narrow",Impact,sans-serif;
@@ -22,8 +24,8 @@ html,body{height:100%}
 body{
   margin:0;
   min-width:1000px;
-  background:#000;
-  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 2px,transparent 2px 9px);
+  background:var(--pole);
+  background-image:repeating-linear-gradient(45deg,rgba(255,253,242,.055) 0 2px,transparent 2px 9px);
   color:var(--ink);
   font:600 17px/1.4 var(--ui);
   -webkit-font-smoothing:antialiased;
@@ -37,16 +39,16 @@ button,select,input[type=range]{cursor:pointer}
   width:min(1240px,calc(100% - 40px));
   margin:24px auto;
   background:var(--paper);
-  border:var(--rule) solid #000;
+  border:var(--rule) solid var(--ink);
 }
 
 /* ---------- compact header ---------- */
 .appbar{
   --fg:var(--paper);--bg:#000;
-  background:#000;color:var(--paper);
+  background:var(--ink);color:var(--paper);
   display:flex;align-items:stretch;gap:28px;
   padding:0 20px 0 0;
-  border-bottom:var(--rule) solid #000;
+  border-bottom:var(--rule) solid var(--ink);
 }
 .brand{display:flex;align-items:center;gap:12px;padding:12px 26px 12px 20px;border-right:var(--rule) solid var(--paper)}
 .spine{display:flex;align-items:flex-end;gap:5px;height:46px}
@@ -67,8 +69,8 @@ button,select,input[type=range]{cursor:pointer}
 }
 .tab::after{content:"";position:absolute;left:14px;right:14px;bottom:10px;height:var(--rule);background:transparent}
 .tab:hover::after{background:var(--paper)}
-.tab[aria-selected="true"]{background:var(--paper);color:#000}
-.tab[aria-selected="true"]::after{background:#000}
+.tab[aria-selected="true"]{background:var(--marker);color:var(--ink)}
+.tab[aria-selected="true"]::after{background:var(--ink)}
 
 .status{margin-left:auto;display:flex;align-items:center;gap:18px;font:800 14px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--paper)}
 .status .dot{display:inline-block;width:13px;height:13px;background:var(--paper);margin-right:8px;vertical-align:-1px}
@@ -86,25 +88,25 @@ main{
 
 .blockhead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .blockhead h2{
-  margin:0;background:#000;color:var(--paper);
+  margin:0;background:var(--ink);color:var(--paper);
   font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.1em;
   padding:9px 18px 11px;text-transform:uppercase;
 }
-.blockhead .bar{flex:1;height:var(--rule);background:#000}
+.blockhead .bar{flex:1;height:var(--rule);background:var(--ink)}
 .blockhead .count{font:800 14px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase}
 
 /* ---------- device rows ---------- */
-.rows{border-top:var(--rule) solid #000;border-left:var(--rule) solid #000;border-right:var(--rule) solid #000}
+.rows{border-top:var(--rule) solid var(--ink);border-left:var(--rule) solid var(--ink);border-right:var(--rule) solid var(--ink)}
 .row{
   --bg:var(--sheet);--fg:#000;
   background:var(--bg);color:var(--fg);
-  border-bottom:var(--rule) solid #000;
+  border-bottom:var(--rule) solid var(--ink);
   display:grid;align-items:center;min-height:88px;
   grid-template-columns:92px 62px minmax(240px,1fr) auto;
   transition:transform .09s linear;
 }
-.row.inuse{--bg:#000;--fg:var(--paper)}
-.row.manual{--bg:var(--red);--fg:#FFFFFF}
+.row.inuse{--bg:var(--marker);--fg:var(--ink)}
+.row.manual{--bg:var(--ink);--fg:var(--marker)}
 .row.offline{--bg:var(--dead);--fg:var(--dead-ink);
   background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.10) 0 3px,transparent 3px 11px)}
 .row:not(.offline):hover{transform:translateX(7px)}
@@ -145,18 +147,18 @@ main{
   font:800 16px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;
   transition:background .1s linear,color .1s linear;
 }
-.add:hover{background:#000;color:var(--paper)}
+.add:hover{background:var(--ink);color:var(--paper)}
 .add:active{transform:translateY(2px)}
 
 /* ---------- legend ---------- */
 .legend{
   display:flex;align-items:center;gap:26px;flex-wrap:wrap;
-  border-top:var(--rule) solid #000;padding-top:14px;
+  border-top:var(--rule) solid var(--ink);padding-top:14px;
   font:800 13px/1 var(--ui);letter-spacing:.13em;text-transform:uppercase;
 }
 .legend span{display:flex;align-items:center;gap:9px}
-.legend i{width:20px;height:20px;background:#000;display:block}
-.legend i.man{background:var(--red)}
+.legend i{width:20px;height:20px;background:var(--marker);border:2px solid var(--ink);display:block}
+.legend i.man{background:var(--ink)}
 .legend .hint{margin-left:auto;font:700 14px/1 var(--ui);letter-spacing:.02em;text-transform:none;color:#26261F}
 
 /* ---------- mixer ---------- */
@@ -181,14 +183,14 @@ main{
   border:3px solid var(--fg);background:transparent;color:var(--fg);
   font:800 15px/1 var(--ui);letter-spacing:.04em;padding:0 34px 0 12px;
 }
-.sel select option{background:#fff;color:#000}
+.sel select option{background:#fff;color:var(--ink)}
 .sel::after{content:"";position:absolute;right:13px;top:19px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--fg);pointer-events:none}
 .sel select:hover{background:var(--fg);color:var(--bg)}
 .row.man .txt{justify-self:start;margin-right:14px}
 
 .remembered{
   display:flex;align-items:center;justify-content:space-between;gap:20px;
-  border:var(--rule) solid #000;padding:14px 18px;margin-bottom:26px;
+  border:var(--rule) solid var(--ink);padding:14px 18px;margin-bottom:26px;
   font:800 16px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
 }
 
@@ -208,7 +210,7 @@ main{
 #settings .blockhead{margin-top:34px}
 #settings .blockhead:first-child{margin-top:0}
 .setlist{
-  border:var(--rule) solid #000;
+  border:var(--rule) solid var(--ink);
   margin-bottom:6px;
 }
 .setrow{
@@ -217,7 +219,7 @@ main{
   display:flex;align-items:center;justify-content:space-between;gap:26px;
   padding:20px 24px;min-height:86px;
 }
-.setrow+.setrow{border-top:var(--rule) solid #000}
+.setrow+.setrow{border-top:var(--rule) solid var(--ink)}
 label.setrow{cursor:pointer}
 .setrow:hover{background:#fff}
 .setlabel{display:flex;flex-direction:column;gap:6px;max-width:66ch}
@@ -229,16 +231,16 @@ label.setrow{cursor:pointer}
 }
 .setrow select{
   -webkit-appearance:none;appearance:none;flex:none;
-  border:var(--rule) solid #000;background:var(--paper);color:#000;
+  border:var(--rule) solid var(--ink);background:var(--paper);color:#000;
   font:800 16px/1 var(--ui);letter-spacing:.06em;height:52px;padding:0 18px;
   text-transform:uppercase;cursor:pointer;
 }
-.setrow select option{background:#fff;color:#000}
-.setrow select:hover{background:#000;color:var(--paper)}
+.setrow select option{background:#fff;color:var(--ink)}
+.setrow select:hover{background:var(--ink);color:var(--paper)}
 .about{
   display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   margin-top:30px;padding:18px 24px;
-  background:#000;color:var(--paper);
+  background:var(--ink);color:var(--paper);
   font:800 13px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;
 }
 .about-d{width:3px;height:16px;background:var(--paper)}
@@ -246,7 +248,7 @@ label.setrow{cursor:pointer}
 /* ---------- toast ---------- */
 .toast{
   position:fixed;right:26px;bottom:26px;z-index:50;
-  background:#000;color:var(--paper);border:4px solid var(--paper);
+  background:var(--ink);color:var(--paper);border:4px solid var(--paper);
   padding:16px 22px;font:800 15px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
   visibility:hidden;opacity:0;transform:translateY(24px);
   transition:transform .14s cubic-bezier(0.23,1,0.32,1),opacity .14s linear,visibility 0s linear .14s;
