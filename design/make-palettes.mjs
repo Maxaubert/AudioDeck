@@ -48,7 +48,7 @@ const DARK_OVERRIDE = `
 body{background:#000;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 2px,transparent 2px 9px)}
 .shell{border-color:var(--ink)}
 .appbar{background:#000;border-bottom-color:var(--marker)}
-.brand{border-right-color:var(--ink)}
+.brand{border-right-color:var(--marker)}
 .mark{border-color:var(--ink)}
 .mark i{background:var(--ink)}
 .wordmark{color:var(--ink)}
