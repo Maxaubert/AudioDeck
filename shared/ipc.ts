@@ -60,6 +60,15 @@ export interface AudioDeckApi {
   setPaused(paused: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;
+  /** Frameless window caption controls. */
+  windowMinimize(): Promise<void>;
+  /** Toggles maximize/restore; resolves with the new maximized state. */
+  windowToggleMaximize(): Promise<boolean>;
+  windowClose(): Promise<void>;
+  /** Current maximized state, for the caption glyph on first paint. */
+  windowIsMaximized(): Promise<boolean>;
+  /** Subscribe to maximize/unmaximize; returns an unsubscribe function. */
+  onWindowStateChanged(cb: (maximized: boolean) => void): () => void;
 }
 
 /** Channel names, one per AudioDeckApi method. */
@@ -78,4 +87,9 @@ export const IPC = {
   setPaused: "audiodeck:set-paused",
   setAutostart: "audiodeck:set-autostart",
   setPollInterval: "audiodeck:set-poll-interval",
+  windowMinimize: "audiodeck:window-minimize",
+  windowToggleMaximize: "audiodeck:window-toggle-maximize",
+  windowClose: "audiodeck:window-close",
+  windowIsMaximized: "audiodeck:window-is-maximized",
+  windowStateChanged: "audiodeck:window-state-changed",
 } as const;

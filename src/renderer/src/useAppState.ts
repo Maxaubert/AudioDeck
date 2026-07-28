@@ -76,6 +76,11 @@ export function useAppState(): AppStateHook {
       setPaused: wrap((paused) => api.setPaused(paused)),
       setAutostart: wrap((enabled) => api.setAutostart(enabled)),
       setPollInterval: wrap((ms) => api.setPollInterval(ms)),
+      windowMinimize: () => api.windowMinimize(),
+      windowToggleMaximize: () => api.windowToggleMaximize(),
+      windowClose: () => api.windowClose(),
+      windowIsMaximized: () => api.windowIsMaximized(),
+      onWindowStateChanged: (cb) => api.onWindowStateChanged(cb),
     };
   }
 

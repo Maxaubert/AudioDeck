@@ -27,6 +27,15 @@ const api: AudioDeckApi = {
   setPaused: (paused: boolean) => ipcRenderer.invoke(IPC.setPaused, paused),
   setAutostart: (enabled: boolean) => ipcRenderer.invoke(IPC.setAutostart, enabled),
   setPollInterval: (ms: number) => ipcRenderer.invoke(IPC.setPollInterval, ms),
+  windowMinimize: () => ipcRenderer.invoke(IPC.windowMinimize),
+  windowToggleMaximize: () => ipcRenderer.invoke(IPC.windowToggleMaximize),
+  windowClose: () => ipcRenderer.invoke(IPC.windowClose),
+  windowIsMaximized: () => ipcRenderer.invoke(IPC.windowIsMaximized),
+  onWindowStateChanged: (cb: (maximized: boolean) => void) => {
+    const listener = (_e: unknown, maximized: boolean): void => cb(maximized);
+    ipcRenderer.on(IPC.windowStateChanged, listener);
+    return () => ipcRenderer.removeListener(IPC.windowStateChanged, listener);
+  },
 };
 
 contextBridge.exposeInMainWorld("audiodeck", api);

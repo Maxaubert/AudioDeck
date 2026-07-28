@@ -1,7 +1,7 @@
 // ipcMain handlers backing the AudioDeckApi contract. Maps renderer requests
 // onto the daemon's services; owns no state of its own.
 
-import { app, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
 import { restartShellHost } from "./reapply.js";
@@ -189,6 +189,26 @@ export function registerIpc(deps: IpcDeps): void {
     // The flyout caches glyphs the same way it caches names.
     restartShellHost();
   });
+
+  ipcMain.handle(IPC.windowMinimize, (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.minimize();
+  });
+
+  ipcMain.handle(IPC.windowToggleMaximize, (e): boolean => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (win === null) return false;
+    if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
+    return win.isMaximized();
+  });
+
+  ipcMain.handle(IPC.windowClose, (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.close();
+  });
+
+  ipcMain.handle(IPC.windowIsMaximized, (e): boolean =>
+    BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false,
+  );
 
   ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
     deps.setPaused(paused);

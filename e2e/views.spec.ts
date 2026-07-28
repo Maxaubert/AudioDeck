@@ -159,3 +159,28 @@ test("Settings tab exposes the working controls and hides the old footer", async
   await page.getByRole("button", { name: "Priority", exact: true }).click();
   await expect(page.getByRole("list", { name: "Output priority" })).toBeVisible();
 });
+
+test("frameless caption carries working window controls", async () => {
+  const { page } = ctx;
+
+  // The strip exists and is the drag handle; buttons opt out of dragging.
+  const caption = page.locator(".caption");
+  await expect(caption).toBeVisible();
+  await expect(caption).toHaveCSS("-webkit-app-region", "drag");
+  await expect(page.locator(".wc")).toHaveCSS("-webkit-app-region", "no-drag");
+
+  await expect(page.getByRole("button", { name: "Minimize" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
+
+  // Maximize relabels itself to Restore once the window is maximized.
+  const maximize = page.getByRole("button", { name: "Maximize" });
+  await expect(maximize).toBeVisible();
+  await maximize.click();
+  await expect(page.getByRole("button", { name: "Restore" })).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: "Restore" }).click();
+  await expect(page.getByRole("button", { name: "Maximize" })).toBeVisible({ timeout: 5000 });
+
+  // AUDIO carries the stencil bridges, DECK does not.
+  await expect(page.locator(".brand-word .stencil")).toHaveText("Audio");
+  await expect(page.locator(".brand-word .brand-deck")).toHaveText("Deck");
+});

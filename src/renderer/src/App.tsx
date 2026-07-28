@@ -7,6 +7,7 @@ import { PriorityView } from "./views/PriorityView.js";
 import { MixerView } from "./views/MixerView.js";
 import { DevicesView } from "./views/DevicesView.js";
 import { SettingsView } from "./views/SettingsView.js";
+import { WindowCaption } from "./components/WindowCaption.js";
 
 type ViewName = "priority" | "mixer" | "devices" | "settings";
 
@@ -23,13 +24,15 @@ export default function App() {
 
   return (
     <div className="shell" data-loaded={state !== null}>
+      <WindowCaption />
       <header className="topbar">
         <h1 className="brand">
           <span className="brand-mark" aria-hidden="true">
             <i />
           </span>
           <span className="brand-word">
-            Audio<span>Deck</span>
+            <span className="stencil">Audio</span>
+            <span className="brand-deck">Deck</span>
           </span>
         </h1>
         <nav className="tabs" aria-label="Views">
