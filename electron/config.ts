@@ -27,6 +27,11 @@ export interface AudioDeckConfig {
   /** Endpoint IDs the user removed from the priority lists; never auto re-added. */
   excluded: { output: string[]; mic: string[] };
   /**
+   * Endpoints that ignored a volume change. Remembered so the mixer can say
+   * so from the first paint instead of only after the user tries and fails.
+   */
+  volumeLocked: string[];
+  /**
    * User customizations applied to Windows itself, kept so the daemon can
    * re-apply them when a driver re-enumeration resets the endpoint (HDMI
    * displays and virtual devices do this routinely).
@@ -61,6 +66,7 @@ export function defaultConfig(): AudioDeckConfig {
     hiddenDevices: [],
     aliases: {},
     excluded: { output: [], mic: [] },
+    volumeLocked: [],
     customizations: {},
   };
 }
@@ -156,6 +162,7 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
       output: stringArray(partial.excluded?.output) ?? base.excluded.output,
       mic: stringArray(partial.excluded?.mic) ?? base.excluded.mic,
     },
+    volumeLocked: stringArray(partial.volumeLocked) ?? base.volumeLocked,
     customizations: customizationRecord(partial.customizations) ?? base.customizations,
   };
 }

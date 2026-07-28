@@ -73,18 +73,40 @@ function MixerStrip({
 
   const muted = device.mute === true;
   const offline = device.state !== "active";
+  // The row doubles as a switch, like the Priority list. Clicks on the fader
+  // or the mute button are controls, not a request to change device.
+  const clickable = device.available && !device.isDefault;
+  const isControl = (target: EventTarget | null): boolean =>
+    (target as HTMLElement | null)?.closest("button, input, .vol") !== null;
+  const switchToThis = (): void => void actions.setDefault(device.id);
   const classes = [
     "strip",
     "mixer-strip",
     offline ? "is-offline" : "",
     device.isDefault ? "is-default" : "",
     device.isDefault && manualOverride ? "is-manual" : "",
+    clickable ? "is-clickable" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <li className={classes}>
+    <li
+      className={classes}
+      title={clickable ? "Click to switch audio here now" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={(e) => {
+        if (!clickable || isControl(e.target)) return;
+        switchToThis();
+      }}
+      onKeyDown={(e) => {
+        if (!clickable || isControl(e.target)) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          switchToThis();
+        }
+      }}
+    >
       <span className="rank">{rank}</span>
       <DeviceGlyph formFactor={device.formFactor} />
       <div className="strip-body">

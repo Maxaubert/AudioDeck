@@ -26,10 +26,9 @@ export interface IpcDeps {
  * Endpoints that ignored a volume write this session. Some devices own their
  * level in hardware, so the fader would otherwise look broken.
  */
-const volumeLocked = new Set<string>();
-
 export function registerIpc(deps: IpcDeps): void {
   const { audioctl, poller } = deps;
+  const volumeLocked = new Set<string>(deps.getConfig().volumeLocked);
 
   ipcMain.handle(IPC.getState, async (): Promise<AppState> => {
     const snapshot = poller.snapshot() ?? (await freshSnapshot(audioctl));
@@ -116,11 +115,13 @@ export function registerIpc(deps: IpcDeps): void {
     // Read back: hardware that owns its own level accepts the call and then
     // reverts. Tolerate a point of rounding either way.
     const actual = poller.snapshot()?.endpoints.find((e) => e.id === id)?.volume ?? null;
-    if (actual !== null && Math.abs(actual - wanted) > 1) {
-      if (!volumeLocked.has(id)) console.log(`[ipc] ${id} ignored a volume change, marking it locked`);
-      volumeLocked.add(id);
-    } else {
-      volumeLocked.delete(id);
+    const ignored = actual !== null && Math.abs(actual - wanted) > 1;
+    const before = volumeLocked.has(id);
+    if (ignored) volumeLocked.add(id);
+    else volumeLocked.delete(id);
+    if (ignored !== before) {
+      console.log(`[ipc] ${id} ${ignored ? "ignored a volume change, marking it locked" : "accepts volume again"}`);
+      await deps.saveConfig({ ...deps.getConfig(), volumeLocked: [...volumeLocked] });
     }
   });
 

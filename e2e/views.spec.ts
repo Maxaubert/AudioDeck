@@ -201,3 +201,21 @@ test("a volume change survives leaving the Mixer tab immediately", async () => {
     page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" }),
   ).toHaveValue("70", { timeout: 5000 });
 });
+
+test("clicking a mixer row switches to it, but the fader does not", async () => {
+  const { page } = ctx;
+  await page.getByRole("button", { name: "Mixer", exact: true }).click();
+
+  const lg = page.locator(".mixer-strip").filter({ hasText: "NVIDIA High Definition Audio" });
+  await expect(lg).not.toHaveClass(/is-default/);
+
+  // The name area switches device, and the UI shows it without waiting for Windows.
+  await lg.locator(".strip-body").click();
+  await expect(lg).toHaveClass(/is-default/, { timeout: 2000 });
+
+  // The fader is a control, not a device switch.
+  const arctis = page.locator(".mixer-strip").filter({ hasText: "Arctis Nova Pro Wireless" }).first();
+  await arctis.locator(".vol").click();
+  await page.waitForTimeout(500);
+  await expect(arctis).not.toHaveClass(/is-default/);
+});
