@@ -19,6 +19,9 @@ export function useAppState(): AppStateHook {
   const [state, setState] = useState<AppState | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Switching the Windows default takes a moment. Show the click immediately
+  // and let the daemon catch up, so the UI never feels stuck.
+  const [pendingDefault, setPendingDefault] = useState<string | null>(null);
   const alive = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -66,7 +69,10 @@ export function useAppState(): AppStateHook {
       setPriority: wrap((flow, ids) => api.setPriority(flow, ids)),
       addToPriority: wrap((flow, id) => api.addToPriority(flow, id)),
       removeFromPriority: wrap((flow, id) => api.removeFromPriority(flow, id)),
-      setDefault: wrap((id) => api.setDefault(id)),
+      setDefault: wrap(async (id) => {
+        setPendingDefault(id);
+        await api.setDefault(id);
+      }),
       setVolume: wrap((id, level) => api.setVolume(id, level)),
       setMute: wrap((id, mute) => api.setMute(id, mute)),
       setEndpointEnabled: wrap((id, enabled) => api.setEndpointEnabled(id, enabled)),
@@ -84,7 +90,43 @@ export function useAppState(): AppStateHook {
     };
   }
 
-  return { state, error: actionError ?? pollError, refresh, actions: actionsRef.current };
+  // Clear the optimistic pick once the daemon agrees, or give up after a few
+  // seconds so a failed switch cannot leave the UI lying.
+  const pendingLanded =
+    pendingDefault !== null &&
+    state !== null &&
+    state.devices.some((d) => d.id === pendingDefault && d.isDefault);
+
+  useEffect(() => {
+    if (pendingDefault === null) return;
+    if (pendingLanded) {
+      setPendingDefault(null);
+      return;
+    }
+    const timer = setTimeout(() => setPendingDefault(null), 6000);
+    return () => clearTimeout(timer);
+  }, [pendingDefault, pendingLanded]);
+
+  const view = applyPendingDefault(state, pendingDefault);
+
+  return { state: view, error: actionError ?? pollError, refresh, actions: actionsRef.current };
+}
+
+/**
+ * Move the "in use" marker onto the clicked device straight away. Only the
+ * clicked device's own flow is touched, so choosing an output never disturbs
+ * which microphone is shown as live.
+ */
+function applyPendingDefault(state: AppState | null, pendingId: string | null): AppState | null {
+  if (state === null || pendingId === null) return state;
+  const target = state.devices.find((d) => d.id === pendingId);
+  if (target === undefined || target.isDefault) return state;
+  return {
+    ...state,
+    devices: state.devices.map((d) =>
+      d.flow === target.flow ? { ...d, isDefault: d.id === pendingId } : d,
+    ),
+  };
 }
 
 export { splitDeviceName } from "../../../shared/deviceName.js";

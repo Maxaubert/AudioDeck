@@ -184,3 +184,20 @@ test("frameless caption carries working window controls", async () => {
   await expect(page.locator(".brand-word .stencil")).toHaveText("Audio");
   await expect(page.locator(".brand-word .brand-deck")).toHaveText("Deck");
 });
+
+test("a volume change survives leaving the Mixer tab immediately", async () => {
+  const { page } = ctx;
+  await page.getByRole("button", { name: "Mixer", exact: true }).click();
+
+  const fader = page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" });
+  await fader.fill("70");
+  // Leave well inside the 200ms debounce window.
+  await page.getByRole("button", { name: "Priority", exact: true }).click();
+  await page.waitForTimeout(900);
+
+  // Coming back, the daemon holds the new level rather than the old one.
+  await page.getByRole("button", { name: "Mixer", exact: true }).click();
+  await expect(
+    page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" }),
+  ).toHaveValue("70", { timeout: 5000 });
+});

@@ -19,6 +19,12 @@ export interface DeviceView {
   /** 0-100, null for non-active endpoints. */
   volume: number | null;
   mute: boolean | null;
+  /**
+   * True when the device ignored a volume change we made: some hardware owns
+   * its own level (the Arctis Nova Pro base station pins Windows at 100), so
+   * the mixer says so instead of showing a fader that does nothing.
+   */
+  volumeLocked: boolean;
   available: boolean;
   availabilityReason: AvailabilityReason;
 }

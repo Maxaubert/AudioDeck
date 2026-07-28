@@ -36,6 +36,10 @@ function MixerStrip({
 }) {
   const [local, setLocal] = useState(device.volume ?? 0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Volume the user asked for that has not reached the daemon yet.
+  const pending = useRef<number | null>(null);
+  const commit = useRef<(v: number) => void>(() => {});
+  commit.current = (v: number) => void actions.setVolume(device.id, v);
 
   // Follow daemon updates unless the user is on the fader right now.
   useEffect(() => {
@@ -46,10 +50,26 @@ function MixerStrip({
 
   // Debounced commit while dragging.
   useEffect(() => {
-    if (local === (device.volume ?? 0)) return;
-    const timer = setTimeout(() => void actions.setVolume(device.id, local), 200);
+    if (local === (device.volume ?? 0)) {
+      pending.current = null;
+      return;
+    }
+    pending.current = local;
+    const timer = setTimeout(() => {
+      pending.current = null;
+      commit.current(local);
+    }, 200);
     return () => clearTimeout(timer);
-  }, [local, device.id, device.volume, actions]);
+  }, [local, device.volume]);
+
+  // Leaving the page (or the row disappearing) must not swallow the change the
+  // user just made: flush anything still inside the debounce window.
+  useEffect(
+    () => () => {
+      if (pending.current !== null) commit.current(pending.current);
+    },
+    [],
+  );
 
   const muted = device.mute === true;
   const offline = device.state !== "active";
@@ -76,7 +96,17 @@ function MixerStrip({
           <div className="device-sub">{displayDetail(device)}</div>
         ) : null}
       </div>
-      {offline ? (
+      {device.volumeLocked && !offline ? (
+        <>
+          <div className="vol">
+            <Meter value={local} />
+          </div>
+          <span className="volume-value">{local}%</span>
+          <span className="na na-locked" title="This device sets its own volume, so Windows cannot change it">
+            On device
+          </span>
+        </>
+      ) : offline ? (
         <>
           <div className="na">Unavailable</div>
           <span className="volume-value">--</span>

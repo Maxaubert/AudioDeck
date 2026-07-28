@@ -22,6 +22,12 @@ export interface IpcDeps {
   applyAutostart: (enabled: boolean) => Promise<void>;
 }
 
+/**
+ * Endpoints that ignored a volume write this session. Some devices own their
+ * level in hardware, so the fader would otherwise look broken.
+ */
+const volumeLocked = new Set<string>();
+
 export function registerIpc(deps: IpcDeps): void {
   const { audioctl, poller } = deps;
 
@@ -39,6 +45,7 @@ export function registerIpc(deps: IpcDeps): void {
       formFactor: a.endpoint.formFactor ?? null,
       volume: a.endpoint.volume,
       mute: a.endpoint.mute,
+      volumeLocked: volumeLocked.has(a.endpoint.id),
       available: a.available,
       availabilityReason: a.reason,
     }));
@@ -103,8 +110,18 @@ export function registerIpc(deps: IpcDeps): void {
   });
 
   ipcMain.handle(IPC.setVolume, async (_e, id: string, level: number) => {
-    await audioctl.setVolume(id, Math.round(level));
+    const wanted = Math.round(level);
+    await audioctl.setVolume(id, wanted);
     await poller.refreshNow();
+    // Read back: hardware that owns its own level accepts the call and then
+    // reverts. Tolerate a point of rounding either way.
+    const actual = poller.snapshot()?.endpoints.find((e) => e.id === id)?.volume ?? null;
+    if (actual !== null && Math.abs(actual - wanted) > 1) {
+      if (!volumeLocked.has(id)) console.log(`[ipc] ${id} ignored a volume change, marking it locked`);
+      volumeLocked.add(id);
+    } else {
+      volumeLocked.delete(id);
+    }
   });
 
   ipcMain.handle(IPC.setMute, async (_e, id: string, mute: boolean) => {
