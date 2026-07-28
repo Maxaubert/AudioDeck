@@ -6,7 +6,18 @@ import path from "node:path";
 const dir = "C:/Users/Admin/Documents/Claude/Github/AudioDeck/design/mockups";
 
 const ENTRIES = [
-  ["pal-amber.html", "Amber base (current)", "claude", "base", "The settled theme this round varies: boxed amber nav plate, accent divider, solid add outline, no legend strip."],
+  ["tw-folder.html", "Shipped base (folder tabs)", "claude", "base", "The title bar currently in the real app: folder tabs, amber active plate, brand divider."],
+
+  ["tb-faceplate.html", "Hardware faceplate", "claude", "titlebar", "Rack panel: corner screws, engraved brand plate, amber status LED, machined tab buttons."],
+  ["tb-vu.html", "Live VU strip", "claude", "titlebar", "Segmented L/R meters animate in the spare space with a scale and a peak readout."],
+  ["tb-masthead.html", "Newspaper masthead", "claude", "titlebar", "Broadsheet nameplate with edition dateline and double rules; tabs ride the lower rule."],
+  ["tb-barcode.html", "Product barcode", "claude", "titlebar", "Printed label with barcode and serial, boxed model code, stamped label-plate tabs."],
+  ["tb-marquee.html", "Cinema marquee", "claude", "titlebar", "Bulb-ringed marquee frame with a slow chase; tabs are smaller marquee plates."],
+  ["tb-twotier.html", "Two tier bar", "claude", "titlebar", "Brand and status on top, tab strip in its own band below, split by an amber rule."],
+  ["tb-ticket.html", "Ticket stub", "claude", "titlebar", "Perforated bottom edge, dashed tear lines between sections, rotated AUDIO ONE stub."],
+  ["tb-stencil.html", "Spray stencil", "claude", "titlebar", "Stencil-cut wordmark with letter bridges and overspray; crate-label tabs."],
+  ["tb-slap.html", "Sticker slap", "claude", "titlebar", "Brand and tabs are individually rotated stickers with keylines and peeled corners."],
+  ["tb-console.html", "Console strip", "claude", "titlebar", "Channel-strip controls: level bar, switch graphic and interval readout with micro labels."],
 
   ["tw-slanted.html", "Slanted sticker rows", "claude", "shape", "Rows and nav plates skew alternately so the stack reads as slapped-on stickers; type is counter-skewed to stay square."],
   ["tw-hardshadow.html", "Hard offset shadows", "claude", "shape", "Flat unblurred shadow blocks under the row stack, section plates and add button; the in-use row casts amber."],
@@ -16,7 +27,6 @@ const ENTRIES = [
   ["tw-tagbadge.html", "Angled tag badges", "claude", "detail", "State badges become small rotated price tags with a notched edge; counters match."],
 
   ["tw-tallbar.html", "Tall title bar", "claude", "nav", "Bar height roughly doubles, logomark and wordmark scale up, tabs sit on the baseline, amber build tag added."],
-  ["tw-folder.html", "Folder tabs", "claude", "nav", "Tabs become trapezoid folder shapes; the active one connects into the sheet with no rule cutting beneath it."],
   ["tw-invbar.html", "Inverted title bar", "claude", "nav", "Light plate with dark lettering, amber active tab, amber rule kept. Body untouched."],
   ["tw-compact.html", "Compact density", "claude", "density", "Everything tightened about a fifth: rows, rank slab, nav, type scale. Denser pro-tool feel."],
   ["tw-addbutton.html", "Add affordance restyle", "claude", "detail", "The add control becomes a compact left-aligned amber plate with a boxed plus, instead of a full-width bar."],
