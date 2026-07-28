@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioDeck - punk-hardcore</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#000000;
+  --paper:#F2F0EA;
+  --sheet:#FFFFFF;
+  --dead:#E3E0D8;
+  --dead-ink:#46463F;
+  --red:#B3000C;
+  --rule:6px;
+  --display:"Anton","Arial Narrow",Impact,sans-serif;
+  --ui:"Archivo",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;border-radius:0}
+html,body{height:100%}
+body{
+  margin:0;
+  min-width:1000px;
+  background:#000;
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 2px,transparent 2px 9px);
+  color:var(--ink);
+  font:600 17px/1.4 var(--ui);
+  -webkit-font-smoothing:antialiased;
+}
+button,select,input{font:inherit;color:inherit}
+button,select,input[type=range]{cursor:pointer}
+:focus-visible{outline:4px solid var(--fg,#000);outline-offset:3px;box-shadow:0 0 0 2px var(--bg,#fff)}
+
+/* ---------- window shell ---------- */
+.shell{
+  width:min(1240px,calc(100% - 40px));
+  margin:24px auto;
+  background:var(--paper);
+  border:var(--rule) solid #000;
+}
+
+/* ---------- compact header ---------- */
+.appbar{
+  --fg:var(--paper);--bg:#000;
+  background:#000;color:var(--paper);
+  display:flex;align-items:stretch;gap:28px;
+  padding:0 20px 0 0;
+  border-bottom:var(--rule) solid #000;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:12px 26px 12px 20px;border-right:var(--rule) solid var(--paper)}
+.spine{display:flex;align-items:flex-end;gap:5px;height:46px}
+.spine i{display:block;width:8px;background:var(--paper)}
+.spine i:nth-child(1){height:46px}
+.spine i:nth-child(2){height:46px}
+.spine i:nth-child(3){height:24px}
+.mark{font-family:var(--display);font-size:27px;line-height:.86;letter-spacing:.03em}
+.mark b{display:block;font-weight:400;color:var(--paper)}
+.mark em{display:block;font-style:normal;background:var(--paper);color:#000;padding:0 5px 2px;margin-top:2px}
+
+.tabs{display:flex;align-items:stretch;gap:0}
+.tab{
+  border:0;background:transparent;color:var(--paper);
+  font-family:var(--display);font-size:21px;letter-spacing:.08em;text-transform:uppercase;
+  padding:0 26px;position:relative;
+  transition:background .1s linear,color .1s linear;
+}
+.tab::after{content:"";position:absolute;left:14px;right:14px;bottom:10px;height:var(--rule);background:transparent}
+.tab:hover::after{background:var(--paper)}
+.tab[aria-selected="true"]{background:var(--paper);color:#000}
+.tab[aria-selected="true"]::after{background:#000}
+
+.status{margin-left:auto;display:flex;align-items:center;gap:18px;font:800 14px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--paper)}
+.status .dot{display:inline-block;width:13px;height:13px;background:var(--paper);margin-right:8px;vertical-align:-1px}
+.status .div{width:3px;height:22px;background:var(--paper)}
+
+/* ---------- main ---------- */
+main{
+  padding:34px 30px 12px;
+  background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px);
+}
+.page{display:none}
+.page.on{display:block}
+.block{margin-bottom:54px}
+.block:last-child{margin-bottom:30px}
+
+.blockhead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.blockhead h2{
+  margin:0;background:#000;color:var(--paper);
+  font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.1em;
+  padding:9px 18px 11px;text-transform:uppercase;
+}
+.blockhead .bar{flex:1;height:var(--rule);background:#000}
+.blockhead .count{font:800 14px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase}
+
+/* ---------- device rows ---------- */
+.rows{border-top:var(--rule) solid #000;border-left:var(--rule) solid #000;border-right:var(--rule) solid #000}
+.row{
+  --bg:var(--sheet);--fg:#000;
+  background:var(--bg);color:var(--fg);
+  border-bottom:var(--rule) solid #000;
+  display:grid;align-items:center;min-height:88px;
+  grid-template-columns:92px 62px minmax(240px,1fr) auto;
+  transition:transform .09s linear;
+}
+.row.inuse{--bg:#000;--fg:var(--paper)}
+.row.manual{--bg:var(--red);--fg:#FFFFFF}
+.row.offline{--bg:var(--dead);--fg:var(--dead-ink);
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.10) 0 3px,transparent 3px 11px)}
+.row:not(.offline):hover{transform:translateX(7px)}
+
+.rank{
+  align-self:stretch;background:var(--fg);color:var(--bg);
+  display:grid;place-items:center;
+  font-family:var(--display);font-size:42px;line-height:1;padding-bottom:3px;
+}
+.glyph{display:grid;place-items:center}
+.glyph svg{width:35px;height:35px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:square;stroke-linejoin:miter}
+.name{padding:14px 16px 14px 6px;min-width:0}
+.name strong{display:block;font:800 22px/1.15 var(--ui);letter-spacing:.005em}
+.name small{display:block;margin-top:5px;font:700 15px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.badge{
+  display:inline-block;margin-left:12px;vertical-align:3px;
+  background:var(--fg);color:var(--bg);
+  font:800 12px/1 var(--ui);letter-spacing:.14em;padding:6px 8px;
+}
+
+.acts{display:flex;gap:8px;padding:0 18px 0 12px}
+.sq,.txt{
+  border:3px solid var(--fg);background:transparent;color:var(--fg);
+  height:46px;min-width:46px;display:grid;place-items:center;
+  font:800 14px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
+  transition:background .1s linear,color .1s linear;
+}
+.txt{padding:0 14px}
+.sq svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:square}
+.sq:hover,.txt:hover{background:var(--fg);color:var(--bg)}
+.sq:active,.txt:active{transform:translateY(2px)}
+.sq[disabled],.txt[disabled]{opacity:.45;cursor:not-allowed}
+.sq[disabled]:hover,.txt[disabled]:hover{background:transparent;color:var(--fg)}
+
+.add{
+  width:100%;height:66px;margin-top:0;
+  border:5px dashed #000;background:transparent;color:#000;
+  font:800 16px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;
+  transition:background .1s linear,color .1s linear;
+}
+.add:hover{background:#000;color:var(--paper)}
+.add:active{transform:translateY(2px)}
+
+/* ---------- legend ---------- */
+.legend{
+  display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  border-top:var(--rule) solid #000;padding-top:14px;
+  font:800 13px/1 var(--ui);letter-spacing:.13em;text-transform:uppercase;
+}
+.legend span{display:flex;align-items:center;gap:9px}
+.legend i{width:20px;height:20px;background:#000;display:block}
+.legend i.man{background:var(--red)}
+.legend .hint{margin-left:auto;font:700 14px/1 var(--ui);letter-spacing:.02em;text-transform:none;color:#26261F}
+
+/* ---------- mixer ---------- */
+.row.mix{grid-template-columns:92px 62px minmax(210px,1fr) minmax(250px,1.1fr) 92px 116px}
+.vol{position:relative;height:40px;margin:0 20px}
+.segs{display:flex;gap:3px;height:100%}
+.segs span{flex:1;border:3px solid var(--fg);background:transparent}
+.segs span.f{background:var(--fg)}
+.vol input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;-webkit-appearance:none;appearance:none}
+.vol:focus-within{outline:4px solid var(--fg);outline-offset:4px}
+.pct{font-family:var(--display);font-size:28px;text-align:right;padding-right:6px;font-variant-numeric:tabular-nums}
+.na{font:800 14px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;padding-left:20px}
+.mute{margin:0 18px 0 12px;width:80px}
+.mute.on{background:var(--fg);color:var(--bg)}
+
+/* ---------- devices ---------- */
+.row.man{grid-template-columns:62px minmax(230px,1fr) 200px 122px 128px;padding-left:20px;min-height:84px}
+.row.man .name{padding-left:0}
+.sel{position:relative;justify-self:start;width:186px}
+.sel select{
+  -webkit-appearance:none;appearance:none;width:100%;height:46px;
+  border:3px solid var(--fg);background:transparent;color:var(--fg);
+  font:800 15px/1 var(--ui);letter-spacing:.04em;padding:0 34px 0 12px;
+}
+.sel select option{background:#fff;color:#000}
+.sel::after{content:"";position:absolute;right:13px;top:19px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--fg);pointer-events:none}
+.sel select:hover{background:var(--fg);color:var(--bg)}
+.row.man .txt{justify-self:start;margin-right:14px}
+
+.remembered{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  border:var(--rule) solid #000;padding:14px 18px;margin-bottom:26px;
+  font:800 16px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* ---------- switches ---------- */
+.sw{
+  width:70px;height:34px;padding:3px;flex:none;
+  border:3px solid currentColor;background:transparent;
+  display:flex;align-items:center;
+}
+.sw i{display:block;width:22px;height:22px;background:currentColor;transition:transform .1s linear}
+.sw.on{background:currentColor}
+.sw.on i{transform:translateX(36px);background:var(--bg,var(--paper))}
+.swwrap{display:flex;align-items:center;gap:12px}
+.swwrap .state{font:800 13px/1 var(--ui);letter-spacing:.14em;width:26px}
+
+/* ---------- settings strip ---------- */
+.settings{
+  --fg:var(--paper);--bg:#000;
+  background:#000;color:var(--paper);
+  border-top:var(--rule) solid #000;
+  display:grid;grid-template-columns:1fr 1fr 1.15fr;align-items:center;
+}
+.setting{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 24px;min-height:78px;
+  font:800 15px/1.2 var(--ui);letter-spacing:.1em;text-transform:uppercase;
+}
+.setting+.setting{border-left:var(--rule) solid var(--paper)}
+.setting select{
+  -webkit-appearance:none;appearance:none;
+  border:3px solid var(--paper);background:transparent;color:var(--paper);
+  font:800 15px/1 var(--ui);letter-spacing:.06em;height:44px;padding:0 16px;
+}
+.setting select option{background:#000;color:#fff}
+.setting select:hover{background:var(--paper);color:#000}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;right:26px;bottom:26px;z-index:50;
+  background:#000;color:var(--paper);border:4px solid var(--paper);
+  padding:16px 22px;font:800 15px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
+  visibility:hidden;opacity:0;transform:translateY(24px);
+  transition:transform .14s cubic-bezier(0.23,1,0.32,1),opacity .14s linear,visibility 0s linear .14s;
+}
+.toast.show{visibility:visible;opacity:1;transform:translateY(0);transition-delay:0s}
+
+@media (max-width:1120px){
+  .row{grid-template-columns:80px 54px minmax(200px,1fr) auto}
+  .row.mix{grid-template-columns:80px 54px minmax(170px,1fr) minmax(190px,1fr) 80px 104px}
+  .row.man{grid-template-columns:54px minmax(180px,1fr) 170px 110px 118px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.row:hover{transform:none}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="appbar">
+    <div class="brand">
+      <span class="spine" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="mark"><b>AUDIO</b><em>DECK</em></span>
+    </div>
+    <div class="tabs" role="tablist" aria-label="AudioDeck pages">
+      <button class="tab" role="tab" id="tab-priority" aria-controls="priority" aria-selected="true" data-page="priority">Priority</button>
+      <button class="tab" role="tab" id="tab-mixer" aria-controls="mixer" aria-selected="false" data-page="mixer">Mixer</button>
+      <button class="tab" role="tab" id="tab-devices" aria-controls="devices" aria-selected="false" data-page="devices">Devices</button>
+    </div>
+    <div class="status"><span><i class="dot" aria-hidden="true"></i>Automation on</span><span class="div" aria-hidden="true"></span><span>Scan 2s</span></div>
+  </div>
+
+  <main>
+    <section class="page on" id="priority" role="tabpanel" aria-labelledby="tab-priority"></section>
+    <section class="page" id="mixer" role="tabpanel" aria-labelledby="tab-mixer"></section>
+    <section class="page" id="devices" role="tabpanel" aria-labelledby="tab-devices"></section>
+  </main>
+
+  <footer class="settings">
+    <div class="setting"><span>Start with Windows</span>
+      <span class="swwrap"><span class="state" data-state>On</span><button class="sw on" role="switch" aria-checked="true" aria-label="Start with Windows"><i></i></button></span></div>
+    <div class="setting"><span>Pause automation</span>
+      <span class="swwrap"><span class="state" data-state>Off</span><button class="sw" role="switch" aria-checked="false" aria-label="Pause automation"><i></i></button></span></div>
+    <label class="setting"><span>Check devices every</span>
+      <select aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option><option>30 seconds</option></select></label>
+  </footer>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+/* ---- geometry-only glyphs, no curves, no emoji ---- */
+const S = 'fill="currentColor" stroke="none"';
+const GLYPH = {
+  headphones:`<path d="M6 21V12h20v9"/><rect x="3" y="18" width="7" height="11" ${S}/><rect x="22" y="18" width="7" height="11" ${S}/>`,
+  headset:`<path d="M6 15V6h20v9"/><rect x="2" y="12" width="7" height="11" ${S}/><rect x="23" y="12" width="7" height="11" ${S}/><path d="M5 23v6h6"/><rect x="11" y="26" width="6" height="6" ${S}/>`,
+  tv:`<path d="M3 5h26v18H3z"/><rect x="14" y="23" width="4" height="5" ${S}/><rect x="9" y="28" width="14" height="3" ${S}/>`,
+  mic:`<rect x="11" y="2" width="10" height="16" ${S}/><path d="M6 14v4h20v-4"/><path d="M16 18v9"/><rect x="8" y="27" width="16" height="3" ${S}/>`,
+  speaker:`<path d="M5 3h22v27H5z"/><rect x="10" y="7" width="12" height="7" ${S}/><rect x="10" y="18" width="12" height="8" ${S}/>`
+};
+const glyph = k => `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">${GLYPH[k]}</svg></span>`;
+
+const outputs = [
+  {name:'AirPods Pro', sub:'Apple / Headphones', kind:'headphones', state:'offline', badge:'Offline'},
+  {name:'Arctis Nova Pro', sub:'Steelseries / Headset', kind:'headset', state:'inuse', badge:'In use', vol:100},
+  {name:'Quest', sub:'Meta / Headphones', kind:'headphones', vol:62},
+  {name:'NVIDIA High Definition Audio', sub:'LG / TV', kind:'tv', vol:45}
+];
+const mics = [
+  {name:'Arctis Nova Pro Mic', sub:'Steelseries / Microphone', kind:'mic', vol:100},
+  {name:'DJI MIC MINI', sub:'DJI / Wireless microphone', kind:'mic', state:'manual', badge:'Manual override', vol:62}
+];
+
+const move = (dir,label) => `<button class="sq" data-move="${dir}" aria-label="${label}"><svg viewBox="0 0 20 20"><path d="${dir<0?'M4 12l6-6 6 6':'M4 8l6 6 6-6'}"/></svg></button>`;
+const acts = d => `<div class="acts">${move(-1,'Move '+d.name+' up')}${move(1,'Move '+d.name+' down')}<button class="sq" data-remove aria-label="Remove ${d.name} from ranking"><svg viewBox="0 0 20 20"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>`;
+const nameCell = d => `<div class="name"><strong>${d.name}${d.badge?`<span class="badge">${d.badge}</span>`:''}</strong><small>${d.sub}</small></div>`;
+
+const rankRow = (d,i) => `<article class="row ${d.state||''}"><span class="rank">${i+1}</span>${glyph(d.kind)}${nameCell(d)}${acts(d)}</article>`;
+
+const segs = v => `<div class="segs" aria-hidden="true">${Array.from({length:20},(_,n)=>`<span class="${n < Math.round(v/5) ? 'f':''}"></span>`).join('')}</div>`;
+const mixRow = (d,i) => `<article class="row mix ${d.state||''}"><span class="rank">${i+1}</span>${glyph(d.kind)}${nameCell(d)}${
+  d.state==='offline'
+    ? '<div class="na">Unavailable</div><span class="pct">--</span><button class="txt mute" disabled>Mute</button>'
+    : `<div class="vol">${segs(d.vol)}<input type="range" min="0" max="100" step="1" value="${d.vol}" aria-label="Volume for ${d.name}"></div><span class="pct">${d.vol}%</span><button class="txt mute">Mute</button>`
+}</article>`;
+
+const head = (title,count) => `<div class="blockhead"><h2>${title}</h2><span class="bar"></span><span class="count">${count}</span></div>`;
+const list = (title,count,items,fn,add) => `<section class="block">${head(title,count)}<div class="rows">${items.map(fn).join('')}</div>${add?'<button class="add">+ Add a device (2 more)</button>':''}</section>`;
+
+$('#priority').innerHTML =
+  list('Outputs','4 ranked',outputs,rankRow,true) +
+  list('Microphones','2 ranked',mics,rankRow,true) +
+  `<div class="legend"><span><i></i>Automatic, in use</span><span><i class="man"></i>Manual override</span><span class="hint">Highest available device becomes the Windows default.</span></div>`;
+
+$('#mixer').innerHTML =
+  list('Outputs','4 ranked',outputs,mixRow,false) +
+  list('Microphones','2 ranked',mics,mixRow,false);
+
+const types = ['Speakers','Headphones','Headset','TV'];
+const endpoints = [
+  ...outputs.map(d=>({...d,type:d.kind==='tv'?'TV':d.kind==='headset'?'Headset':'Headphones'})),
+  ...mics.map(d=>({...d,type:'Headset'})),
+  {name:'Realtek Digital Output', sub:'Realtek / Disabled endpoint', kind:'speaker', state:'offline', badge:'Disabled', type:'Speakers', off:true}
+];
+$('#devices').innerHTML =
+  `<div class="remembered"><span>Show remembered devices (31)</span><span class="swwrap"><span class="state" data-state>Off</span><button class="sw" role="switch" aria-checked="false" aria-label="Show remembered devices"><i></i></button></span></div>` +
+  `<section class="block">${head('All endpoints','7 found')}<div class="rows">${endpoints.map(d=>`<article class="row man ${d.state==='manual'?'':d.state||''}">${glyph(d.kind)}${nameCell({name:d.name,sub:d.sub,badge:d.off?'Disabled':''})}<span class="sel"><select aria-label="Device type for ${d.name}">${types.map(t=>`<option ${t===d.type?'selected':''}>${t}</option>`).join('')}</select></span><button class="txt" data-rename title="Renames the device in Windows too">Rename</button><button class="txt" data-toggle>${d.off?'Enable':'Disable'}</button></article>`).join('')}</div></section>`;
+
+/* ---- interactions ---- */
+const toast = $('.toast');
+let toastTimer;
+function flash(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toast.classList.remove('show'),1600);
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected', x===t));
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on', p.id===t.dataset.page));
+  });
+});
+
+document.addEventListener('input',e=>{
+  const r = e.target;
+  if(r.type!=='range') return;
+  const row = r.closest('.row');
+  row.querySelector('.pct').textContent = r.value+'%';
+  const filled = Math.round(r.value/5);
+  row.querySelectorAll('.segs span').forEach((s,n)=>s.classList.toggle('f', n<filled));
+});
+
+document.addEventListener('click',e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+
+  if(b.classList.contains('sw')){
+    const on = b.classList.toggle('on');
+    b.setAttribute('aria-checked', on);
+    const label = b.parentElement.querySelector('[data-state]');
+    if(label) label.textContent = on ? 'On' : 'Off';
+    return;
+  }
+  if(b.classList.contains('mute')){
+    const on = b.classList.toggle('on');
+    b.textContent = on ? 'Muted' : 'Mute';
+    return;
+  }
+  if(b.hasAttribute('data-rename')){
+    const el = b.closest('.row').querySelector('strong');
+    const next = prompt('Rename this device in Windows', el.textContent.trim());
+    if(next){ el.textContent = next; flash('Renamed in Windows'); }
+    return;
+  }
+  if(b.hasAttribute('data-toggle')){
+    const enabling = b.textContent === 'Enable';
+    b.textContent = enabling ? 'Disable' : 'Enable';
+    b.closest('.row').classList.toggle('offline', !enabling);
+    flash(enabling ? 'Endpoint enabled' : 'Endpoint disabled');
+    return;
+  }
+  if(b.hasAttribute('data-remove')){
+    flash('Removed from ranking');
+    return;
+  }
+  if(b.hasAttribute('data-move')){
+    const row = b.closest('.row');
+    const dir = +b.dataset.move;
+    const sib = dir < 0 ? row.previousElementSibling : row.nextElementSibling;
+    if(!sib) return;
+    dir < 0 ? row.parentNode.insertBefore(row,sib) : row.parentNode.insertBefore(sib,row);
+    renumber(row.parentNode);
+    return;
+  }
+  if(b.classList.contains('add')) flash('Pick a device to rank');
+});
+
+function renumber(container){
+  container.querySelectorAll(':scope > .row').forEach((r,i)=>{
+    const rank = r.querySelector('.rank');
+    if(rank) rank.textContent = i+1;
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioDeck - punk-tight</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#151515; --ink:#282622; --paper:#f4f0df; --card:#fffdf4;
+  --yellow:#f6e94a; --coral:#f45b46; --aqua:#47cbbb; --pink:#f08bb4;
+  --dead:#d9d5c7; --deadink:#413f39; --hair:#151515;
+  --cond:"Oswald",Impact,"Arial Narrow",sans-serif;
+  --body:"Archivo",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--coral);color:var(--black);
+  font:17px/1.4 var(--body);min-width:900px;
+  padding:22px 0 34px;
+  -webkit-font-smoothing:antialiased;
+}
+body:before{content:"";position:fixed;inset:auto auto 8vh -30px;width:46vw;height:44px;background:var(--yellow);transform:rotate(-4deg);z-index:-1}
+button,select,input{font:inherit;color:inherit}
+button,select,input[type=range]{cursor:pointer}
+:focus-visible{outline:3px solid var(--black);outline-offset:2px}
+.bar :focus-visible,.settings :focus-visible{outline-color:#fff}
+
+/* ---------- window ---------- */
+.app{
+  width:min(1180px,calc(100% - 44px));margin:0 auto;background:var(--paper);
+  border:3px solid var(--black);
+  clip-path:polygon(0 0,99.7% .5%,100% 99.3%,.4% 100%);
+}
+
+/* ---------- title bar ---------- */
+.bar{
+  display:flex;align-items:stretch;gap:0;background:var(--black);color:var(--paper);
+  height:52px;padding-left:12px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding-right:20px}
+.mark{display:flex;gap:3px;height:26px;align-items:flex-end}
+.mark i{display:block;width:7px;height:26px;background:var(--yellow);transform:skew(-13deg)}
+.mark i:nth-child(2){background:var(--coral)}
+.mark i:nth-child(3){background:var(--aqua);height:16px}
+.word{font:700 25px/1 var(--cond);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.word b{font-weight:700;border-bottom:4px solid var(--aqua);padding-bottom:1px}
+
+nav{display:flex;align-items:stretch;gap:2px;margin-left:6px}
+.tab{
+  border:0;background:transparent;color:var(--paper);padding:0 20px;
+  font:600 16px/1 var(--cond);letter-spacing:1.6px;text-transform:uppercase;
+  border-bottom:5px solid transparent;transition:background .1s,color .1s,border-color .1s;
+}
+.tab:hover{background:#2b2b2b;border-bottom-color:var(--yellow)}
+.tab[aria-selected=true]{background:var(--paper);color:var(--black);border-bottom-color:var(--coral)}
+
+.status{
+  margin-left:auto;display:flex;align-items:center;gap:9px;padding:0 14px 0 18px;
+  font:700 14px/1 var(--body);letter-spacing:1.3px;
+  border-left:2px solid #3a3a3a;
+}
+.dot{width:13px;height:13px;background:var(--aqua);flex:none}
+.status.paused .dot{background:var(--coral)}
+.wctl{display:flex;align-items:center;gap:7px;padding:0 14px;background:#0c0c0c}
+.wctl i{display:block;width:13px;height:13px;background:#6d6a63}
+.wctl i:last-child{background:var(--coral)}
+
+/* ---------- pages ---------- */
+main{padding:16px 20px 4px}
+.page{display:none}
+.page.active{display:block}
+
+.blockhead{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.blockhead h2{
+  margin:0;background:var(--yellow);padding:5px 14px 6px;
+  font:700 19px/1 var(--cond);letter-spacing:2.2px;text-transform:uppercase;
+  transform:rotate(-.7deg);
+}
+.blockhead .count{font:700 14px/1 var(--body);letter-spacing:1.4px;text-transform:uppercase}
+.blockhead:after{content:"";flex:1;height:5px;background:var(--black)}
+.section{margin-bottom:20px}
+
+/* ---------- rows ---------- */
+.row{
+  display:grid;align-items:center;background:var(--card);
+  border:2px solid var(--hair);border-top-width:0;
+  min-height:56px;
+  transition:transform .1s ease-out,background .1s ease-out;
+}
+.rows .row:first-child{border-top-width:2px}
+.row:hover{background:var(--yellow);transform:translateX(5px)}
+.row.in-use{background:var(--aqua)}
+.row.override{background:var(--pink)}
+.row.offline,.row.off{background:var(--dead);color:var(--deadink)}
+.row.offline:hover,.row.off:hover{background:#cfcbbc;transform:none}
+
+.p-row{grid-template-columns:48px 40px minmax(240px,1fr) auto}
+.rank{font:700 28px/1 var(--cond);text-align:center;letter-spacing:.5px}
+.glyph{display:grid;place-items:center}
+.glyph svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:square;stroke-linejoin:miter}
+.name{padding:7px 10px 7px 4px;min-width:0}
+.name strong{display:block;font:700 18px/1.15 var(--body);letter-spacing:.1px}
+.name small{display:block;margin-top:2px;font:600 14px/1.2 var(--body);color:inherit;opacity:.78}
+.row.offline .name small,.row.off .name small{opacity:1}
+.badge{
+  display:inline-block;margin-left:9px;vertical-align:2px;background:var(--black);color:#fff;
+  padding:3px 7px 4px;font:700 12px/1 var(--body);letter-spacing:1.2px;transform:rotate(-1deg);
+}
+.badge.ghost{background:#5c5952}
+
+.acts{display:flex;gap:4px;padding:0 10px 0 6px}
+.ibtn{
+  width:34px;height:34px;display:grid;place-items:center;
+  border:2px solid currentColor;background:transparent;
+}
+.ibtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:square}
+.ibtn:hover{background:var(--black);color:var(--paper)}
+.ibtn:active{transform:scale(.94)}
+.tbtn{
+  height:34px;padding:0 12px;border:2px solid currentColor;background:transparent;
+  font:700 14px/1 var(--body);letter-spacing:1.1px;text-transform:uppercase;
+}
+.tbtn:hover{background:var(--black);color:var(--paper)}
+.tbtn:active{transform:scale(.97)}
+.tbtn[disabled]{opacity:.45;cursor:not-allowed}
+
+.add{
+  display:block;width:100%;height:42px;margin-top:6px;border:2px dashed var(--black);
+  background:transparent;font:700 14px/1 var(--body);letter-spacing:1.4px;text-transform:uppercase;
+}
+.add:hover{background:var(--yellow)}
+
+.legend{
+  display:flex;gap:18px;align-items:center;margin:2px 0 10px;
+  font:700 14px/1 var(--body);letter-spacing:1.2px;text-transform:uppercase;
+}
+.legend span{display:flex;align-items:center;gap:7px}
+.sw{width:14px;height:14px;background:var(--aqua);border:2px solid var(--black)}
+.sw.m{background:var(--pink)}
+.sw.o{background:var(--dead)}
+
+/* ---------- mixer ---------- */
+.m-row{grid-template-columns:48px 40px minmax(230px,400px) minmax(200px,1fr) 62px 92px}
+.slot{padding:0 14px;display:flex;align-items:center}
+.slot b{font:700 14px/1 var(--body);letter-spacing:1.2px;text-transform:uppercase}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:10px;background:var(--card);border:2px solid var(--black)}
+input[type=range]::-moz-range-track{height:10px;background:var(--card);border:2px solid var(--black)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:26px;background:var(--black);margin-top:-8px}
+input[type=range]::-moz-range-thumb{width:16px;height:26px;border:0;border-radius:0;background:var(--black)}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--coral)}
+input[type=range]:hover::-moz-range-thumb{background:var(--coral)}
+.pct{font:700 20px/1 var(--cond);text-align:right;letter-spacing:.6px}
+.mute{margin:0 10px 0 14px}
+.mute.on{background:var(--black);color:var(--yellow)}
+
+/* ---------- devices ---------- */
+.d-row{grid-template-columns:40px minmax(230px,1fr) 168px 96px 104px;padding-left:8px}
+.d-row select{
+  width:154px;height:34px;padding:0 6px;background:var(--card);
+  border:2px solid var(--black);font:600 15px/1 var(--body);
+}
+.d-row .tbtn{justify-self:start}
+.remembered{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  background:var(--card);border:2px solid var(--black);padding:8px 12px;margin-bottom:14px;
+  font:700 14px/1 var(--body);letter-spacing:1.2px;text-transform:uppercase;
+}
+
+/* ---------- switch ---------- */
+.switch{width:52px;height:28px;padding:3px;background:#8f8b80;border:2px solid var(--black);position:relative;flex:none}
+.switch:after{content:"";display:block;width:18px;height:18px;background:var(--black);transition:transform .12s ease-out}
+.switch.on{background:var(--aqua)}
+.switch.on:after{transform:translateX(24px)}
+
+/* ---------- settings strip ---------- */
+.settings{
+  display:flex;align-items:center;gap:24px;
+  background:var(--black);color:var(--paper);padding:10px 18px;margin-top:6px;
+  font:700 14px/1 var(--body);letter-spacing:1.2px;text-transform:uppercase;
+}
+.settings label,.settings .set{display:flex;align-items:center;gap:10px}
+.settings select{
+  height:32px;padding:0 6px;background:var(--paper);color:var(--black);
+  border:2px solid var(--paper);font:600 15px/1 var(--body);text-transform:none;letter-spacing:0;
+}
+.settings .hint{margin-left:auto;font-weight:600;letter-spacing:1px;color:#c9c4b3;white-space:nowrap}
+
+.toast{
+  position:fixed;right:24px;bottom:22px;background:var(--black);color:var(--yellow);
+  padding:12px 18px;font:700 15px/1 var(--body);letter-spacing:1px;
+  transform:translateY(120px);transition:transform .16s ease-out;
+}
+.toast.show{transform:none}
+
+@media(max-width:1050px){
+  .m-row{grid-template-columns:44px 36px 1fr 170px 56px 82px}
+  .d-row{grid-template-columns:36px 1fr 140px 88px 96px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="bar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="word">Audio<b>Deck</b></span>
+    </div>
+    <nav role="tablist" aria-label="Pages">
+      <button class="tab" role="tab" aria-selected="true" data-page="priority">Priority</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="mixer">Mixer</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="devices">Devices</button>
+    </nav>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">AUTO ON / 2s</span></div>
+    <div class="wctl" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+
+  <main>
+    <section id="priority" class="page active" role="tabpanel" aria-label="Priority"></section>
+    <section id="mixer" class="page" role="tabpanel" aria-label="Mixer"></section>
+    <section id="devices" class="page" role="tabpanel" aria-label="Devices"></section>
+  </main>
+
+  <footer class="settings">
+    <div class="set"><span>Start with Windows</span><button class="switch on" role="switch" aria-checked="true" aria-label="Start with Windows"></button></div>
+    <div class="set"><span>Pause automation</span><button class="switch" id="pause" role="switch" aria-checked="false" aria-label="Pause automation"></button></div>
+    <label>Check devices every <select id="interval" aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option></select></label>
+    <span class="hint">Highest available device wins</span>
+  </footer>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const outputs = [
+  {name:'AirPods Pro', sub:'Apple / Bluetooth headphones', kind:'headphones', state:'offline', badge:'Offline'},
+  {name:'Arctis Nova Pro', sub:'Steelseries / Wireless headset', kind:'headset', state:'in-use', badge:'In use', vol:100},
+  {name:'Quest', sub:'Meta / Headset audio', kind:'headphones', vol:62},
+  {name:'NVIDIA High Definition Audio', sub:'LG / TV over HDMI', kind:'tv', vol:45}
+];
+const mics = [
+  {name:'Arctis Nova Pro Mic', sub:'Steelseries / Headset mic', kind:'mic', vol:100},
+  {name:'DJI MIC MINI', sub:'DJI / Wireless receiver', kind:'mic', state:'override', badge:'Manual override', vol:62}
+];
+
+const PATHS = {
+  headphones:'<path d="M5 18v-4a11 11 0 0 1 22 0v4"/><path d="M4 17h6v10H6a2 2 0 0 1-2-2z"/><path d="M28 17h-6v10h4a2 2 0 0 0 2-2z"/>',
+  headset:'<path d="M5 18v-4a11 11 0 0 1 22 0v4"/><path d="M4 17h6v10H6a2 2 0 0 1-2-2z"/><path d="M28 17h-6v10h4a2 2 0 0 0 2-2z"/><path d="M22 27v2h-6"/>',
+  tv:'<rect x="3" y="6" width="26" height="17"/><path d="M11 28h10M16 23v5"/>',
+  mic:'<rect x="12" y="3" width="8" height="16"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4M11 29h10"/>',
+  speaker:'<rect x="7" y="3" width="18" height="26"/><circle cx="16" cy="20" r="5"/><path d="M16 9h.01"/>'
+};
+const glyph = k => `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">${PATHS[k]||PATHS.speaker}</svg></span>`;
+const badge = d => d.badge ? `<span class="badge${d.state==='offline'?' ghost':''}">${d.badge}</span>` : '';
+
+const ibtn = (label, path, dir) =>
+  `<button class="ibtn" aria-label="${label}"${dir?` data-move="${dir}"`:' data-remove="1"'}><svg viewBox="0 0 20 20"><path d="${path}"/></svg></button>`;
+const acts = () => `<div class="acts">
+  ${ibtn('Move up','M4 12l6-6 6 6',-1)}${ibtn('Move down','M4 8l6 6 6-6',1)}${ibtn('Remove from ranking','M5 5l10 10M15 5L5 15')}
+</div>`;
+
+const pRow = (d,i) => `<article class="row p-row ${d.state||''}">
+  <span class="rank">${i+1}</span>${glyph(d.kind)}
+  <div class="name"><strong>${d.name}${badge(d)}</strong><small>${d.sub}</small></div>
+  ${acts()}
+</article>`;
+
+const mRow = (d,i) => `<article class="row m-row ${d.state||''}">
+  <span class="rank">${i+1}</span>${glyph(d.kind)}
+  <div class="name"><strong>${d.name}${badge(d)}</strong><small>${d.sub}</small></div>
+  ${d.state==='offline'
+    ? '<div class="slot"><b>No control while offline</b></div><span class="pct">--</span><button class="tbtn mute" disabled>Mute</button>'
+    : `<div class="slot"><input type="range" min="0" max="100" value="${d.vol}" aria-label="${d.name} volume"></div>
+       <span class="pct">${d.vol}%</span><button class="tbtn mute">Mute</button>`}
+</article>`;
+
+const list = (title, count, items, render, add) => `<section class="section">
+  <div class="blockhead"><h2>${title}</h2><span class="count">${count}</span></div>
+  <div class="rows">${items.map(render).join('')}</div>
+  ${add ? `<button class="add" data-toast="Pick a device to add to this ranking">+ Add a device (2 more)</button>` : ''}
+</section>`;
+
+$('#priority').innerHTML =
+  `<div class="legend">
+     <span><i class="sw"></i> Automatic, in use</span>
+     <span><i class="sw m"></i> Manual override</span>
+     <span><i class="sw o"></i> Offline</span>
+   </div>` +
+  list('Outputs','4 ranked',outputs,pRow,true) +
+  list('Microphones','2 ranked',mics,pRow,true);
+
+$('#mixer').innerHTML =
+  list('Outputs','4 ranked',outputs,mRow,false) +
+  list('Microphones','2 ranked',mics,mRow,false);
+
+const all = [...outputs, ...mics,
+  {name:'Realtek Digital Output', sub:'Realtek / S/PDIF, disabled in Windows', kind:'speaker', state:'off', off:true}];
+const types = ['Speakers','Headphones','Headset','TV'];
+const typeFor = d => d.kind==='tv' ? 'TV'
+  : (d.kind==='headset' || d.kind==='mic') ? 'Headset'
+  : d.kind==='headphones' ? 'Headphones' : 'Speakers';
+
+$('#devices').innerHTML =
+  `<div class="remembered"><span>Show remembered devices (31)</span>
+     <button class="switch" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></div>` +
+  `<section class="section">
+     <div class="blockhead"><h2>All endpoints</h2><span class="count">${all.length} found / 1 disabled</span></div>
+     <div class="rows">${all.map(d => `<article class="row d-row ${d.state==='off'?'off':''}">
+       ${glyph(d.kind)}
+       <div class="name"><strong>${d.name}</strong><small>${d.sub}</small></div>
+       <select aria-label="${d.name} device type">${types.map(t=>`<option${t===typeFor(d)?' selected':''}>${t}</option>`).join('')}</select>
+       <button class="tbtn rename">Rename</button>
+       <button class="tbtn toggle">${d.off?'Enable':'Disable'}</button>
+     </article>`).join('')}</div>
+   </section>`;
+
+const toast = m => {
+  const t = $('.toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(window._t); window._t = setTimeout(()=>t.classList.remove('show'),1500);
+};
+
+function show(page){
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x.dataset.page === page)));
+  document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === page));
+}
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => show(b.dataset.page)));
+if (['priority','mixer','devices'].includes(location.hash.slice(1))) show(location.hash.slice(1));
+
+document.addEventListener('input', e => {
+  if (e.target.type === 'range')
+    e.target.closest('.row').querySelector('.pct').textContent = e.target.value + '%';
+});
+
+$('#interval').addEventListener('change', e => {
+  if (!$('#status').classList.contains('paused'))
+    $('#statusText').textContent = 'AUTO ON / ' + e.target.value.replace(' seconds','s');
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.classList.contains('switch')) {
+    const on = !b.classList.contains('on');
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', String(on));
+    if (b.id === 'pause') {
+      const s = $('#status');
+      s.classList.toggle('paused', on);
+      $('#statusText').textContent = on ? 'AUTOMATION PAUSED' : 'AUTO ON / ' + $('#interval').value.replace(' seconds','s');
+    }
+    return;
+  }
+  if (b.classList.contains('mute')) {
+    const on = b.classList.toggle('on');
+    b.textContent = on ? 'Muted' : 'Mute';
+    return;
+  }
+  if (b.classList.contains('rename')) {
+    const n = b.closest('.row').querySelector('strong');
+    const v = prompt('Rename this device in Windows', n.textContent.trim());
+    if (v) { n.textContent = v; toast('Renamed in Windows'); }
+    return;
+  }
+  if (b.classList.contains('toggle')) {
+    const row = b.closest('.row'), enable = b.textContent === 'Enable';
+    row.classList.toggle('off', !enable);
+    b.textContent = enable ? 'Disable' : 'Enable';
+    toast(enable ? 'Endpoint enabled' : 'Endpoint disabled');
+    return;
+  }
+  if (b.dataset.toast) { toast(b.dataset.toast); return; }
+  if (b.dataset.remove) { toast('Removed from this ranking'); return; }
+  if (b.dataset.move) {
+    const row = b.closest('.row'), dir = +b.dataset.move;
+    const sib = dir < 0 ? row.previousElementSibling : row.nextElementSibling;
+    if (!sib) return;
+    dir < 0 ? row.parentNode.insertBefore(row, sib) : row.parentNode.insertBefore(sib, row);
+    row.parentNode.querySelectorAll('.rank').forEach((r,i) => r.textContent = i + 1);
+  }
+});
+</script>
+</body>
+</html>

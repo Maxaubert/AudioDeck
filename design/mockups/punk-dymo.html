@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioDeck - punk-dymo</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Archivo+Narrow:wght@600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --oil:#22231f;          /* machine body */
+  --oil-2:#2c2d27;        /* rails, chrome */
+  --pitch:#0d0e0a;        /* hard rules */
+  --tape:#191a16;         /* label tape stock */
+  --emboss:#f3f0e3;       /* raised letters */
+  --news:#d7d4c8;         /* panel stock */
+  --news-2:#cfcbbe;       /* alt row */
+  --news-3:#dcd9cb;       /* row under the cursor */
+  --ink:#16170f;
+  --ink-2:#45443c;
+  --dead:#b9b6aa;         /* offline field */
+  --hatch:repeating-linear-gradient(45deg,rgba(0,0,0,.07) 0 1px,transparent 1px 6px);
+  --acid:#b6f23c;         /* the one accent */
+  --marker:#e2622a;       /* hand-written override */
+  --narrow:'Archivo Narrow','Arial Narrow',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--oil)}
+body{
+  margin:0;min-width:820px;
+  background:var(--oil);
+  background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 4px);
+  color:var(--ink);
+  font:600 17px/1.4 Archivo,'Helvetica Neue',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,select,input{font:inherit;color:inherit}
+button,select{cursor:pointer}
+/* two-tone ring: dark core reads on the acid panel, acid halo reads on the oil chrome */
+:focus-visible{outline:3px solid var(--pitch);outline-offset:1px;
+  box-shadow:0 0 0 6px var(--acid);position:relative;z-index:2}
+
+/* ---------- the machine ---------- */
+.deck{
+  width:min(1240px,calc(100% - 32px));margin:20px auto 26px;
+  display:grid;grid-template-columns:26px 1fr 26px;
+  background:var(--oil-2);
+  border:3px solid var(--pitch);
+  box-shadow:0 0 0 1px #3b3d35 inset;
+}
+.rail{
+  background:#33342d;
+  background-image:
+    radial-gradient(circle at 13px 26px,#080905 0 5px,transparent 5.1px),
+    radial-gradient(circle at 13px 27px,#5d5f53 0 6.5px,transparent 6.6px);
+  background-size:26px 84px;
+  border-left:2px solid #080905;border-right:2px solid #4b4d42;
+}
+.rail.r{border-left:2px solid #4b4d42;border-right:2px solid #080905}
+
+/* ---------- label tape ---------- */
+.tape{
+  display:inline-block;background:var(--tape);color:var(--emboss);
+  font-family:var(--narrow);font-weight:700;text-transform:uppercase;
+  letter-spacing:.055em;line-height:1;padding:7px 11px 8px;
+  border:1px solid #000;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.75);
+  text-shadow:0 -1px 0 rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.14);
+  white-space:nowrap;
+}
+.tape.acid{background:var(--acid);color:#101206;border-color:#5d7c1c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.35);
+  text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.tape.mark{background:var(--marker);color:#170a03;border-color:#7d3311;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.4);
+  text-shadow:0 1px 0 rgba(255,255,255,.25)}
+.tape.sm{font-size:13px;padding:5px 8px 6px;letter-spacing:.07em}
+.tape.ghost{background:transparent;color:var(--ink-2);border:2px solid #858376;
+  box-shadow:none;text-shadow:none}
+
+/* ---------- header ---------- */
+.top{
+  grid-column:1/4;display:flex;align-items:center;gap:24px;
+  padding:9px 18px 10px;background:var(--oil);
+  border-bottom:3px solid var(--pitch);
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px);
+}
+.mark{display:flex;align-items:center;gap:11px}
+.embosser{width:40px;height:40px;background:var(--tape);border:2px solid #000;
+  display:grid;grid-template-rows:repeat(3,1fr);gap:4px;padding:6px 5px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.7)}
+.embosser i{display:block;background:#8a8c7c;box-shadow:inset 0 -1px 0 rgba(0,0,0,.6)}
+.embosser i:nth-child(2){background:var(--acid);width:60%}
+.embosser i:nth-child(3){width:80%}
+.logo{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.logo .tape{font-size:19px;padding:5px 10px 6px;letter-spacing:.1em}
+.logo .tape:last-child{margin-left:13px;transform:rotate(.7deg)}
+nav{display:flex;gap:8px;margin-left:6px}
+.tab{border:0;padding:0;background:none;font:inherit}
+.tab .tape{font-size:16px;padding:9px 17px 10px;color:#cbc8b9;transition:transform .12s cubic-bezier(.23,1,.32,1),color .12s}
+.tab:nth-child(2) .tape{transform:rotate(-.6deg)}
+.tab:nth-child(3) .tape{transform:rotate(.5deg)}
+.tab:hover .tape{color:var(--emboss);transform:translateY(-2px) rotate(-.8deg)}
+.tab.on .tape{background:var(--acid);color:#101206;border-color:#5d7c1c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.35);
+  text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.tab:active .tape{transform:translateY(1px)}
+.status{margin:0 0 0 auto;display:flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:.04em;color:#b7b4a5}
+.lamp{width:11px;height:11px;background:var(--acid);box-shadow:0 0 0 2px #0b0c08}
+.status b{color:var(--emboss);font-weight:700}
+
+/* ---------- panel ---------- */
+main{grid-column:2/3;background:var(--news);
+  background-image:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.028) 0 1px,transparent 1px 3px),
+    radial-gradient(circle at 20% 60%,rgba(0,0,0,.05) 0 1px,transparent 1.4px);
+  background-size:auto,7px 9px;
+  padding:20px 22px 26px;border-bottom:3px solid var(--pitch)}
+.page{display:none}
+.page.on{display:block}
+.block{margin-bottom:26px}
+.block:last-child{margin-bottom:0}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:11px}
+.head h2{margin:0;font-size:19px;padding:8px 13px 9px;transform:rotate(-.5deg)}
+.head .count{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.06em;color:#3d3c34}
+.head .rule{flex:1;height:4px;background:var(--pitch)}
+.legend{display:flex;gap:14px;align-items:center}
+.legend span{display:flex;align-items:center;gap:7px;font-family:var(--narrow);font-weight:700;
+  font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:#2c2b23}
+.sw{width:16px;height:16px;background:var(--acid);border:2px solid var(--pitch)}
+.sw.m{background:var(--marker)}
+
+/* ---------- rack rows ---------- */
+.row{
+  display:grid;align-items:center;min-height:70px;
+  grid-template-columns:56px 48px minmax(230px,1fr) 172px 150px;
+  background:var(--news-2);border:2px solid var(--pitch);border-top-width:0;
+  transition:transform .12s cubic-bezier(.23,1,.32,1),background .12s;
+}
+.row:first-of-type{border-top-width:2px}
+.rows .row:nth-child(even){background:#c8c4b6}
+.rows .row:hover{background:var(--news-3);transform:translateX(4px)}
+.rows .row.use{background:#e4e9d3}
+.rows .row.use:hover{background:#ecf0dd}
+.rows .row.over{background:#ece1d4}
+.rows .row.over:hover{background:#f3eade}
+.rows .row.off{background:var(--dead);background-image:var(--hatch);color:var(--ink-2)}
+.rows .row.off:hover{background:#c1beb2;background-image:var(--hatch)}
+
+/* engraved rank plate: the row's state lives here */
+.rank{align-self:stretch;display:grid;place-items:center;
+  background:var(--tape);border-right:2px solid var(--pitch);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.6);
+  font-family:var(--mono);font-weight:700;font-size:23px;letter-spacing:.01em;
+  color:var(--emboss);text-shadow:0 -1px 0 rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.16)}
+.rows .row.use .rank{background:var(--acid);color:#101206;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.3)}
+.rows .row.over .rank{background:var(--marker);color:#170a03;
+  text-shadow:0 1px 0 rgba(255,255,255,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.35)}
+.rows .row.off .rank{color:#8d8b7f}
+.glyph{display:grid;place-items:center}
+.glyph svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:square;stroke-linejoin:miter}
+.name{padding:10px 14px 10px 6px;min-width:0}
+.name strong{display:block;font-size:20px;font-weight:800;line-height:1.15;letter-spacing:-.005em}
+.name small{display:block;margin-top:3px;font-family:var(--mono);font-weight:500;font-size:13.5px;
+  letter-spacing:.03em;color:#3f3e36;text-transform:uppercase}
+.row.off .name small,.row.dev.disabled .name small{color:var(--ink-2)}
+.state{padding-right:12px;display:flex;justify-content:flex-end}
+.state .tape{transform:rotate(-.6deg)}
+.acts{display:flex;gap:6px;justify-content:flex-end;padding-right:12px}
+.ctl{width:40px;height:40px;border:2px solid var(--pitch);background:transparent;
+  display:grid;place-items:center;transition:background .1s,color .1s,transform .1s}
+.ctl svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:square}
+.ctl:hover{background:var(--pitch);color:var(--news)}
+.ctl:active{transform:translateY(1px)}
+.ctl[disabled]{opacity:.35;cursor:not-allowed}
+.txt{height:40px;padding:0 13px;border:2px solid var(--pitch);background:transparent;
+  font-family:var(--narrow);font-weight:700;font-size:15px;letter-spacing:.05em;text-transform:uppercase;
+  transition:background .1s,color .1s,transform .1s}
+.txt:hover{background:var(--pitch);color:var(--news)}
+.txt:active{transform:translateY(1px)}
+.add{width:100%;height:56px;margin-top:8px;border:3px dashed #55544a;background:transparent;
+  font-family:var(--narrow);font-weight:700;font-size:16px;letter-spacing:.09em;text-transform:uppercase;
+  color:#3a392f;transition:background .12s,color .12s,border-color .12s}
+.add:hover{background:var(--tape);border-color:var(--pitch);color:var(--acid)}
+
+/* ---------- mixer ---------- */
+.row.mix{grid-template-columns:56px 48px minmax(200px,1fr) minmax(210px,290px) 78px 116px}
+.fader{padding:0 16px}
+.fader input{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;display:block}
+.fader input::-webkit-slider-runnable-track{height:16px;background:var(--tape);border:2px solid var(--pitch);
+  background-image:repeating-linear-gradient(90deg,#3d3f34 0 2px,transparent 2px 20px)}
+.fader input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:32px;margin-top:-10px;
+  background:var(--acid);border:2px solid var(--pitch);box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
+.fader input::-moz-range-track{height:16px;background:var(--tape);border:2px solid var(--pitch)}
+.fader input::-moz-range-thumb{width:14px;height:30px;border-radius:0;background:var(--acid);border:2px solid var(--pitch)}
+.fader.dead{font-family:var(--narrow);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.pct{font-family:var(--mono);font-weight:700;font-size:21px;text-align:right;padding-right:4px}
+.row.off .pct{color:var(--ink-2)}
+.mute{margin:0 12px 0 auto;height:40px;padding:0 15px;border:2px solid var(--pitch);background:transparent;
+  font-family:var(--narrow);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;
+  transition:background .1s,color .1s}
+.mute:hover{background:var(--pitch);color:var(--news)}
+.mute.on{background:var(--marker);border-color:#7d3311;color:#170a03}
+.mute[disabled]{opacity:.4;cursor:not-allowed}
+
+/* ---------- devices ---------- */
+.row.dev{grid-template-columns:56px minmax(230px,1fr) 190px 112px 118px}
+.glyph.plate{align-self:stretch;background:var(--tape);border-right:2px solid var(--pitch);
+  color:var(--emboss);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.6)}
+.rows .row.dev.disabled .glyph.plate{color:#8d8b7f}
+.rows .row.dev.disabled{background:var(--dead);background-image:var(--hatch);color:var(--ink-2)}
+.rows .row.dev.disabled:hover{background:#c1beb2;background-image:var(--hatch)}
+.selwrap{position:relative;margin-right:14px}
+.selwrap:after{content:"";position:absolute;right:11px;top:50%;margin-top:-3px;
+  width:0;height:0;border:6px solid transparent;border-top-color:var(--ink);pointer-events:none}
+.selwrap select{-webkit-appearance:none;appearance:none;width:100%;height:40px;padding:0 30px 0 11px;
+  border:2px solid var(--pitch);background:#e2dfd2;font-family:var(--narrow);font-weight:700;
+  font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.selwrap select:hover{background:#eeebde}
+.row.dev .txt{margin-right:10px}
+.remember{display:flex;align-items:center;gap:12px;margin-left:auto}
+.remember span{font-family:var(--narrow);font-weight:700;font-size:14.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:#2c2b23}
+
+/* ---------- switches ---------- */
+.toggle{width:58px;height:30px;padding:3px;border:2px solid var(--pitch);background:#8e8b7f;
+  display:block;flex:none}
+.toggle:after{content:"";display:block;width:22px;height:20px;background:var(--tape);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2);transition:transform .13s cubic-bezier(.23,1,.32,1)}
+.toggle.on{background:var(--acid)}
+.toggle.on:after{transform:translateX(26px)}
+
+/* ---------- bottom strip ---------- */
+.strip{grid-column:1/4;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:13px 18px;background:var(--oil);
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px)}
+.opt{display:flex;align-items:center;gap:11px;padding:8px 12px;background:#2a2b25;border:2px solid #0b0c08}
+.opt .tape{font-size:14px;padding:6px 9px 7px}
+.opt select{height:34px;border:2px solid var(--pitch);background:#d7d4c8;color:var(--ink);
+  padding:0 8px;font-family:var(--narrow);font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.strip .sig{margin-left:auto;font-family:var(--mono);font-weight:500;font-size:13px;
+  letter-spacing:.08em;color:#9a978a;text-transform:uppercase}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;right:22px;bottom:22px;background:var(--tape);color:var(--acid);
+  border:2px solid #000;padding:13px 18px;font-family:var(--narrow);font-weight:700;font-size:16px;
+  letter-spacing:.06em;text-transform:uppercase;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.7);
+  transform:translateY(120px) rotate(-1deg);transition:transform .18s cubic-bezier(.23,1,.32,1)}
+.toast.show{transform:translateY(0) rotate(-1deg)}
+
+@media(max-width:1080px){
+  .row{grid-template-columns:50px 44px minmax(180px,1fr) 160px 146px}
+  .row.mix{grid-template-columns:50px 44px minmax(150px,1fr) minmax(160px,1fr) 70px 108px}
+  .row.dev{grid-template-columns:44px minmax(170px,1fr) 168px 104px 110px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="top">
+    <div class="mark">
+      <span class="embosser" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="logo"><span class="tape">Audio</span><span class="tape acid">Deck</span></span>
+    </div>
+    <nav aria-label="Pages">
+      <button class="tab on" data-page="priority" aria-current="page"><span class="tape">Priority</span></button>
+      <button class="tab" data-page="mixer"><span class="tape">Mixer</span></button>
+      <button class="tab" data-page="devices"><span class="tape">Devices</span></button>
+    </nav>
+    <p class="status"><span class="lamp" aria-hidden="true"></span> AUTOMATION <b>ON</b> / SCAN <b>2s</b></p>
+  </div>
+
+  <div class="rail" aria-hidden="true"></div>
+  <main>
+    <section id="priority" class="page on"></section>
+    <section id="mixer" class="page"></section>
+    <section id="devices" class="page"></section>
+  </main>
+  <div class="rail r" aria-hidden="true"></div>
+
+  <footer class="strip">
+    <div class="opt"><span class="tape">Start with Windows</span>
+      <button class="toggle on" role="switch" aria-checked="true" aria-label="Start with Windows"></button></div>
+    <div class="opt"><span class="tape">Pause automation</span>
+      <button class="toggle" role="switch" aria-checked="false" aria-label="Pause automation"></button></div>
+    <label class="opt"><span class="tape">Check devices every</span>
+      <select aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option><option>30 seconds</option></select></label>
+    <span class="sig">AudioDeck 1.4 / audioctl</span>
+  </footer>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const G = {
+  headphones:'<path d="M5 18v-4a11 11 0 0 1 22 0v4"/><path d="M5 17h5v10H7a2 2 0 0 1-2-2z"/><path d="M27 17h-5v10h3a2 2 0 0 0 2-2z"/>',
+  headset:'<path d="M6 18v-4a10 10 0 0 1 20 0v4"/><path d="M6 17h4v9H6z"/><path d="M26 17h-4v9h4z"/><path d="M22 26v2h-6"/>',
+  tv:'<path d="M3 6h26v16H3z"/><path d="M11 27h10"/><path d="M16 22v5"/>',
+  mic:'<path d="M12 4h8v14h-8z"/><path d="M7 15v2a9 9 0 0 0 18 0v-2"/><path d="M16 26v3"/><path d="M11 29h10"/>',
+  wmic:'<path d="M11 10h10v18H11z"/><path d="M14 28h4v2h-4z"/><path d="M8 7a10 10 0 0 1 16 0"/><path d="M12 4a14 14 0 0 1 8 0"/>',
+  spdif:'<path d="M4 7h24v18H4z"/><path d="M9 16h3l3-5 3 10 3-5h3"/>'
+};
+const glyph = (k,cls) => '<span class="glyph '+(cls||'')+'" aria-hidden="true"><svg viewBox="0 0 32 32">'
+  + G[k] + '</svg></span>';
+
+const outputs = [
+  {n:'AirPods Pro',       s:'Apple / Headphones',  g:'headphones', st:'off',  tag:'Offline'},
+  {n:'Arctis Nova Pro',   s:'Steelseries / Headset',g:'headset',   st:'use',  tag:'In use',  v:100},
+  {n:'Quest',             s:'Meta / Headphones',   g:'headphones', st:'',                     v:62},
+  {n:'NVIDIA High Definition Audio', s:'LG / TV',  g:'tv',         st:'',                     v:45}
+];
+const mics = [
+  {n:'Arctis Nova Pro Mic', s:'Steelseries / Microphone', g:'mic',  st:'',                              v:100},
+  {n:'DJI MIC MINI',        s:'DJI / Wireless microphone',g:'wmic', st:'over', tag:'Manual override',   v:62}
+];
+
+const pad = i => String(i+1).padStart(2,'0');
+const rank = i => '<span class="rank">'+pad(i)+'</span>';
+const name = d => '<div class="name"><strong>'+d.n+'</strong><small>'+d.s+'</small></div>';
+const tapeClass = st => st === 'over' ? 'mark' : st === 'use' ? 'acid' : 'ghost';
+const tag = d => '<div class="state">' + (d.tag
+  ? '<span class="tape '+tapeClass(d.st)+' sm">'+d.tag+'</span>' : '') + '</div>';
+
+const ico = (p,label,cls,attrs) => '<button class="ctl '+cls+'"'+(attrs||'')
+  + ' aria-label="'+label+'"><svg viewBox="0 0 20 20"><path d="'+p+'"/></svg></button>';
+const acts = d => '<div class="acts">'
+  + ico('M4 12l6-6 6 6','Move '+d.n+' up','mv',' data-dir="-1"')
+  + ico('M4 8l6 6 6-6','Move '+d.n+' down','mv',' data-dir="1"')
+  + ico('M5 5l10 10M15 5L5 15','Remove '+d.n,'rm')
+  + '</div>';
+
+const pRow = (d,i) => '<article class="row '+d.st+'">'+rank(i)+glyph(d.g)+name(d)+tag(d)+acts(d)+'</article>';
+
+const mRow = (d,i) => '<article class="row mix '+d.st+'">'+rank(i)+glyph(d.g)+name(d)
+  + (d.st==='off'
+      ? '<div class="fader dead">No signal</div><span class="pct">--</span><button class="mute" disabled>Mute</button>'
+      : '<div class="fader"><input type="range" min="0" max="100" value="'+d.v+'" aria-label="'+d.n+' volume"></div>'
+        + '<span class="pct">'+d.v+'%</span><button class="mute">Mute</button>')
+  + '</article>';
+
+const head = (label,count,aside) => '<div class="head"><h2 class="tape">'+label+'</h2>'
+  + '<span class="count">'+count+'</span><span class="rule"></span>'
+  + (aside||'') + '</div>';
+
+const legend = '<span class="legend"><span><i class="sw"></i>Automatic, in use</span>'
+  + '<span><i class="sw m"></i>Manual override</span></span>';
+
+/* ---- Priority ---- */
+$('#priority').innerHTML =
+  '<div class="block">' + head('Outputs','4 RANKED',legend)
+  + '<div class="rows">' + outputs.map(pRow).join('') + '</div>'
+  + '<button class="add">+ Add a device (2 more)</button></div>'
+  + '<div class="block">' + head('Microphones','2 RANKED')
+  + '<div class="rows">' + mics.map(pRow).join('') + '</div>'
+  + '<button class="add">+ Add a device (2 more)</button></div>';
+
+/* ---- Mixer ---- */
+$('#mixer').innerHTML =
+  '<div class="block">' + head('Outputs','4 RANKED',legend)
+  + '<div class="rows">' + outputs.map(mRow).join('') + '</div></div>'
+  + '<div class="block">' + head('Microphones','2 RANKED')
+  + '<div class="rows">' + mics.map(mRow).join('') + '</div></div>';
+
+/* ---- Devices ---- */
+const all = outputs.concat(mics, [
+  {n:'Realtek Digital Output', s:'Realtek / S-PDIF endpoint', g:'spdif', st:'', dis:true}
+]);
+const types = ['Speakers','Headphones','Headset','TV','Microphone'];
+const typeOf = d => d.g==='tv' ? 'TV' : d.g==='headset' ? 'Headset'
+  : d.g==='mic'||d.g==='wmic' ? 'Microphone' : d.g==='spdif' ? 'Speakers' : 'Headphones';
+
+const remember = '<span class="remember"><span>Show remembered devices (31)</span>'
+  + '<button class="toggle" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></span>';
+
+$('#devices').innerHTML =
+  '<div class="block">' + head('All endpoints','7 FOUND',remember)
+  + '<div class="rows">' + all.map(d =>
+      '<article class="row dev'+(d.dis?' disabled':'')+'">'
+      + glyph(d.g,'plate') + name(d)
+      + '<span class="selwrap"><select aria-label="'+d.n+' device type">'
+        + types.map(t => '<option'+(t===typeOf(d)?' selected':'')+'>'+t+'</option>').join('')
+        + '</select></span>'
+      + '<button class="txt rn">Rename</button>'
+      + '<button class="txt dz">'+(d.dis?'Enable':'Disable')+'</button>'
+      + '</article>').join('')
+  + '</div></div>';
+
+/* ---- behaviour ---- */
+const flash = m => { const t = $('.toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(window._t); window._t = setTimeout(() => t.classList.remove('show'), 1600); };
+
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => { x.classList.remove('on'); x.removeAttribute('aria-current'); });
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); b.setAttribute('aria-current','page');
+  $('#'+b.dataset.page).classList.add('on');
+});
+
+document.addEventListener('input', e => {
+  if (e.target.type === 'range')
+    e.target.closest('.row').querySelector('.pct').textContent = e.target.value + '%';
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('toggle')) {
+    b.classList.toggle('on');
+    b.setAttribute('aria-checked', b.classList.contains('on'));
+  }
+  if (b.classList.contains('mute')) {
+    b.classList.toggle('on');
+    b.textContent = b.classList.contains('on') ? 'Muted' : 'Mute';
+  }
+  if (b.classList.contains('rn')) {
+    const el = b.closest('.row').querySelector('strong');
+    const v = prompt('Rename this Windows device', el.textContent);
+    if (v) { el.textContent = v; flash('Renamed in Windows'); }
+  }
+  if (b.classList.contains('dz')) {
+    const on = b.textContent === 'Enable';
+    b.textContent = on ? 'Disable' : 'Enable';
+    b.closest('.row').classList.toggle('disabled', !on);
+    flash(on ? 'Endpoint enabled' : 'Endpoint disabled');
+  }
+  if (b.classList.contains('rm')) flash('Removed from ranking');
+  if (b.classList.contains('add')) flash('Pick a device to rank');
+  if (b.classList.contains('mv')) {
+    const r = b.closest('.row'), up = b.dataset.dir === '-1';
+    const sib = up ? r.previousElementSibling : r.nextElementSibling;
+    if (!sib) return;
+    up ? r.parentNode.insertBefore(r, sib) : r.parentNode.insertBefore(sib, r);
+    [...r.parentNode.children].forEach((row,i) => {
+      const t = row.querySelector('.rank'); if (t) t.textContent = String(i+1).padStart(2,'0');
+    });
+  }
+});
+</script>
+</body>
+</html>

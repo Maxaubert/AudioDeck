@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioDeck - punk-gigposter</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Big+Shoulders+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#efe8d8;          /* uncoated cream stock */
+  --sheet:#fbf7ec;          /* unprinted area inside rows */
+  --ink:#14100e;            /* overprint: where both inks land */
+  --red:#c62411;            /* ink A, vermilion */
+  --red-lite:#f0c8ba;       /* ink A at ~30% halftone */
+  --teal:#16b0a4;           /* ink B */
+  --teal-lite:#b9e3dd;
+  --dead:#ded7c6;           /* offline stock */
+  --dead-ink:#4b463d;
+  --sub:#4b443b;
+  --press:cubic-bezier(0.23,1,0.32,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--ink);
+  background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.055) 1px,transparent 1.6px);
+  background-size:7px 7px;
+  color:var(--ink);
+  font:17px/1.45 Archivo,"Segoe UI",Arial,sans-serif;
+  font-weight:600;
+  min-width:1100px;
+  padding:34px 0 56px;
+}
+button,select,input{font:inherit;color:inherit}
+button,select{cursor:pointer}
+h1,h2,h3{margin:0}
+
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px;box-shadow:0 0 0 6px var(--paper)}
+.footer :focus-visible,.remembered :focus-visible{outline-color:var(--paper);box-shadow:0 0 0 6px var(--ink)}
+
+/* ---------- the sheet ---------- */
+.shell{
+  position:relative;isolation:isolate;
+  width:min(1240px,calc(100% - 60px));margin:0 auto;
+  background:var(--paper);
+  border:3px solid var(--ink);
+  box-shadow:13px 13px 0 var(--red);
+  overflow:hidden;
+}
+.shell:after{ /* paper grain */
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background-image:radial-gradient(circle at 1px 1px,rgba(20,16,14,.13) .9px,transparent 1.2px);
+  background-size:4px 4px;mix-blend-mode:multiply;opacity:.5;
+}
+
+/* ---------- signature: one diagonal band, two inks, 3px off register ---------- */
+.plate{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.band{position:absolute;left:-14%;right:-14%;top:72px;height:104px;background:var(--teal);transform:rotate(-3.5deg)}
+.band:before{ /* ink A plate, deliberately 3px out of register */
+  content:"";position:absolute;left:47%;width:23%;top:3px;bottom:-3px;
+  background:var(--red);mix-blend-mode:multiply;
+}
+.band:after{ /* halftone tail, ink B breaking up at the run-off end */
+  content:"";position:absolute;left:0;width:19%;top:0;bottom:0;
+  background-image:radial-gradient(circle at 3px 3px,var(--teal) 3.1px,transparent 3.4px);
+  background-size:9px 9px;background-color:var(--paper);
+}
+.band-low{position:absolute;left:-10%;right:-10%;bottom:118px;height:30px;background:var(--red);transform:rotate(-3.5deg)}
+.dots{position:absolute;background-image:radial-gradient(circle at 3px 3px,var(--ink) 2.6px,transparent 3px);background-size:9px 9px;opacity:.32}
+.dots-a{right:-12px;top:280px;width:96px;height:280px}
+.dots-b{left:-14px;bottom:220px;width:74px;height:150px}
+.app{position:relative;z-index:2}
+
+/* ---------- compact header ---------- */
+.head{
+  display:flex;align-items:center;gap:26px;
+  padding:13px 22px 15px 20px;
+  border-bottom:4px solid var(--ink);
+}
+.brand{display:flex;align-items:center;gap:13px}
+.mark{width:46px;height:50px;background:var(--ink);flex:none;display:flex;align-items:flex-end;gap:4px;padding:7px 6px;box-shadow:4px 4px 0 var(--red)}
+.mark i{display:block;flex:1;background:var(--teal)}
+.mark i:nth-child(1){height:38%}
+.mark i:nth-child(2){height:74%;background:var(--red)}
+.mark i:nth-child(3){height:100%}
+.wordmark{line-height:.76;text-transform:uppercase;font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900}
+.wordmark span{display:block;font-size:27px;letter-spacing:2px;text-shadow:2px 2px 0 var(--red)}
+.wordmark b{display:block;font-size:27px;letter-spacing:2px;background:var(--teal);padding:1px 7px 3px;margin-left:-2px;box-shadow:3px 3px 0 var(--ink)}
+
+nav{display:flex;gap:9px;margin-left:6px}
+.tab{
+  position:relative;border:3px solid var(--ink);background:var(--sheet);
+  padding:11px 22px 10px;font:800 15px/1 Archivo,sans-serif;letter-spacing:2px;text-transform:uppercase;
+  transition:transform .12s var(--press),background .12s linear;
+}
+.tab:hover{background:var(--teal-lite)}
+.tab:active{transform:translate(2px,2px)}
+.tab.on{background:var(--ink);color:var(--paper);box-shadow:5px 5px 0 var(--red)}
+
+.status{margin-left:auto;display:flex;align-items:center;gap:9px;border:3px solid var(--ink);background:var(--sheet);padding:8px 13px;font:800 13px/1 Archivo,sans-serif;letter-spacing:1.6px;text-transform:uppercase}
+.pip{width:13px;height:13px;background:var(--teal);border:2px solid var(--ink);animation:blip 1.9s steps(1,end) infinite}
+@keyframes blip{0%,70%{opacity:1}71%,100%{opacity:.25}}
+
+/* ---------- page body ---------- */
+main{padding:24px 96px 26px 40px}
+.page{display:none}
+.page.on{display:block}
+.section{margin-bottom:26px}
+.sect{display:flex;align-items:center;gap:14px;margin:0 0 12px}
+.sect h2{background:var(--ink);color:var(--paper);padding:6px 18px 8px;font-size:29px;line-height:1;text-transform:uppercase;box-shadow:4px 4px 0 var(--teal)}
+.sect .count{font:800 13px/1 Archivo,sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--ink)}
+.sect .rule{flex:1;height:7px;background:var(--ink);position:relative}
+.sect .rule:before{content:"";position:absolute;left:3px;right:-3px;top:3px;height:7px;background:var(--red)}
+
+/* ---------- device rows ---------- */
+.row{
+  display:grid;grid-template-columns:66px 48px minmax(240px,1fr) auto;align-items:center;
+  min-height:76px;background:var(--sheet);border:3px solid var(--ink);margin-bottom:10px;
+  transition:transform .12s var(--press),background .12s linear;
+}
+.row:not(.man):hover{transform:translateX(5px)}
+.row.in-use{background:var(--teal)}
+.row.override{background:var(--red-lite)}
+.row.off{background:var(--dead);color:var(--dead-ink);background-image:radial-gradient(circle at 2px 2px,rgba(20,16,14,.22) 1.6px,transparent 2px);background-size:6px 6px}
+.rank{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:44px;line-height:1;text-align:center}
+.row.off .rank{color:#5d574c}
+.glyph{display:grid;place-items:center}
+.glyph svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:square;stroke-linejoin:miter}
+.name{padding:11px 10px 11px 4px;min-width:0}
+.name strong{display:block;font-size:21px;font-weight:800;line-height:1.15;letter-spacing:-.2px}
+.name small{display:block;margin-top:3px;font-size:15px;font-weight:600;color:var(--sub)}
+.row.off .name small{color:#5d574c}
+.tag{display:inline-block;vertical-align:2px;margin-left:9px;background:var(--ink);color:var(--paper);padding:4px 7px;font:800 11px/1 Archivo,sans-serif;letter-spacing:1.4px;text-transform:uppercase}
+.tag.man{background:var(--red)}
+.tag.gone{background:transparent;color:var(--dead-ink);border:2px solid var(--dead-ink)}
+
+.acts{display:flex;gap:6px;padding:0 12px}
+.ib,.tb{border:3px solid var(--ink);background:transparent;height:40px;min-width:40px;display:grid;place-items:center;transition:transform .1s var(--press),background .1s linear,color .1s linear}
+.tb{padding:0 13px;font:800 14px/1 Archivo,sans-serif;letter-spacing:1.2px;text-transform:uppercase}
+.ib svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:square}
+.ib:hover,.tb:hover{background:var(--ink);color:var(--paper)}
+.ib:active,.tb:active{transform:translate(2px,2px)}
+.tb.go:hover{background:var(--red)}
+
+.add{
+  width:100%;height:56px;border:3px dashed var(--ink);background:var(--paper);
+  font:800 15px/1 Archivo,sans-serif;letter-spacing:2px;text-transform:uppercase;
+  transition:background .12s linear,transform .1s var(--press);
+}
+.add:hover{background:var(--teal-lite)}
+.add:active{transform:translate(2px,2px)}
+
+.legend{display:flex;align-items:center;gap:20px;margin-top:14px;width:max-content;background:var(--paper);padding:9px 15px 9px 0;font:800 13px/1 Archivo,sans-serif;letter-spacing:1.5px;text-transform:uppercase}
+.legend span{display:flex;align-items:center;gap:8px}
+.sw{width:17px;height:17px;background:var(--teal);border:2px solid var(--ink)}
+.sw.man{background:var(--red-lite)}
+
+/* ---------- mixer ---------- */
+.mix{grid-template-columns:66px 48px minmax(210px,1fr) minmax(210px,270px) 66px 104px}
+.slot{padding:0 18px}
+.dim{font:700 15px/1 Archivo,sans-serif;color:var(--dead-ink);letter-spacing:1px;text-transform:uppercase}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;display:block}
+input[type=range]::-webkit-slider-runnable-track{height:14px;border:3px solid var(--ink);background:linear-gradient(90deg,var(--teal) 0 calc(var(--p) * 1%),var(--dead) calc(var(--p) * 1%) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:32px;background:var(--ink);border:0;margin-top:-6px}
+input[type=range]::-moz-range-track{height:14px;border:3px solid var(--ink);background:linear-gradient(90deg,var(--teal) 0 calc(var(--p) * 1%),var(--dead) calc(var(--p) * 1%) 100%)}
+input[type=range]::-moz-range-thumb{width:20px;height:32px;background:var(--ink);border:0;border-radius:0}
+/* teal fill would vanish on the teal in-use row: switch that one to ink on paper */
+.row.in-use input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--ink) 0 calc(var(--p) * 1%),var(--sheet) calc(var(--p) * 1%) 100%)}
+.row.in-use input[type=range]::-moz-range-track{background:linear-gradient(90deg,var(--ink) 0 calc(var(--p) * 1%),var(--sheet) calc(var(--p) * 1%) 100%)}
+.pct{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:29px;line-height:1;text-align:right;font-variant-numeric:tabular-nums}
+.pct.na{font-size:20px;color:var(--dead-ink)}
+.mute{margin:0 12px 0 16px}
+.mute.on{background:var(--ink);color:var(--teal)}
+.mute[disabled]{border-color:var(--dead-ink);color:var(--dead-ink);cursor:not-allowed}
+.mute[disabled]:hover{background:transparent;color:var(--dead-ink)}
+
+/* ---------- devices ---------- */
+.man{grid-template-columns:48px minmax(230px,1fr) 186px 108px 116px;padding:0 14px;gap:10px}
+.man select{width:100%;border:3px solid var(--ink);background:var(--sheet);padding:9px 8px;font-size:16px;font-weight:700}
+.man select:hover{background:var(--teal-lite)}
+.row.gone{background:var(--dead);color:var(--dead-ink)}
+.row.gone select{border-color:var(--dead-ink);background:#e9e3d5}
+.remembered{display:flex;align-items:center;gap:16px;background:var(--ink);color:var(--paper);padding:13px 18px;margin-bottom:22px;font:800 15px/1 Archivo,sans-serif;letter-spacing:1.5px;text-transform:uppercase;box-shadow:5px 5px 0 var(--red)}
+.remembered:before{content:"";width:17px;height:17px;background:var(--red)}
+.remembered .switch{margin-left:auto}
+
+/* ---------- switches + footer ---------- */
+.switch{width:62px;height:32px;padding:3px;border:3px solid var(--ink);background:var(--dead);position:relative;flex:none;transition:background .12s linear}
+.footer .switch,.remembered .switch{border-color:var(--paper)}
+.switch:after{content:"";display:block;width:20px;height:20px;background:var(--ink);transition:transform .14s var(--press)}
+.footer .switch:after,.remembered .switch:after{background:var(--paper)}
+.switch.on{background:var(--teal)}
+.switch.on:after{transform:translateX(30px)}
+.switch:active:after{transform:scale(.9)}
+.switch.on:active:after{transform:translateX(30px) scale(.9)}
+
+.footer{
+  display:flex;align-items:center;gap:34px;flex-wrap:wrap;
+  background:var(--ink);color:var(--paper);padding:16px 26px;border-top:4px solid var(--ink);
+  font:800 15px/1 Archivo,sans-serif;letter-spacing:1.3px;text-transform:uppercase;
+}
+.footer label,.footer .set{display:flex;align-items:center;gap:13px}
+.footer select{border:3px solid var(--paper);background:var(--ink);color:var(--paper);padding:8px 9px;font:800 15px/1 Archivo,sans-serif;letter-spacing:1px}
+.footer select:hover{background:var(--red)}
+.footer .spacer{flex:1}
+.stamp{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:19px;letter-spacing:3px;color:var(--teal)}
+
+.toast{position:fixed;right:34px;bottom:34px;z-index:9;background:var(--ink);color:var(--teal);border:3px solid var(--teal);padding:14px 20px;font:800 15px/1 Archivo,sans-serif;letter-spacing:1.4px;text-transform:uppercase;box-shadow:6px 6px 0 var(--red);transform:translateY(150px);transition:transform .2s var(--press)}
+.toast.show{transform:translateY(0)}
+
+@media (max-width:1180px){
+  main{padding-right:52px}
+  .dots-a{display:none}
+  .mix{grid-template-columns:60px 44px minmax(180px,1fr) minmax(160px,220px) 62px 96px}
+  .man{grid-template-columns:44px minmax(190px,1fr) 160px 100px 108px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  .row:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="plate" aria-hidden="true">
+    <div class="band"></div>
+    <div class="band-low"></div>
+    <div class="dots dots-a"></div>
+    <div class="dots dots-b"></div>
+  </div>
+
+  <div class="app">
+    <header class="head">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="wordmark"><span>Audio</span><b>Deck</b></div>
+      </div>
+      <nav aria-label="Pages">
+        <button class="tab on" data-page="priority" aria-current="page">Priority</button>
+        <button class="tab" data-page="mixer">Mixer</button>
+        <button class="tab" data-page="devices">Devices</button>
+      </nav>
+      <div class="status"><i class="pip"></i><span>Automation on &middot; 2s</span></div>
+    </header>
+
+    <main>
+      <section id="priority" class="page on"></section>
+      <section id="mixer" class="page"></section>
+      <section id="devices" class="page"></section>
+    </main>
+
+    <footer class="footer">
+      <div class="set"><span>Start with Windows</span><button class="switch on" role="switch" aria-checked="true" aria-label="Start with Windows"></button></div>
+      <div class="set"><span>Pause automation</span><button class="switch" role="switch" aria-checked="false" aria-label="Pause automation"></button></div>
+      <label>Check devices every
+        <select aria-label="Device check interval">
+          <option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option><option>30 seconds</option>
+        </select>
+      </label>
+      <span class="spacer"></span>
+      <span class="stamp">AD/1.0</span>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const GLYPH = {
+  buds:'<path d="M8 5h6v11a3 3 0 0 1-6 0zM18 5h6v11a3 3 0 0 1-6 0zM11 19v6M21 19v6"/>',
+  headset:'<path d="M4 19v-5a12 12 0 0 1 24 0v5M4 17h6v10H4zM28 17h-6v10h6zM22 27v2h-6"/>',
+  headphones:'<path d="M4 19v-5a12 12 0 0 1 24 0v5M4 17h6v10H4zM28 17h-6v10h6z"/>',
+  tv:'<path d="M3 5h26v17H3zM12 27h8M16 22v5"/>',
+  mic:'<path d="M11 3h10v15H11zM6 15v2a10 10 0 0 0 20 0v-2M16 27v3M10 30h12"/>',
+  wireless:'<path d="M11 12h10v18H11zM13 3l3 4 3-4M6 8l3 4M26 8l-3 4"/>',
+  optical:'<path d="M4 6h24v20H4zM16 11a5 5 0 1 0 .01 0"/>'
+};
+const g = k => '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">' + GLYPH[k] + '</svg></span>';
+
+const outputs = [
+  {n:'AirPods Pro',    s:'Apple &middot; Earbuds',        i:'buds',       st:'off',    tag:'Offline', vol:null},
+  {n:'Arctis Nova Pro',s:'Steelseries &middot; Headset',  i:'headset',    st:'in-use', tag:'In use',  vol:100},
+  {n:'Quest',          s:'Meta &middot; Headphones',      i:'headphones', st:'',       tag:'',        vol:62},
+  {n:'NVIDIA High Definition Audio', s:'LG &middot; TV',  i:'tv',         st:'',       tag:'',        vol:45}
+];
+const mics = [
+  {n:'Arctis Nova Pro Mic',s:'Steelseries &middot; Headset mic', i:'mic',      st:'',         tag:'',                vol:88},
+  {n:'DJI MIC MINI',       s:'DJI &middot; Wireless receiver',   i:'wireless', st:'override', tag:'Manual override', vol:70}
+];
+
+const tagHtml = d => d.tag ? '<span class="tag' + (d.st==='override'?' man':d.st==='off'?' gone':'') + '">' + d.tag + '</span>' : '';
+
+const ctl = (path,label,dir) =>
+  '<button class="ib ' + (dir?'move':'kill') + '"' + (dir?' data-dir="'+dir+'"':'') + ' aria-label="' + label + '">' +
+  '<svg viewBox="0 0 20 20"><path d="' + path + '"/></svg></button>';
+const acts = () => '<div class="acts">' +
+  ctl('M4 12l6-6 6 6','Move up','-1') +
+  ctl('M4 8l6 6 6-6','Move down','1') +
+  ctl('M4 4l12 12M16 4L4 16','Remove from ranking',null) + '</div>';
+
+const rankRow = (d,i) =>
+  '<article class="row ' + d.st + '"><span class="rank">' + (i+1) + '</span>' + g(d.i) +
+  '<div class="name"><strong>' + d.n + tagHtml(d) + '</strong><small>' + d.s + '</small></div>' + acts() + '</article>';
+
+const mixRow = (d,i) =>
+  '<article class="row mix ' + d.st + '"><span class="rank">' + (i+1) + '</span>' + g(d.i) +
+  '<div class="name"><strong>' + d.n + tagHtml(d) + '</strong><small>' + d.s + '</small></div>' +
+  (d.vol === null
+    ? '<div class="slot"><span class="dim">No signal</span></div><span class="pct na">OFF</span><button class="tb mute" disabled>Mute</button>'
+    : '<div class="slot"><input type="range" min="0" max="100" value="' + d.vol + '" style="--p:' + d.vol + '" aria-label="' + d.n + ' volume"></div>' +
+      '<span class="pct">' + d.vol + '%</span><button class="tb mute">Mute</button>') +
+  '</article>';
+
+const sect = (title,count,rows,add) =>
+  '<section class="section"><div class="sect"><h2>' + title + '</h2><span class="count">' + count + '</span><i class="rule"></i></div>' +
+  rows + (add ? '<button class="add">+ Add a device (2 more)</button>' : '') + '</section>';
+
+$('#priority').innerHTML =
+  sect('Outputs','4 ranked',outputs.map(rankRow).join(''),true) +
+  sect('Microphones','2 ranked',mics.map(rankRow).join(''),true) +
+  '<div class="legend"><span><i class="sw"></i>Automatic, in use</span><span><i class="sw man"></i>Manual override</span></div>';
+
+$('#mixer').innerHTML =
+  sect('Outputs','4 ranked',outputs.map(mixRow).join(''),false) +
+  sect('Microphones','2 ranked',mics.map(mixRow).join(''),false);
+
+const all = outputs.concat(mics,[{n:'Realtek Digital Output',s:'Realtek &middot; S/PDIF, disabled',i:'optical',st:'gone',tag:'',vol:null}]);
+const types = ['Speakers','Headphones','Headset','TV'];
+const typeFor = d => d.i==='tv' ? 'TV' : (d.i==='headset'||d.i==='mic'||d.i==='wireless') ? 'Headset' : d.i==='optical' ? 'Speakers' : 'Headphones';
+
+$('#devices').innerHTML =
+  '<div class="remembered"><span>Show remembered devices (31)</span>' +
+  '<button class="switch" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></div>' +
+  sect('All endpoints','7 found &middot; renames apply in Windows',
+    all.map(d =>
+      '<article class="row man ' + (d.st === 'gone' ? 'gone' : '') + '">' + g(d.i) +
+      '<div class="name"><strong>' + d.n + '</strong><small>' + d.s + '</small></div>' +
+      '<select aria-label="' + d.n + ' device type">' +
+        types.map(t => '<option' + (t===typeFor(d)?' selected':'') + '>' + t + '</option>').join('') +
+      '</select>' +
+      '<button class="tb rename">Rename</button>' +
+      '<button class="tb toggle' + (d.st==='gone'?' go':'') + '">' + (d.st==='gone'?'Enable':'Disable') + '</button>' +
+      '</article>').join(''), false);
+
+/* ---------- behaviour ---------- */
+let tid;
+const flash = m => {
+  const t = $('.toast');
+  t.textContent = m; t.classList.add('show');
+  clearTimeout(tid); tid = setTimeout(() => t.classList.remove('show'), 1600);
+};
+
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => { x.classList.remove('on'); x.removeAttribute('aria-current'); });
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); b.setAttribute('aria-current','page');
+  $('#' + b.dataset.page).classList.add('on');
+}));
+
+document.addEventListener('input', e => {
+  if (e.target.type !== 'range') return;
+  e.target.style.setProperty('--p', e.target.value);
+  e.target.closest('.row').querySelector('.pct').textContent = e.target.value + '%';
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.classList.contains('switch')) {
+    b.classList.toggle('on');
+    b.setAttribute('aria-checked', b.classList.contains('on'));
+  }
+  if (b.classList.contains('mute')) {
+    b.classList.toggle('on');
+    b.textContent = b.classList.contains('on') ? 'Muted' : 'Mute';
+  }
+  if (b.classList.contains('rename')) {
+    const el = b.closest('.row').querySelector('strong');
+    const v = prompt('Rename this device in Windows', el.textContent.trim());
+    if (v) { el.textContent = v; flash('Renamed in Windows'); }
+  }
+  if (b.classList.contains('toggle')) {
+    const on = b.textContent.trim() === 'Enable';
+    b.textContent = on ? 'Disable' : 'Enable';
+    b.classList.toggle('go', !on);
+    b.closest('.row').classList.toggle('gone', !on);
+    flash(on ? 'Endpoint enabled' : 'Endpoint disabled');
+  }
+  if (b.classList.contains('kill')) flash('Removed from ranking');
+  if (b.classList.contains('add')) flash('Pick a device to rank');
+  if (b.classList.contains('move')) {
+    const row = b.closest('.row'), up = b.dataset.dir === '-1';
+    const sib = up ? row.previousElementSibling : row.nextElementSibling;
+    if (!sib || !sib.classList.contains('row')) return;
+    up ? row.parentNode.insertBefore(row, sib) : row.parentNode.insertBefore(sib, row);
+    [...row.parentNode.querySelectorAll('.row')].forEach((r,i) => {
+      const n = r.querySelector('.rank'); if (n) n.textContent = i + 1;
+    });
+    flash('Ranking updated');
+  }
+});
+</script>
+</body>
+</html>

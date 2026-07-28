@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AudioDeck design mockups</title>
+<title>AudioDeck punk variations</title>
 <style>
   :root {
     --chrome: #16181d;
@@ -11,17 +11,14 @@
     --line: #333844;
     --ink: #f2f4f8;
     --ink-dim: #a6aebd;
-    --accent: #ffb454;
+    --accent: #4ecdc4;
+    --pink: #ef7bab;
     --ease: cubic-bezier(0.23, 1, 0.32, 1);
     color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
-
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
+  html, body { height: 100%; margin: 0; }
 
   body {
     display: flex;
@@ -35,32 +32,26 @@
   header {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
     flex-wrap: wrap;
-    padding: 0.9rem 1.5rem;
+    padding: 0.85rem 1.4rem;
     background: var(--chrome-2);
     border-bottom: 1px solid var(--line);
   }
 
   .brand {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     white-space: nowrap;
   }
   .brand span { color: var(--accent); }
 
-  .picker {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex: 1;
-    min-width: 340px;
-  }
+  .picker { display: flex; align-items: center; gap: 0.55rem; flex: 1; min-width: 340px; }
 
   select {
     flex: 1;
-    min-width: 260px;
+    min-width: 250px;
     font: inherit;
     font-size: 1.05rem;
     padding: 0.6rem 0.9rem;
@@ -70,8 +61,8 @@
     border-radius: 8px;
     cursor: pointer;
   }
-
   select:hover { border-color: #4b5364; }
+  optgroup { color: var(--ink-dim); font-style: normal; }
 
   button, .linkbtn {
     font: inherit;
@@ -90,28 +81,19 @@
     gap: 0.4rem;
     transition: border-color 140ms var(--ease), background 140ms var(--ease);
   }
-
   button:hover, .linkbtn:hover { border-color: #4b5364; background: #262a33; }
   button:active { transform: scale(0.98); }
-  button:disabled { opacity: 0.4; cursor: default; }
 
-  :focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-  .counter {
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-dim);
-    white-space: nowrap;
-  }
+  .counter { font-variant-numeric: tabular-nums; color: var(--ink-dim); white-space: nowrap; }
 
   .meta {
-    padding: 0.55rem 1.5rem;
+    padding: 0.5rem 1.4rem;
     background: var(--chrome-2);
     border-bottom: 1px solid var(--line);
     color: var(--ink-dim);
-    font-size: 0.98rem;
+    font-size: 0.97rem;
     display: flex;
     gap: 0.75rem;
     align-items: baseline;
@@ -119,35 +101,24 @@
   }
 
   .tag {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding: 0.2rem 0.5rem;
     border: 1px solid var(--line);
     border-radius: 999px;
-    color: var(--ink);
     white-space: nowrap;
   }
-  .tag.codex { color: #7fd6a9; border-color: #2f5c47; }
-  .tag.claude { color: var(--accent); border-color: #5c4526; }
+  .tag.codex { color: var(--pink); border-color: #5c2f45; }
+  .tag.claude { color: var(--accent); border-color: #245c58; }
+  .tag.kind { color: var(--ink-dim); }
 
-  .stage {
-    flex: 1;
-    min-height: 0;
-    background: #0b0c0f;
-  }
-
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
-    background: #fff;
-  }
+  .stage { flex: 1; min-height: 0; background: #0b0c0f; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
 
   kbd {
     font: inherit;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     padding: 0.1rem 0.35rem;
     border: 1px solid var(--line);
     border-bottom-width: 2px;
@@ -155,95 +126,84 @@
     color: var(--ink-dim);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
-  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
   <header>
-    <div class="brand">Audio<span>Deck</span> mockups</div>
+    <div class="brand">Punk<span>Deck</span> variations</div>
     <div class="picker">
-      <button id="prev" type="button" aria-label="Previous mockup">&#9664;</button>
-      <select id="pick" aria-label="Choose a mockup"></select>
-      <button id="next" type="button" aria-label="Next mockup">&#9654;</button>
+      <button id="prev" type="button" aria-label="Previous variation">&#9664;</button>
+      <select id="pick" aria-label="Choose a variation"></select>
+      <button id="next" type="button" aria-label="Next variation">&#9654;</button>
     </div>
     <span class="counter" id="counter"></span>
     <a class="linkbtn" id="open" href="#" target="_blank" rel="noopener">Open full page</a>
   </header>
   <div class="meta">
     <span class="tag" id="source">&nbsp;</span>
+    <span class="tag kind" id="kind">&nbsp;</span>
     <span id="desc"></span>
     <span style="margin-left:auto"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> to browse</span>
   </div>
   <div class="stage">
-    <iframe id="frame" title="Mockup preview"></iframe>
+    <iframe id="frame" title="Variation preview"></iframe>
   </div>
 
 <script>
 const MOCKUPS = [
-  { file: "riso-zine.html", name: "Riso zine", by: "claude", round: 2,
-    desc: "Two fluoro spot inks overprinting on uncoated stock, halftone dots, deliberate misregistration." },
-  { file: "bauhaus-constructivist.html", name: "Bauhaus constructivist", by: "claude", round: 2,
-    desc: "Poster first: primary red, cobalt, chrome yellow, pure geometry on a hard diagonal axis." },
-  { file: "braun-functional.html", name: "Braun functional", by: "claude", round: 2,
-    desc: "Dieter Rams restraint. Machined grey chassis, one orange accent, millimetre grid." },
-  { file: "ma-minimal.html", name: "Ma minimal", by: "claude", round: 2,
-    desc: "Japanese negative space. Hairlines, no boxes, a single vermillion seal for the live device." },
-  { file: "blueprint-draft.html", name: "Blueprint draft", by: "claude", round: 2,
-    desc: "Cyanotype engineering drawing: dimension lines, callout annotations, title block." },
-  { file: "studio-console.html", name: "Studio console", by: "claude",
-    desc: "Pro-audio rack gear, dark. Channel faders, LED meters, amber on near-black." },
-  { file: "swiss-light.html", name: "Swiss light", by: "claude",
-    desc: "International style. White, hard black, one red, strict grid, oversized rank figures." },
-  { file: "linear-glass.html", name: "Linear glass", by: "claude",
-    desc: "Modern SaaS dark. Glassy panels, radial glow behind the active device, own logomark." },
-  { file: "mono-terminal.html", name: "Mono terminal", by: "claude",
-    desc: "Monospace black/white/green. ASCII dividers, [01] ranks, cursor detail, own text logo." },
-  { file: "soft-daylight.html", name: "Soft daylight", by: "claude",
-    desc: "Warm off-white, rounded cards, sage and terracotta, calm domestic feel." },
-  { file: "neo-brutalist.html", name: "Neo-brutalist", by: "claude",
-    desc: "Bone white, 3px ink borders, hard offset shadows, yellow in-use, stamped logotype." },
-  { file: "fluent-native.html", name: "Fluent native", by: "claude",
-    desc: "Windows 11 look. Mica layers, Segoe type, accent pill, WinUI radii." },
-  { file: "editorial-serif.html", name: "Editorial serif", by: "claude",
-    desc: "Cream paper, display serif headings, ledger rows, ink blue and copper, monogram." },
-  { file: "aurora-gradient.html", name: "Aurora gradient", by: "claude",
-    desc: "Near-black with one soft teal-violet mesh glow, frosted cards, luminous outlines." },
-  { file: "retro-hifi.html", name: "Retro hi-fi", by: "claude",
-    desc: "Charcoal, silver and warm orange VU glow, tuner-scale sliders, own cone logomark." },
-  { file: "codex-5.html", name: "Bauhaus workshop", by: "codex", round: 2,
-    desc: "Primary planes on cream, blocky signal marks, big condensed headline." },
-  { file: "codex-6.html", name: "Transit map", by: "codex", round: 2,
-    desc: "Civic wayfinding: roundel logo, route line threading the ranks, teal and orange." },
-  { file: "codex-7.html", name: "Punk zine", by: "codex", round: 2,
-    desc: "Cut-and-paste photocopy energy, taped angles, acid teal and pink on newsprint." },
-  { file: "codex-8.html", name: "Typographic notation", by: "codex", round: 2,
-    desc: "Score-like quiet layout built from type and rules alone." },
-  { file: "codex-9.html", name: "Art deco broadcast", by: "codex", round: 2,
-    desc: "Oxblood and gold radio hall: deco arch logomark, diamond markers, theatre framing." },
-  { file: "codex-1.html", name: "Codex 1", by: "codex", desc: "Dark teal signal-director dashboard." },
-  { file: "codex-2.html", name: "Codex 2", by: "codex", desc: "Codex's own direction." },
-  { file: "codex-3.html", name: "Codex 3", by: "codex", desc: "Codex's own direction." },
-  { file: "codex-4.html", name: "Vintage receiver", by: "codex",
-    desc: "Walnut and cream hi-fi console with an engraved faceplate." },
+  { file: "punk-tight.html", name: "Tight cleanup", by: "claude", kind: "minor",
+    desc: "The reference done right: hero killed, one thin title bar, rows compressed to 56px." },
+  { file: "punk-quiet.html", name: "Punk grown up", by: "claude", kind: "minor",
+    desc: "Same family made quiet: newsprint, one acid, decoration down to a cut edge and hairlines." },
+  { file: "punk-sticker.html", name: "Sticker sheet", by: "claude", kind: "major",
+    desc: "Die-cut stickers on release liner, every row rotated a fraction, peeling tab corners." },
+  { file: "punk-xerox.html", name: "Third-gen photocopy", by: "claude", kind: "major",
+    desc: "Blown-out toner edges, dither screens, copier streaks, grayscale plus fluoro pink." },
+  { file: "punk-ransom.html", name: "Ransom note", by: "claude", kind: "major",
+    desc: "Cut-letter collage on labels and tabs only; functional text stays clean and legible." },
+  { file: "punk-jcard.html", name: "Cassette J-card", by: "claude", kind: "major",
+    desc: "Tape insert layout: rotated spine strip, tape-window sections, marker annotations." },
+  { file: "punk-gigposter.html", name: "Silkscreen gig poster", by: "claude", kind: "major",
+    desc: "Two inks with deliberate offset overlap, diagonal band, halftone fills." },
+  { file: "punk-hardcore.html", name: "Hardcore monochrome", by: "claude", kind: "major",
+    desc: "Black and newsprint only, plus one blood red for the override. Punk as refusal." },
+  { file: "punk-riotgrrrl.html", name: "Riot grrrl collage", by: "claude", kind: "major",
+    desc: "Hot pink and black, marker scrawl, hand-circled states, torn paper edges." },
+  { file: "punk-dymo.html", name: "Dymo industrial", by: "claude", kind: "major",
+    desc: "Embossed label-tape strips, oil grey and acid green, rack-machine feel." },
+  { file: "codex-p1.html", name: "Codex punk 1", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p2.html", name: "Codex punk 2", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p3.html", name: "Codex punk 3", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p4.html", name: "Codex punk 4", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p5.html", name: "Codex punk 5", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p6.html", name: "Codex punk 6", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p7.html", name: "Codex punk 7", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p8.html", name: "Codex punk 8", by: "codex", kind: "", desc: "Codex variation." },
+  { file: "codex-p9.html", name: "Codex punk 9", by: "codex", kind: "", desc: "Codex variation." },
 ];
 
 const pick = document.getElementById("pick");
 const frame = document.getElementById("frame");
 const counter = document.getElementById("counter");
 const sourceTag = document.getElementById("source");
+const kindTag = document.getElementById("kind");
 const desc = document.getElementById("desc");
 const openLink = document.getElementById("open");
-const prev = document.getElementById("prev");
-const next = document.getElementById("next");
 
-MOCKUPS.forEach((m, i) => {
-  const opt = document.createElement("option");
-  opt.value = String(i);
-  opt.textContent = (m.by === "codex" ? "Codex: " : "") + m.name;
-  pick.appendChild(opt);
-});
+const groups = { claude: "Claude", codex: "Codex" };
+for (const [key, label] of Object.entries(groups)) {
+  const og = document.createElement("optgroup");
+  og.label = label;
+  MOCKUPS.forEach((m, i) => {
+    if (m.by !== key) return;
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = m.name + (m.kind ? "  (" + m.kind + ")" : "");
+    og.appendChild(opt);
+  });
+  pick.appendChild(og);
+}
 
 let index = 0;
 
@@ -255,19 +215,19 @@ function show(i) {
   counter.textContent = (index + 1) + " / " + MOCKUPS.length;
   sourceTag.textContent = m.by === "codex" ? "Codex" : "Claude";
   sourceTag.className = "tag " + m.by;
+  kindTag.textContent = m.kind || "variation";
   desc.textContent = m.desc;
   openLink.href = m.file;
   location.hash = m.file.replace(".html", "");
 }
 
 pick.addEventListener("change", () => show(Number(pick.value)));
-prev.addEventListener("click", () => show(index - 1));
-next.addEventListener("click", () => show(index + 1));
-
+document.getElementById("prev").addEventListener("click", () => show(index - 1));
+document.getElementById("next").addEventListener("click", () => show(index + 1));
 document.addEventListener("keydown", (e) => {
   if (e.target === pick) return;
-  if (e.key === "ArrowLeft") { show(index - 1); }
-  if (e.key === "ArrowRight") { show(index + 1); }
+  if (e.key === "ArrowLeft") show(index - 1);
+  if (e.key === "ArrowRight") show(index + 1);
 });
 
 const fromHash = MOCKUPS.findIndex((m) => m.file.replace(".html", "") === location.hash.slice(1));
