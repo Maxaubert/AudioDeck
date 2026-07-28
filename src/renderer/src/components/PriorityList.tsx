@@ -4,7 +4,7 @@
 import { useRef, useState } from "react";
 import { moveItem } from "../reorder.js";
 import { displayDetail, displayName } from "../useAppState.js";
-import { AvailabilityBadge } from "./StatusBadge.js";
+import { StateBadge } from "./StatusBadge.js";
 import { DeviceGlyph } from "./DeviceGlyph.js";
 import type { DeviceView } from "../../../../shared/ipc.js";
 
@@ -124,17 +124,15 @@ export function PriorityList({
             <div className="strip-body">
               <div className="device-name">
                 {device !== undefined ? displayName(device) : "Not connected"}
+                {device !== undefined ? (
+                  <StateBadge device={device} manualOverride={manualOverride} />
+                ) : (
+                  <span className="badge badge-offline">Offline</span>
+                )}
               </div>
               {device !== undefined && displayDetail(device) !== null ? (
                 <div className="device-sub">{displayDetail(device)}</div>
               ) : null}
-            </div>
-            <div className="strip-tags">
-              {device !== undefined ? (
-                <AvailabilityBadge device={device} />
-              ) : (
-                <span className="badge badge-offline">Offline</span>
-              )}
             </div>
             <div className="move-controls">
               <button

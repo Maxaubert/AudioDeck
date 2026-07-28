@@ -1,22 +1,36 @@
-// Mixer view: a fader and mute per ranked device, mirroring the Priority
-// lists exactly - same devices, same order, same glyphs. Ranked devices that
-// are offline show a quiet row without a fader; devices outside the priority
-// list do not appear here at all.
+// Mixer view: one row per ranked device, matching the Priority order. Each row
+// is a single line: rank, glyph, name, segmented meter, percentage, mute. The
+// meter is 20 blocks with an invisible range input laid over it, so dragging
+// works exactly like a slider while the visuals stay in the print language.
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { displayDetail, displayName } from "../useAppState.js";
-import { AvailabilityBadge } from "../components/StatusBadge.js";
+import { StateBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
-import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 import { SectionLabel } from "../components/SectionLabel.js";
+import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
+
+const SEGMENTS = 20;
+
+function Meter({ value }: { value: number }) {
+  const lit = Math.round((value / 100) * SEGMENTS);
+  return (
+    <div className="segs" aria-hidden="true">
+      {Array.from({ length: SEGMENTS }, (_, i) => (
+        <span key={i} className={i < lit ? "f" : undefined} />
+      ))}
+    </div>
+  );
+}
 
 function MixerStrip({
   device,
+  rank,
   manualOverride,
   actions,
 }: {
   device: DeviceView;
+  rank: number;
   manualOverride: boolean;
   actions: AudioDeckApi;
 }) {
@@ -39,65 +53,62 @@ function MixerStrip({
 
   const muted = device.mute === true;
   const offline = device.state !== "active";
-  const name = displayName(device);
   const classes = [
     "strip",
     "mixer-strip",
-    "is-plain",
     offline ? "is-offline" : "",
-    // The amber outline is the one "audio goes here right now" indicator;
-    // blue means it was pointed here by hand and priority is on hold.
     device.isDefault ? "is-default" : "",
     device.isDefault && manualOverride ? "is-manual" : "",
   ]
     .filter(Boolean)
     .join(" ");
+
   return (
-    <li
-      className={classes}
-      title={
-        device.isDefault && manualOverride
-          ? "Manually switched; the priority list resumes on the next device event"
-          : undefined
-      }
-    >
-      <div className="mixer-head">
-        <DeviceGlyph formFactor={device.formFactor} />
-        <div className="strip-body">
-          <div className="device-name">{name}</div>
-          {displayDetail(device) !== null ? (
-            <div className="device-sub">{displayDetail(device)}</div>
-          ) : null}
+    <li className={classes}>
+      <span className="rank">{rank}</span>
+      <DeviceGlyph formFactor={device.formFactor} />
+      <div className="strip-body">
+        <div className="device-name">
+          {displayName(device)}
+          <StateBadge device={device} manualOverride={manualOverride} />
         </div>
-        {offline ? (
-          <AvailabilityBadge device={device} />
-        ) : (
-          <span className={muted ? "volume-value is-muted" : "volume-value"}>{local}%</span>
-        )}
+        {displayDetail(device) !== null ? (
+          <div className="device-sub">{displayDetail(device)}</div>
+        ) : null}
       </div>
-      {offline ? null : (
-        <div className="volume-row">
-          <input
-            ref={inputRef}
-            type="range"
-            className="fader"
-            min={0}
-            max={100}
-            step={1}
-            value={local}
-            style={{ "--fill": `${local}%` } as CSSProperties}
-            aria-label={`${device.name} volume`}
-            onChange={(e) => setLocal(Number(e.target.value))}
-          />
+      {offline ? (
+        <>
+          <div className="na">Unavailable</div>
+          <span className="volume-value">--</span>
+          <button type="button" className="btn mute" disabled>
+            Mute
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="vol">
+            <Meter value={local} />
+            <input
+              ref={inputRef}
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={local}
+              aria-label={`${device.name} volume`}
+              onChange={(e) => setLocal(Number(e.target.value))}
+            />
+          </div>
+          <span className={muted ? "volume-value is-muted" : "volume-value"}>{local}%</span>
           <button
             type="button"
-            className={muted ? "btn btn-danger" : "btn"}
+            className={muted ? "btn mute is-on" : "btn mute"}
             aria-pressed={muted}
             onClick={() => void actions.setMute(device.id, !muted)}
           >
-            {muted ? "Unmute" : "Mute"}
+            {muted ? "Muted" : "Mute"}
           </button>
-        </div>
+        </>
       )}
     </li>
   );
@@ -105,9 +116,7 @@ function MixerStrip({
 
 function rankedDevices(state: AppState, priority: string[]): DeviceView[] {
   const byId = new Map(state.devices.map((d) => [d.id, d]));
-  return priority
-    .map((id) => byId.get(id))
-    .filter((d): d is DeviceView => d !== undefined);
+  return priority.map((id) => byId.get(id)).filter((d): d is DeviceView => d !== undefined);
 }
 
 export function MixerView({ state, actions }: { state: AppState; actions: AudioDeckApi }) {
@@ -118,16 +127,16 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
       <h2 className="view-title" id="mixer-title">
         Mixer
       </h2>
-      <p className="view-hint">Volume and mute for your ranked devices.</p>
       <SectionLabel title="Outputs" note={`${outputs.length} ranked`} />
       {outputs.length === 0 ? (
         <p className="empty-note">No ranked outputs yet.</p>
       ) : (
         <ul className="strip-list">
-          {outputs.map((d) => (
+          {outputs.map((d, i) => (
             <MixerStrip
               key={d.id}
               device={d}
+              rank={i + 1}
               manualOverride={state.override.output}
               actions={actions}
             />
@@ -139,10 +148,11 @@ export function MixerView({ state, actions }: { state: AppState; actions: AudioD
         <p className="empty-note">No ranked microphones yet.</p>
       ) : (
         <ul className="strip-list">
-          {mics.map((d) => (
+          {mics.map((d, i) => (
             <MixerStrip
               key={d.id}
               device={d}
+              rank={i + 1}
               manualOverride={state.override.mic}
               actions={actions}
             />
