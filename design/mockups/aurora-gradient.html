@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AudioDeck - aurora-gradient</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07090e;
+    --ink:#e9eef7;
+    --muted:#a3adc0;
+    --dim:#79839a;
+    --faint:#57607a;
+    --line:rgba(255,255,255,.085);
+    --line-soft:rgba(255,255,255,.055);
+    --card:rgba(255,255,255,.035);
+    --card-strong:rgba(255,255,255,.055);
+    --teal:#2fd4c0;
+    --violet:#8f7bf6;
+    --amber:#f0b25e;
+    --cyan:#58d8ec;
+    --danger:#f2777f;
+    --r-lg:18px;
+    --r-md:12px;
+    --r-sm:9px;
+    --ease:cubic-bezier(0.23,1,0.32,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:dark}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",-apple-system,"Segoe UI",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    min-height:100vh;
+    padding:52px 24px 72px;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---- aurora: one large corner glow, restrained ---- */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(1000px 720px at 10% -12%, rgba(47,212,192,.14), transparent 62%),
+      radial-gradient(1250px 860px at 32% -4%, rgba(143,123,246,.12), transparent 64%),
+      radial-gradient(700px 520px at -6% 30%, rgba(47,212,192,.05), transparent 60%);
+    z-index:0;
+  }
+  body::after{ /* fine grain so the glow doesn't band */
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.028 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index:0;
+  }
+
+  .window{
+    position:relative;
+    z-index:1;
+    width:1180px;
+    max-width:100%;
+    margin:0 auto;
+    background:linear-gradient(180deg, rgba(20,24,34,.72), rgba(12,15,22,.78));
+    -webkit-backdrop-filter:blur(22px);
+    backdrop-filter:blur(22px);
+    border:1px solid var(--line);
+    border-radius:22px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.06) inset,
+      0 40px 90px -30px rgba(0,0,0,.75),
+      0 0 120px -40px rgba(90,110,200,.25);
+    overflow:hidden;
+  }
+
+  /* ================= header ================= */
+  .titlebar{
+    display:flex;
+    align-items:center;
+    gap:32px;
+    padding:20px 28px 18px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .wordmark{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    user-select:none;
+  }
+  .logomark{
+    width:34px;height:34px;
+    border-radius:10px;
+    background:linear-gradient(140deg, rgba(47,212,192,.16), rgba(143,123,246,.16));
+    border:1px solid rgba(255,255,255,.12);
+    display:grid;place-items:center;
+    flex:none;
+  }
+  .wordmark h1{
+    font-size:22px;
+    font-weight:650;
+    letter-spacing:-0.015em;
+  }
+  .wordmark h1 b{font-weight:650;color:var(--teal)}
+  .wordmark small{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-top:1px;
+  }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    background:rgba(0,0,0,.28);
+    border:1px solid var(--line-soft);
+    border-radius:12px;
+    padding:4px;
+    margin-left:12px;
+  }
+  .tab{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--muted);
+    font:inherit;
+    font-size:16px;
+    font-weight:550;
+    padding:9px 26px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:color .18s var(--ease), background .18s var(--ease);
+  }
+  .tab:hover{color:var(--ink)}
+  .tab[aria-selected="true"]{
+    color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+    box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 6px 14px -8px rgba(0,0,0,.7);
+  }
+  .winctl{
+    margin-left:auto;
+    display:flex;
+    gap:22px;
+    color:var(--faint);
+    font-size:15px;
+    letter-spacing:.02em;
+    user-select:none;
+  }
+  .winctl span{cursor:default;transition:color .15s}
+  .winctl span:hover{color:var(--muted)}
+
+  /* ================= pages ================= */
+  .page{display:none;padding:34px 28px 30px}
+  .page.is-active{display:block}
+  .page-lede{
+    color:var(--muted);
+    font-size:16.5px;
+    max-width:66ch;
+    margin:-6px 0 28px;
+  }
+  .page-lede strong{color:var(--ink);font-weight:600}
+
+  .cols{
+    display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+    gap:34px;
+    align-items:start;
+  }
+
+  .sec-label{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin:0 2px 14px;
+  }
+  .sec-label h2{
+    font-size:13.5px;
+    font-weight:650;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .sec-label .rule{flex:1;height:1px;background:var(--line-soft)}
+  .sec-label .count{
+    font-size:13px;
+    color:var(--faint);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- device rows ---- */
+  .stack{display:flex;flex-direction:column;gap:11px}
+  .row{
+    display:grid;
+    grid-template-columns:40px 46px minmax(0,1fr) auto;
+    align-items:center;
+    gap:16px;
+    padding:15px 16px 15px 20px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    transition:background .18s var(--ease), border-color .18s var(--ease), transform .18s var(--ease);
+    cursor:pointer;
+  }
+  .row:hover{
+    background:var(--card-strong);
+    border-color:rgba(255,255,255,.14);
+    transform:translateY(-1px);
+  }
+  .row:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  .rank{
+    font-size:26px;
+    font-weight:300;
+    color:var(--faint);
+    font-variant-numeric:tabular-nums;
+    text-align:center;
+    line-height:1;
+  }
+  .glyph{
+    width:46px;height:46px;
+    border-radius:12px;
+    background:rgba(255,255,255,.05);
+    border:1px solid var(--line-soft);
+    display:grid;place-items:center;
+    color:var(--muted);
+    flex:none;
+  }
+  .row .name{
+    font-size:18px;
+    font-weight:560;
+    letter-spacing:-0.008em;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+  }
+  .row .name > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .sub{
+    font-size:14.5px;
+    color:var(--dim);
+    margin-top:2px;
+  }
+
+  .chip{
+    font-size:11px;
+    font-weight:650;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    padding:4px 10px 3px;
+    border-radius:999px;
+    border:1px solid;
+    flex:none;
+    line-height:1.5;
+  }
+  .chip.off{color:#96a0b4;border-color:rgba(150,160,180,.4)}
+  .chip.inuse{color:var(--amber);border-color:rgba(240,178,94,.55)}
+  .chip.manual{color:var(--cyan);border-color:rgba(88,216,236,.55)}
+  .chip.disabled{color:#8a93a8;border-color:rgba(138,147,168,.4)}
+
+  /* state outlines: the signature */
+  .row.is-inuse{
+    border-color:rgba(240,178,94,.62);
+    background:linear-gradient(180deg, rgba(240,178,94,.055), rgba(240,178,94,.02));
+    box-shadow:0 0 0 1px rgba(240,178,94,.28), 0 0 30px -10px rgba(240,178,94,.4);
+  }
+  .row.is-inuse:hover{border-color:rgba(240,178,94,.8)}
+  .row.is-inuse .glyph{color:var(--amber);border-color:rgba(240,178,94,.35)}
+  .row.is-manual{
+    border-color:rgba(88,216,236,.6);
+    background:linear-gradient(180deg, rgba(88,216,236,.05), rgba(88,216,236,.02));
+    box-shadow:0 0 0 1px rgba(88,216,236,.26), 0 0 30px -10px rgba(88,216,236,.38);
+  }
+  .row.is-manual:hover{border-color:rgba(88,216,236,.8)}
+  .row.is-manual .glyph{color:var(--cyan);border-color:rgba(88,216,236,.32)}
+  .row.is-offline{cursor:default;background:rgba(255,255,255,.016);border-color:var(--line-soft)}
+  .row.is-offline:hover{transform:none;background:rgba(255,255,255,.016)}
+  .row.is-offline .name,.row.is-offline .rank{color:#8d96aa}
+  .row.is-offline .sub{color:#616a80}
+  .row.is-offline .glyph{color:#616a80;background:rgba(255,255,255,.025)}
+  .row.is-disabled{cursor:default;background:rgba(255,255,255,.016);border-style:dashed}
+  .row.is-disabled:hover{transform:none;background:rgba(255,255,255,.016)}
+  .row.is-disabled .name{color:#8d96aa}
+  .row.is-disabled .sub,.row.is-disabled .glyph{color:#616a80}
+
+  /* row controls */
+  .ctrls{display:flex;gap:7px;align-items:center}
+  .icobtn{
+    appearance:none;
+    width:36px;height:36px;
+    border-radius:var(--r-sm);
+    border:1px solid var(--line-soft);
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    display:grid;place-items:center;
+    cursor:pointer;
+    transition:all .15s var(--ease);
+  }
+  .icobtn:hover{background:rgba(255,255,255,.09);color:var(--ink);border-color:rgba(255,255,255,.18)}
+  .icobtn:active{transform:scale(.94)}
+  .icobtn.rm:hover{color:var(--danger);border-color:rgba(242,119,127,.45)}
+  .icobtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .icobtn[disabled]{opacity:.35;pointer-events:none}
+
+  .addbtn{
+    appearance:none;
+    width:100%;
+    margin-top:11px;
+    padding:15px;
+    font:inherit;
+    font-size:16px;
+    font-weight:550;
+    color:var(--dim);
+    background:transparent;
+    border:1.5px dashed rgba(255,255,255,.16);
+    border-radius:var(--r-md);
+    cursor:pointer;
+    transition:all .18s var(--ease);
+  }
+  .addbtn:hover{color:var(--ink);border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.03)}
+  .addbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  /* ---- legend card ---- */
+  .legend{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:22px 24px;
+    margin-top:30px;
+  }
+  .legend h3{
+    font-size:13.5px;
+    font-weight:650;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .legend ul{list-style:none;display:flex;flex-direction:column;gap:13px}
+  .legend li{display:flex;gap:14px;align-items:flex-start;font-size:15.5px;color:var(--muted)}
+  .legend li strong{color:var(--ink);font-weight:600}
+  .swatch{
+    width:34px;height:22px;
+    border-radius:6px;
+    flex:none;
+    margin-top:2px;
+    border:1.5px solid;
+  }
+  .swatch.amber{border-color:rgba(240,178,94,.75);box-shadow:0 0 12px -3px rgba(240,178,94,.6);background:rgba(240,178,94,.07)}
+  .swatch.cyan{border-color:rgba(88,216,236,.7);box-shadow:0 0 12px -3px rgba(88,216,236,.55);background:rgba(88,216,236,.06)}
+  .swatch.grey{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.02)}
+
+  /* ================= mixer ================= */
+  .mrow{
+    display:grid;
+    grid-template-columns:40px 46px minmax(0,1fr) auto;
+    align-items:center;
+    gap:16px;
+    padding:16px 16px 16px 20px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    transition:background .18s var(--ease), border-color .18s var(--ease);
+  }
+  .mrow:hover{background:var(--card-strong);border-color:rgba(255,255,255,.14)}
+  .mrow .body{min-width:0}
+  .mrow .name{font-size:18px;font-weight:560;letter-spacing:-0.008em;display:flex;align-items:center;gap:12px}
+  .mrow .sub{font-size:14.5px;color:var(--dim);margin-top:1px}
+  .mrow.is-inuse{
+    border-color:rgba(240,178,94,.62);
+    background:linear-gradient(180deg, rgba(240,178,94,.05), rgba(240,178,94,.015));
+    box-shadow:0 0 0 1px rgba(240,178,94,.26), 0 0 28px -10px rgba(240,178,94,.38);
+  }
+  .mrow.is-inuse .glyph{color:var(--amber);border-color:rgba(240,178,94,.35)}
+  .mrow.is-manual{
+    border-color:rgba(88,216,236,.58);
+    background:linear-gradient(180deg, rgba(88,216,236,.045), rgba(88,216,236,.015));
+    box-shadow:0 0 0 1px rgba(88,216,236,.24), 0 0 28px -10px rgba(88,216,236,.36);
+  }
+  .mrow.is-manual .glyph{color:var(--cyan);border-color:rgba(88,216,236,.32)}
+  .mrow.is-offline{background:rgba(255,255,255,.016);border-color:var(--line-soft)}
+  .mrow.is-offline:hover{background:rgba(255,255,255,.016)}
+  .mrow.is-offline .name,.mrow.is-offline .rank{color:#8d96aa}
+  .mrow.is-offline .sub{color:#616a80}
+  .mrow.is-offline .glyph{color:#616a80;background:rgba(255,255,255,.025)}
+  .mrow.is-offline .offnote{font-size:14.5px;color:#616a80;font-style:normal;padding-right:6px}
+
+  .fader{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:12px;
+  }
+  input[type="range"]{
+    appearance:none;
+    -webkit-appearance:none;
+    flex:1;
+    height:7px;
+    border-radius:999px;
+    background:
+      linear-gradient(90deg, var(--teal), var(--violet)) 0 0 / var(--p,50%) 100% no-repeat,
+      rgba(255,255,255,.09);
+    cursor:pointer;
+    outline-offset:4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#eef2fa;
+    border:0;
+    box-shadow:0 2px 8px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.25);
+    transition:transform .12s var(--ease);
+  }
+  input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.12)}
+  input[type="range"]::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;
+    background:#eef2fa;border:0;
+    box-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+  input[type="range"]:focus-visible{outline:2px solid var(--cyan)}
+  .pct{
+    width:58px;
+    text-align:right;
+    font-size:17px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .mutebtn{
+    appearance:none;
+    font:inherit;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.06em;
+    padding:8px 18px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .15s var(--ease);
+  }
+  .mutebtn:hover{color:var(--ink);background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+  .mutebtn:active{transform:scale(.96)}
+  .mutebtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .mutebtn.is-muted{
+    color:#ffd9dc;
+    background:rgba(242,119,127,.14);
+    border-color:rgba(242,119,127,.5);
+  }
+  .mrow.rowmuted input[type="range"]{opacity:.4;pointer-events:none}
+  .mrow.rowmuted .pct{color:var(--faint)}
+
+  /* ================= devices ================= */
+  .drow{
+    display:grid;
+    grid-template-columns:46px minmax(0,1fr) 190px auto;
+    align-items:center;
+    gap:18px;
+    padding:15px 18px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-md);
+    transition:background .18s var(--ease), border-color .18s var(--ease);
+  }
+  .drow:hover{background:var(--card-strong);border-color:rgba(255,255,255,.14)}
+  .drow .name{font-size:18px;font-weight:560;letter-spacing:-0.008em;display:flex;align-items:center;gap:12px}
+  .drow .sub{font-size:14.5px;color:var(--dim);margin-top:1px}
+  .drow.is-disabled{background:rgba(255,255,255,.014);border-style:dashed}
+  .drow.is-disabled:hover{background:rgba(255,255,255,.014)}
+  .drow.is-disabled .name{color:#8d96aa}
+  .drow.is-disabled .sub,.drow.is-disabled .glyph{color:#616a80}
+  .drow.is-inuse{
+    border-color:rgba(240,178,94,.55);
+    box-shadow:0 0 0 1px rgba(240,178,94,.22), 0 0 24px -10px rgba(240,178,94,.35);
+  }
+  .drow.is-inuse .glyph{color:var(--amber)}
+
+  select{
+    appearance:none;
+    font:inherit;
+    font-size:15.5px;
+    font-weight:500;
+    color:var(--ink);
+    width:100%;
+    padding:10px 38px 10px 14px;
+    background:rgba(255,255,255,.045) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1.5 7 7.5 13 1.5' fill='none' stroke='%23a3adc0' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") right 14px center no-repeat;
+    border:1px solid var(--line);
+    border-radius:var(--r-sm);
+    cursor:pointer;
+    transition:all .15s var(--ease);
+  }
+  select:hover{background-color:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2)}
+  select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  select:disabled{opacity:.4;cursor:default}
+  select option{background:#141822;color:var(--ink)}
+
+  .txtbtn{
+    appearance:none;
+    font:inherit;
+    font-size:15px;
+    font-weight:560;
+    padding:10px 18px;
+    border-radius:var(--r-sm);
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .15s var(--ease);
+    white-space:nowrap;
+  }
+  .txtbtn:hover{color:var(--ink);background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}
+  .txtbtn:active{transform:scale(.97)}
+  .txtbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .txtbtn.good{color:#9fe8d9;border-color:rgba(47,212,192,.4)}
+  .txtbtn.good:hover{background:rgba(47,212,192,.1);color:#c8f5ec}
+
+  .dev-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    margin-top:22px;
+    padding:4px 6px;
+  }
+  .dev-note{font-size:15px;color:var(--dim);max-width:56ch}
+  .dev-note strong{color:var(--muted);font-weight:600}
+
+  /* ---- toggles ---- */
+  .toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:13px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:500;
+    color:var(--muted);
+    user-select:none;
+  }
+  .toggle:hover{color:var(--ink)}
+  .toggle input{position:absolute;opacity:0;width:0;height:0}
+  .knob{
+    width:46px;height:26px;
+    border-radius:999px;
+    background:rgba(255,255,255,.1);
+    border:1px solid var(--line);
+    position:relative;
+    flex:none;
+    transition:background .2s var(--ease), border-color .2s var(--ease);
+  }
+  .knob::after{
+    content:"";
+    position:absolute;
+    top:2.5px;left:3px;
+    width:19px;height:19px;
+    border-radius:50%;
+    background:#cfd6e4;
+    transition:transform .2s var(--ease), background .2s var(--ease);
+  }
+  .toggle input:checked + .knob{
+    background:linear-gradient(90deg, rgba(47,212,192,.75), rgba(47,212,192,.55));
+    border-color:rgba(47,212,192,.6);
+  }
+  .toggle input:checked + .knob::after{transform:translateX(19px);background:#06231f}
+  .toggle input:focus-visible + .knob{outline:2px solid var(--cyan);outline-offset:3px}
+
+  /* ================= settings strip ================= */
+  .settings{
+    display:flex;
+    align-items:center;
+    gap:40px;
+    padding:18px 28px;
+    border-top:1px solid var(--line-soft);
+    background:rgba(0,0,0,.22);
+  }
+  .settings .sel-inline{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:16px;
+    font-weight:500;
+    color:var(--muted);
+    margin-left:auto;
+  }
+  .settings .sel-inline select{width:auto;padding:8px 36px 8px 13px;font-size:15px}
+
+  svg{display:block}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{transition:none !important;animation:none !important}
+    .row:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+
+<main class="window">
+
+  <!-- ============ header ============ -->
+  <header class="titlebar">
+    <div class="wordmark">
+      <span class="logomark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1.5" y="7" width="3" height="6" rx="1.5" fill="#2fd4c0"/>
+          <rect x="7.5" y="3" width="3" height="12" rx="1.5" fill="url(#lg1)"/>
+          <rect x="13.5" y="5.5" width="3" height="8" rx="1.5" fill="#8f7bf6"/>
+          <defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="18"><stop stop-color="#2fd4c0"/><stop offset="1" stop-color="#8f7bf6"/></linearGradient></defs>
+        </svg>
+      </span>
+      <div>
+        <h1>Audio<b>Deck</b></h1>
+        <small>Device automation</small>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Pages">
+      <button class="tab" role="tab" aria-selected="true" data-page="priority" id="tab-priority">Priority</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="mixer" id="tab-mixer">Mixer</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="devices" id="tab-devices">Devices</button>
+    </nav>
+
+    <div class="winctl" aria-hidden="true"><span>&#8211;</span><span>&#9633;</span><span>&#10005;</span></div>
+  </header>
+
+  <!-- ============ PRIORITY ============ -->
+  <section class="page is-active" id="page-priority" role="tabpanel" aria-labelledby="tab-priority">
+    <p class="page-lede">The <strong>highest-ranked device that is available</strong> becomes the Windows default automatically. Click any row to switch to it yourself.</p>
+
+    <div class="cols">
+      <div>
+        <div class="sec-label"><h2>Outputs</h2><span class="rule"></span><span class="count">4 ranked</span></div>
+        <div class="stack">
+
+          <div class="row is-offline" tabindex="0" aria-label="AirPods Pro, rank 1, offline">
+            <span class="rank">1</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>AirPods&nbsp;Pro</span> <span class="chip off">Offline</span></span>
+              <span class="sub">Apple &middot; Bluetooth</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" disabled aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+          <div class="row is-inuse" tabindex="0" aria-label="Arctis Nova Pro, rank 2, in use">
+            <span class="rank">2</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Arctis&nbsp;Nova&nbsp;Pro</span> <span class="chip inuse">In use</span></span>
+              <span class="sub">Steelseries &middot; GameDAC wireless</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+          <div class="row" tabindex="0" aria-label="Quest 3, rank 3">
+            <span class="rank">3</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Quest&nbsp;3</span></span>
+              <span class="sub">Meta &middot; Virtual Desktop stream</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+          <div class="row" tabindex="0" aria-label="NVIDIA High Definition Audio, rank 4">
+            <span class="rank">4</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="13" rx="2"/><path d="M8 21h8"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>NVIDIA High Definition Audio</span></span>
+              <span class="sub">LG &middot; TV over HDMI</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" disabled aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+        </div>
+        <button class="addbtn">+ Add a device (2 more)</button>
+      </div>
+
+      <div>
+        <div class="sec-label"><h2>Microphones</h2><span class="rule"></span><span class="count">2 ranked</span></div>
+        <div class="stack">
+
+          <div class="row" tabindex="0" aria-label="Arctis Nova Pro microphone, rank 1">
+            <span class="rank">1</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Arctis&nbsp;Nova&nbsp;Pro&nbsp;Mic</span></span>
+              <span class="sub">Steelseries &middot; ClearCast boom</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" disabled aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+          <div class="row is-manual" tabindex="0" aria-label="DJI MIC MINI, rank 2, manual override">
+            <span class="rank">2</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>DJI&nbsp;MIC&nbsp;MINI</span> <span class="chip manual">Manual</span></span>
+              <span class="sub">DJI &middot; 2.4&nbsp;GHz receiver</span>
+            </span>
+            <span class="ctrls">
+              <button class="icobtn" aria-label="Move up"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 7 4l5 5"/></svg></button>
+              <button class="icobtn" disabled aria-label="Move down"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l5 5 5-5"/></svg></button>
+              <button class="icobtn rm" aria-label="Remove from list"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l9 9M11 2l-9 9"/></svg></button>
+            </span>
+          </div>
+
+        </div>
+
+        <div class="legend">
+          <h3>Reading the outlines</h3>
+          <ul>
+            <li><span class="swatch amber"></span><span><strong>Amber</strong> &middot; picked automatically. The highest-ranked device that is online right now.</span></li>
+            <li><span class="swatch cyan"></span><span><strong>Cyan</strong> &middot; manual override. You clicked this device; automation holds until it goes offline.</span></li>
+            <li><span class="swatch grey"></span><span><strong>Dimmed</strong> &middot; offline. Kept in rank, skipped until it reconnects.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MIXER ============ -->
+  <section class="page" id="page-mixer" role="tabpanel" aria-labelledby="tab-mixer" hidden>
+    <p class="page-lede">Per-device volume for everything in your ranking. Offline devices keep their place but can&rsquo;t be adjusted.</p>
+
+    <div class="cols">
+      <div>
+        <div class="sec-label"><h2>Outputs</h2><span class="rule"></span><span class="count">4 ranked</span></div>
+        <div class="stack">
+
+          <div class="mrow is-offline">
+            <span class="rank">1</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>AirPods&nbsp;Pro</span> <span class="chip off">Offline</span></span>
+              <span class="sub">Apple &middot; Bluetooth</span>
+            </span>
+            <span class="offnote">Reconnect to adjust</span>
+          </div>
+
+          <div class="mrow is-inuse">
+            <span class="rank">2</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Arctis&nbsp;Nova&nbsp;Pro</span> <span class="chip inuse">In use</span></span>
+              <div class="fader">
+                <input type="range" min="0" max="100" value="62" aria-label="Arctis Nova Pro volume" style="--p:62%">
+                <span class="pct">62%</span>
+              </div>
+            </span>
+            <span class="ctrls"><button class="mutebtn">Mute</button></span>
+          </div>
+
+          <div class="mrow">
+            <span class="rank">3</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Quest&nbsp;3</span></span>
+              <div class="fader">
+                <input type="range" min="0" max="100" value="80" aria-label="Quest 3 volume" style="--p:80%">
+                <span class="pct">80%</span>
+              </div>
+            </span>
+            <span class="ctrls"><button class="mutebtn">Mute</button></span>
+          </div>
+
+          <div class="mrow rowmuted">
+            <span class="rank">4</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="13" rx="2"/><path d="M8 21h8"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>NVIDIA High Definition Audio</span></span>
+              <div class="fader">
+                <input type="range" min="0" max="100" value="35" aria-label="NVIDIA High Definition Audio volume" style="--p:35%">
+                <span class="pct">35%</span>
+              </div>
+            </span>
+            <span class="ctrls"><button class="mutebtn is-muted">Muted</button></span>
+          </div>
+
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-label"><h2>Microphones</h2><span class="rule"></span><span class="count">2 ranked</span></div>
+        <div class="stack">
+
+          <div class="mrow">
+            <span class="rank">1</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>Arctis&nbsp;Nova&nbsp;Pro&nbsp;Mic</span></span>
+              <div class="fader">
+                <input type="range" min="0" max="100" value="74" aria-label="Arctis Nova Pro Mic level" style="--p:74%">
+                <span class="pct">74%</span>
+              </div>
+            </span>
+            <span class="ctrls"><button class="mutebtn">Mute</button></span>
+          </div>
+
+          <div class="mrow is-manual">
+            <span class="rank">2</span>
+            <span class="glyph">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+            </span>
+            <span class="body">
+              <span class="name"><span>DJI&nbsp;MIC&nbsp;MINI</span> <span class="chip manual">Manual</span></span>
+              <div class="fader">
+                <input type="range" min="0" max="100" value="55" aria-label="DJI MIC MINI level" style="--p:55%">
+                <span class="pct">55%</span>
+              </div>
+            </span>
+            <span class="ctrls"><button class="mutebtn">Mute</button></span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DEVICES ============ -->
+  <section class="page" id="page-devices" role="tabpanel" aria-labelledby="tab-devices" hidden>
+    <p class="page-lede">Every endpoint Windows knows about, including disabled ones. <strong>Renames are written to Windows itself</strong>, so every app sees your names.</p>
+
+    <div class="sec-label"><h2>All endpoints</h2><span class="rule"></span><span class="count">6 connected</span></div>
+    <div class="stack">
+
+      <div class="drow is-inuse">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>Arctis Nova Pro</span> <span class="chip inuse">In use</span></span>
+          <span class="sub">Steelseries GameDAC Gen&nbsp;2 &middot; was &ldquo;Speakers (2- Arctis Nova Pro Wireless)&rdquo;</span>
+        </span>
+        <select aria-label="Device type for Arctis Nova Pro">
+          <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn">Disable</button>
+        </span>
+      </div>
+
+      <div class="drow">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>AirPods Pro</span> <span class="chip off">Offline</span></span>
+          <span class="sub">Apple &middot; Bluetooth LE Audio</span>
+        </span>
+        <select aria-label="Device type for AirPods Pro">
+          <option>Speakers</option><option selected>Headphones</option><option>Headset</option><option>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn">Disable</button>
+        </span>
+      </div>
+
+      <div class="drow">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>Quest 3</span></span>
+          <span class="sub">Meta &middot; Virtual Desktop audio stream</span>
+        </span>
+        <select aria-label="Device type for Quest 3">
+          <option>Speakers</option><option selected>Headphones</option><option>Headset</option><option>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn">Disable</button>
+        </span>
+      </div>
+
+      <div class="drow">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="13" rx="2"/><path d="M8 21h8"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>NVIDIA High Definition Audio</span></span>
+          <span class="sub">LG C2 over HDMI &middot; port 2</span>
+        </span>
+        <select aria-label="Device type for NVIDIA High Definition Audio">
+          <option>Speakers</option><option>Headphones</option><option>Headset</option><option selected>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn">Disable</button>
+        </span>
+      </div>
+
+      <div class="drow">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>DJI MIC MINI</span></span>
+          <span class="sub">DJI &middot; 2.4&nbsp;GHz receiver &middot; capture</span>
+        </span>
+        <select aria-label="Device type for DJI MIC MINI">
+          <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn">Disable</button>
+        </span>
+      </div>
+
+      <div class="drow is-disabled">
+        <span class="glyph">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="6" height="8" rx="1.5"/><path d="M9 9.5 15 5v14l-6-4.5zM18 9.5a4 4 0 0 1 0 5"/></svg>
+        </span>
+        <span class="body">
+          <span class="name"><span>Realtek High Definition Audio</span> <span class="chip disabled">Disabled</span></span>
+          <span class="sub">Motherboard line out &middot; rear panel</span>
+        </span>
+        <select disabled aria-label="Device type for Realtek High Definition Audio">
+          <option selected>Speakers</option><option>Headphones</option><option>Headset</option><option>TV</option>
+        </select>
+        <span class="ctrls">
+          <button class="txtbtn">Rename</button>
+          <button class="txtbtn good">Enable</button>
+        </span>
+      </div>
+
+    </div>
+
+    <div class="dev-foot">
+      <p class="dev-note"><strong>Remembered devices</strong> are endpoints Windows has seen before but that aren&rsquo;t plugged in right now.</p>
+      <label class="toggle">
+        <input type="checkbox">
+        <span class="knob"></span>
+        Show remembered devices (31)
+      </label>
+    </div>
+  </section>
+
+  <!-- ============ settings strip ============ -->
+  <footer class="settings">
+    <label class="toggle">
+      <input type="checkbox" checked>
+      <span class="knob"></span>
+      Start with Windows
+    </label>
+    <label class="toggle">
+      <input type="checkbox">
+      <span class="knob"></span>
+      Pause automation
+    </label>
+    <div class="sel-inline">
+      <label for="pollrate">Check devices every</label>
+      <select id="pollrate">
+        <option>1 second</option>
+        <option selected>2 seconds</option>
+        <option>5 seconds</option>
+        <option>10 seconds</option>
+      </select>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // tabs
+  const tabs = document.querySelectorAll('.tab');
+  const pages = document.querySelectorAll('.page');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
+    pages.forEach(p => {
+      const on = p.id === 'page-' + t.dataset.page;
+      p.classList.toggle('is-active', on);
+      p.toggleAttribute('hidden', !on);
+    });
+  }));
+
+  // faders: keep the gradient fill and % readout live
+  document.querySelectorAll('input[type="range"]').forEach(r => {
+    r.addEventListener('input', () => {
+      r.style.setProperty('--p', r.value + '%');
+      const pct = r.closest('.fader')?.querySelector('.pct');
+      if (pct) pct.textContent = r.value + '%';
+    });
+  });
+
+  // mute buttons: toggle demo state
+  document.querySelectorAll('.mutebtn').forEach(b => {
+    b.addEventListener('click', () => {
+      const muted = b.classList.toggle('is-muted');
+      b.textContent = muted ? 'Muted' : 'Mute';
+      b.closest('.mrow')?.classList.toggle('rowmuted', muted);
+    });
+  });
+</script>
+</body>
+</html>

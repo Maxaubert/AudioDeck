@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AudioDeck design mockups</title>
+<style>
+  :root {
+    --chrome: #16181d;
+    --chrome-2: #1e2128;
+    --line: #333844;
+    --ink: #f2f4f8;
+    --ink-dim: #a6aebd;
+    --accent: #ffb454;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--chrome);
+    color: var(--ink);
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 1.5rem;
+    background: var(--chrome-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .brand span { color: var(--accent); }
+
+  .picker {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 340px;
+  }
+
+  select {
+    flex: 1;
+    min-width: 260px;
+    font: inherit;
+    font-size: 1.05rem;
+    padding: 0.6rem 0.9rem;
+    color: var(--ink);
+    background: var(--chrome);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  select:hover { border-color: #4b5364; }
+
+  button, .linkbtn {
+    font: inherit;
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0.65rem 0.95rem;
+    min-height: 44px;
+    color: var(--ink);
+    background: var(--chrome);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: border-color 140ms var(--ease), background 140ms var(--ease);
+  }
+
+  button:hover, .linkbtn:hover { border-color: #4b5364; background: #262a33; }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .counter {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+
+  .meta {
+    padding: 0.55rem 1.5rem;
+    background: var(--chrome-2);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-size: 0.98rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .tag.codex { color: #7fd6a9; border-color: #2f5c47; }
+  .tag.claude { color: var(--accent); border-color: #5c4526; }
+
+  .stage {
+    flex: 1;
+    min-height: 0;
+    background: #0b0c0f;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #fff;
+  }
+
+  kbd {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: var(--ink-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">Audio<span>Deck</span> mockups</div>
+    <div class="picker">
+      <button id="prev" type="button" aria-label="Previous mockup">&#9664;</button>
+      <select id="pick" aria-label="Choose a mockup"></select>
+      <button id="next" type="button" aria-label="Next mockup">&#9654;</button>
+    </div>
+    <span class="counter" id="counter"></span>
+    <a class="linkbtn" id="open" href="#" target="_blank" rel="noopener">Open full page</a>
+  </header>
+  <div class="meta">
+    <span class="tag" id="source">&nbsp;</span>
+    <span id="desc"></span>
+    <span style="margin-left:auto"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> to browse</span>
+  </div>
+  <div class="stage">
+    <iframe id="frame" title="Mockup preview"></iframe>
+  </div>
+
+<script>
+const MOCKUPS = [
+  { file: "studio-console.html", name: "Studio console", by: "claude",
+    desc: "Pro-audio rack gear, dark. Channel faders, LED meters, amber on near-black." },
+  { file: "swiss-light.html", name: "Swiss light", by: "claude",
+    desc: "International style. White, hard black, one red, strict grid, oversized rank figures." },
+  { file: "linear-glass.html", name: "Linear glass", by: "claude",
+    desc: "Modern SaaS dark. Glassy panels, radial glow behind the active device, own logomark." },
+  { file: "mono-terminal.html", name: "Mono terminal", by: "claude",
+    desc: "Monospace black/white/green. ASCII dividers, [01] ranks, cursor detail, own text logo." },
+  { file: "soft-daylight.html", name: "Soft daylight", by: "claude",
+    desc: "Warm off-white, rounded cards, sage and terracotta, calm domestic feel." },
+  { file: "neo-brutalist.html", name: "Neo-brutalist", by: "claude",
+    desc: "Bone white, 3px ink borders, hard offset shadows, yellow in-use, stamped logotype." },
+  { file: "fluent-native.html", name: "Fluent native", by: "claude",
+    desc: "Windows 11 look. Mica layers, Segoe type, accent pill, WinUI radii." },
+  { file: "editorial-serif.html", name: "Editorial serif", by: "claude",
+    desc: "Cream paper, display serif headings, ledger rows, ink blue and copper, monogram." },
+  { file: "aurora-gradient.html", name: "Aurora gradient", by: "claude",
+    desc: "Near-black with one soft teal-violet mesh glow, frosted cards, luminous outlines." },
+  { file: "retro-hifi.html", name: "Retro hi-fi", by: "claude",
+    desc: "Charcoal, silver and warm orange VU glow, tuner-scale sliders, own cone logomark." },
+  { file: "codex-1.html", name: "Codex 1", by: "codex", desc: "Codex's own direction." },
+  { file: "codex-2.html", name: "Codex 2", by: "codex", desc: "Codex's own direction." },
+  { file: "codex-3.html", name: "Codex 3", by: "codex", desc: "Codex's own direction." },
+  { file: "codex-4.html", name: "Codex 4", by: "codex", desc: "Codex's own direction." },
+];
+
+const pick = document.getElementById("pick");
+const frame = document.getElementById("frame");
+const counter = document.getElementById("counter");
+const sourceTag = document.getElementById("source");
+const desc = document.getElementById("desc");
+const openLink = document.getElementById("open");
+const prev = document.getElementById("prev");
+const next = document.getElementById("next");
+
+MOCKUPS.forEach((m, i) => {
+  const opt = document.createElement("option");
+  opt.value = String(i);
+  opt.textContent = (m.by === "codex" ? "Codex: " : "") + m.name;
+  pick.appendChild(opt);
+});
+
+let index = 0;
+
+function show(i) {
+  index = (i + MOCKUPS.length) % MOCKUPS.length;
+  const m = MOCKUPS[index];
+  frame.src = m.file;
+  pick.value = String(index);
+  counter.textContent = (index + 1) + " / " + MOCKUPS.length;
+  sourceTag.textContent = m.by === "codex" ? "Codex" : "Claude";
+  sourceTag.className = "tag " + m.by;
+  desc.textContent = m.desc;
+  openLink.href = m.file;
+  location.hash = m.file.replace(".html", "");
+}
+
+pick.addEventListener("change", () => show(Number(pick.value)));
+prev.addEventListener("click", () => show(index - 1));
+next.addEventListener("click", () => show(index + 1));
+
+document.addEventListener("keydown", (e) => {
+  if (e.target === pick) return;
+  if (e.key === "ArrowLeft") { show(index - 1); }
+  if (e.key === "ArrowRight") { show(index + 1); }
+});
+
+const fromHash = MOCKUPS.findIndex((m) => m.file.replace(".html", "") === location.hash.slice(1));
+show(fromHash >= 0 ? fromHash : 0);
+</script>
+</body>
+</html>
