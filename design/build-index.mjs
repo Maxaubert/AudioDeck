@@ -6,7 +6,14 @@ import path from "node:path";
 const dir = "C:/Users/Admin/Documents/Claude/Github/AudioDeck/design/mockups";
 
 const ENTRIES = [
-  ["wc-merged.html", "One strip (no extra row)", "claude", "window", "Window controls at the far right of the tab bar, split by an amber rule. Costs no vertical space."],
+  ["cap-title.html", "Caption: strip with wordmark", "claude", "caption", "Thin 32px black strip above the untouched nav: small AudioDeck wordmark left, standard controls right."],
+  ["cap-bare.html", "Caption: bare strip", "claude", "caption", "Same strip with no text at all, so the chrome reads as one black block with the nav."],
+  ["cap-status.html", "Caption: with live status", "claude", "caption", "The strip also carries an amber dot, AUTO ON, and the current output device."],
+  ["cap-hairline.html", "Caption: dark hairline", "claude", "caption", "A 2px dark rule separates caption from nav, so the two bars read as distinct."],
+  ["cap-amberline.html", "Caption: amber hairline", "claude", "caption", "Same but the separating rule is amber, tying the caption into the accent system."],
+  ["cap-tall.html", "Caption: taller, bigger targets", "claude", "caption", "40px strip with 54px controls for easier hitting, at the cost of a little height."],
+
+  ["wc-merged.html", "Bolder: controls inside the nav bar", "claude", "window", "No extra row at all: the controls tuck into the right of the tab bar behind an amber rule."],
   ["wc-slimtop.html", "Slim caption above", "claude", "window", "A 34px caption strip over the tabs: small wordmark left, controls right, hairline amber between."],
   ["wc-statusbar.html", "Caption with live status", "claude", "window", "The strip earns its height: AUTO ON plus the current output device beside the controls."],
   ["wc-bigkeys.html", "Oversized keys", "claude", "window", "Blunt 56px square keys flush to the window edge, with a knurled grip marking the drag zone."],

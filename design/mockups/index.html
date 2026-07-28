@@ -152,8 +152,20 @@
 
 <script>
 const MOCKUPS = [
-  { file: "wc-merged.html", name: "One strip (no extra row)", by: "claude", kind: "window",
-    desc: "Window controls at the far right of the tab bar, split by an amber rule. Costs no vertical space." },
+  { file: "cap-title.html", name: "Caption: strip with wordmark", by: "claude", kind: "caption",
+    desc: "Thin 32px black strip above the untouched nav: small AudioDeck wordmark left, standard controls right." },
+  { file: "cap-bare.html", name: "Caption: bare strip", by: "claude", kind: "caption",
+    desc: "Same strip with no text at all, so the chrome reads as one black block with the nav." },
+  { file: "cap-status.html", name: "Caption: with live status", by: "claude", kind: "caption",
+    desc: "The strip also carries an amber dot, AUTO ON, and the current output device." },
+  { file: "cap-hairline.html", name: "Caption: dark hairline", by: "claude", kind: "caption",
+    desc: "A 2px dark rule separates caption from nav, so the two bars read as distinct." },
+  { file: "cap-amberline.html", name: "Caption: amber hairline", by: "claude", kind: "caption",
+    desc: "Same but the separating rule is amber, tying the caption into the accent system." },
+  { file: "cap-tall.html", name: "Caption: taller, bigger targets", by: "claude", kind: "caption",
+    desc: "40px strip with 54px controls for easier hitting, at the cost of a little height." },
+  { file: "wc-merged.html", name: "Bolder: controls inside the nav bar", by: "claude", kind: "window",
+    desc: "No extra row at all: the controls tuck into the right of the tab bar behind an amber rule." },
   { file: "wc-slimtop.html", name: "Slim caption above", by: "claude", kind: "window",
     desc: "A 34px caption strip over the tabs: small wordmark left, controls right, hairline amber between." },
   { file: "wc-statusbar.html", name: "Caption with live status", by: "claude", kind: "window",
