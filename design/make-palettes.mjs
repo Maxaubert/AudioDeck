@@ -54,14 +54,16 @@ body{background:#000;background-image:repeating-linear-gradient(45deg,rgba(255,2
 .wordmark{color:var(--ink)}
 .tab{color:var(--ink)}
 .tab:hover::after{background:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.tab[aria-selected="true"]::after{background:var(--paper)}
 main{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 1px,transparent 1px 4px)}
 .blockhead h2{background:var(--ink);color:var(--paper)}
 .blockhead .bar{background:var(--ink)}
 .rows{border-color:var(--ink)}
 .row{--fg:var(--ink);border-bottom-color:var(--ink)}
 .row.inuse{--bg:#000;--fg:var(--marker)}
-.row.manual{--bg:#000;--fg:var(--ink)}
-.row.manual .rank{color:var(--ink);border-right-color:var(--ink)}
+.row.manual{--bg:#000;--fg:var(--marker)}
+.row.manual .rank{color:var(--marker)}
 .row.offline{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 3px,transparent 3px 11px)}
 .add{border-color:var(--ink);color:var(--ink)}
 .add:hover{background:var(--ink);color:var(--paper)}

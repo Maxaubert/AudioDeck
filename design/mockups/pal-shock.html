@@ -82,8 +82,8 @@ button,select,input[type=range]{cursor:pointer}
 }
 .tab::after{content:"";position:absolute;left:14px;right:14px;bottom:10px;height:var(--rule);background:transparent}
 .tab:hover::after{background:var(--paper)}
-.tab[aria-selected="true"]{background:transparent;color:var(--marker)}
-.tab[aria-selected="true"]::after{background:var(--marker)}
+.tab[aria-selected="true"]{background:var(--paper);color:var(--ink)}
+.tab[aria-selected="true"]::after{background:var(--ink)}
 
 .status{margin-left:auto;display:flex;align-items:center;gap:18px;font:800 14px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--paper)}
 .status .dot{display:inline-block;width:13px;height:13px;background:var(--paper);margin-right:8px;vertical-align:-1px}
