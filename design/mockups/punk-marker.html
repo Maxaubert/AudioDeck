@@ -81,8 +81,8 @@ button,select,input[type=range]{cursor:pointer}
 }
 .tab::after{content:"";position:absolute;left:14px;right:14px;bottom:10px;height:var(--rule);background:transparent}
 .tab:hover::after{background:var(--paper)}
-.tab[aria-selected="true"]{background:var(--marker);color:var(--ink)}
-.tab[aria-selected="true"]::after{background:var(--ink)}
+.tab[aria-selected="true"]{background:transparent;color:var(--marker)}
+.tab[aria-selected="true"]::after{background:var(--marker)}
 
 .status{margin-left:auto;display:flex;align-items:center;gap:18px;font:800 14px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--paper)}
 .status .dot{display:inline-block;width:13px;height:13px;background:var(--paper);margin-right:8px;vertical-align:-1px}
@@ -117,8 +117,12 @@ main{
   grid-template-columns:92px 62px minmax(240px,1fr) auto;
   transition:transform .09s linear;
 }
-.row.inuse{--bg:var(--marker);--fg:var(--ink)}
-.row.manual{--bg:var(--ink);--fg:var(--marker)}
+.row.inuse{--bg:#000;--fg:var(--marker)}
+.row.inuse .rank{background:transparent;color:var(--marker);border-right:var(--rule) solid var(--marker)}
+.row.inuse .badge{background:transparent;color:var(--marker);border:2px solid var(--marker);padding:4px 7px}
+.row.manual{--bg:#000;--fg:var(--paper)}
+.row.manual .rank{background:transparent;color:var(--paper);border-right:var(--rule) solid var(--paper)}
+.row.manual .badge{background:transparent;color:var(--marker);border:2px solid var(--marker);padding:4px 7px}
 .row.offline{--bg:var(--dead);--fg:var(--dead-ink);
   background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.10) 0 3px,transparent 3px 11px)}
 .row:not(.offline):hover{transform:translateX(7px)}
@@ -169,8 +173,8 @@ main{
   font:800 13px/1 var(--ui);letter-spacing:.13em;text-transform:uppercase;
 }
 .legend span{display:flex;align-items:center;gap:9px}
-.legend i{width:20px;height:20px;background:var(--marker);border:2px solid var(--ink);display:block}
-.legend i.man{background:var(--ink)}
+.legend i{width:20px;height:20px;background:#000;border:3px solid var(--marker);display:block}
+.legend i.man{background:#000;border-color:var(--paper)}
 .legend .hint{margin-left:auto;font:700 14px/1 var(--ui);letter-spacing:.02em;text-transform:none;color:#26261F}
 
 /* ---------- mixer ---------- */
