@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AudioDeck - Codex 5</title>
+  <style>
+    :root{--paper:#f2eedf;--ink:#171714;--blue:#1646d8;--red:#e13f2d;--yellow:#f4c727;--muted:#66665f;--line:#171714}
+    *{box-sizing:border-box}html{background:var(--blue)}body{margin:0;color:var(--ink);background:var(--paper);font:17px/1.45 "Trebuchet MS",Arial,sans-serif;min-width:760px}
+    button,select,input{font:inherit;color:inherit}button,select{cursor:pointer}
+    button:focus-visible,select:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline-offset:3px}
+    .shell{width:min(1220px,calc(100% - 48px));margin:24px auto;border:3px solid var(--ink);background:var(--paper)}
+    header{display:grid;grid-template-columns:290px 1fr;border-bottom:3px solid var(--ink);min-height:152px}
+    .brand{display:grid;grid-template-columns:94px 1fr;align-items:center;border-right:3px solid var(--ink);padding:22px}
+    .brandmark{width:72px;height:72px;position:relative;background:var(--red);border-radius:50%}
+    .brandmark:before{content:"";position:absolute;width:19px;height:80px;background:var(--blue);left:27px;top:-4px;transform:rotate(32deg)}
+    .brandmark:after{content:"";position:absolute;width:22px;height:22px;background:var(--yellow);border:3px solid var(--ink);right:-8px;bottom:1px}
+    .brand strong{font:900 25px/1 Arial,sans-serif;letter-spacing:-1.5px}.brand small{display:block;margin-top:7px;font:700 11px/1.2 Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase}
+    .headright{display:flex;flex-direction:column;justify-content:space-between;padding:22px 28px 0}
+    .kicker{display:flex;align-items:center;gap:12px;font:800 13px/1 Arial,sans-serif;letter-spacing:1.7px;text-transform:uppercase}.kicker:before{content:"";width:46px;height:10px;background:var(--yellow)}
+    nav{display:flex;gap:4px;align-self:flex-end}
+    .tab{border:0;border-top:8px solid transparent;background:transparent;padding:18px 25px 20px;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
+    .tab:hover{background:#fff9}.tab.active{border-top-color:var(--blue);background:var(--ink);color:var(--paper)}
+    main{padding:34px 34px 18px}.page{display:none}.page.active{display:block;animation:stamp .22s ease-out}@keyframes stamp{from{opacity:.2;transform:translateY(5px)}}
+    .intro{display:grid;grid-template-columns:180px 1fr;gap:30px;margin-bottom:30px}
+    .page-index{font:900 92px/.8 Arial Black,Arial,sans-serif;color:var(--blue);letter-spacing:-9px}.intro h1{font:900 clamp(34px,5vw,62px)/.92 Arial Black,Arial,sans-serif;margin:0 0 16px;letter-spacing:-3px;text-transform:uppercase;max-width:760px}
+    .intro p{margin:0;max-width:760px;font-size:19px;font-weight:700}
+    .section{margin:0 0 32px}.section-head{display:flex;align-items:end;justify-content:space-between;border-bottom:3px solid var(--ink);padding:0 0 9px;margin-bottom:0}
+    .section-head h2{font:900 18px/1 Arial,sans-serif;letter-spacing:2px;margin:0}.section-head span{font:800 12px/1 Arial,sans-serif;text-transform:uppercase;color:var(--muted)}
+    .device-row{display:grid;grid-template-columns:74px 52px minmax(260px,1fr) auto;align-items:center;min-height:94px;border-bottom:2px solid var(--ink);position:relative;transition:background .15s,color .15s}
+    .device-row:hover{background:#fff}.device-row.in-use{background:var(--blue);color:white}.device-row.override{background:var(--red);color:white}.device-row.offline{color:#85857c;background:#ddd9cc}
+    .rank{align-self:stretch;display:grid;place-items:center;border-right:2px solid currentColor;font:900 32px/1 Arial Black,Arial,sans-serif}.glyph{display:grid;place-items:center}.glyph svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square}
+    .device-name{padding:14px 10px}.device-name strong{display:block;font:900 21px/1.12 Arial,sans-serif}.device-name small{display:block;margin-top:7px;font-weight:700;opacity:.75}.badge{display:inline-block;margin-left:9px;border:2px solid currentColor;padding:3px 7px;font-size:11px;letter-spacing:1px;vertical-align:2px}
+    .row-actions{display:flex;gap:7px;padding:0 14px}.icon-btn,.text-btn{min-width:42px;height:42px;border:2px solid currentColor;background:transparent;font-weight:900}.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5}.icon-btn:hover,.text-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}.in-use .icon-btn:hover,.override .icon-btn:hover{background:white;color:var(--ink);border-color:white}
+    .add-device{width:100%;min-height:66px;border:3px dashed var(--blue);background:transparent;color:var(--blue);font-weight:900;text-align:left;padding:0 24px;margin-top:16px}.add-device:hover{background:var(--yellow);color:var(--ink);border-color:var(--ink)}
+    .legend{display:flex;gap:24px;margin:18px 0 8px;font-weight:800;font-size:14px}.legend span{display:flex;align-items:center;gap:9px}.swatch{width:18px;height:18px;background:var(--blue);border:2px solid var(--ink)}.swatch.manual{background:var(--red)}
+    .mixer-row{grid-template-columns:74px 52px minmax(240px,1fr) minmax(260px,1.2fr) 74px 90px}.mix-control{display:flex;align-items:center;padding:0 18px}.mix-control input{width:100%;accent-color:var(--blue)}.override .mix-control input,.override input{accent-color:var(--yellow)}.percent{font:900 22px/1 Arial,sans-serif;text-align:right}.mute{margin:0 12px;height:42px;border:2px solid currentColor;background:transparent;font-weight:900}.mute:hover,.mute.on{background:var(--yellow);color:var(--ink)}
+    .device-manage{grid-template-columns:52px minmax(270px,1fr) 165px 94px 94px;padding-left:16px}.device-manage select{width:150px;border:2px solid var(--ink);background:var(--paper);padding:9px}.device-manage .text-btn{padding:0 12px}.disabled-device{background:#ddd9cc;color:#70706a}
+    .remembered{display:flex;justify-content:space-between;align-items:center;border:3px solid var(--ink);padding:18px 20px;margin:18px 0 28px;background:var(--yellow);font-weight:900}.switch{width:58px;height:32px;padding:3px;border:2px solid currentColor;background:transparent;position:relative}.switch:after{content:"";display:block;width:22px;height:22px;background:currentColor;transition:transform .15s}.switch.on:after{transform:translateX(26px)}
+    .note{border-left:15px solid var(--red);padding:14px 18px;background:#fff;font-weight:800;margin-bottom:22px}
+    .settings{display:grid;grid-template-columns:1fr 1fr 1.35fr;border-top:3px solid var(--ink);margin-top:34px}.setting{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-right:2px solid var(--ink);font-weight:900}.setting:last-child{border-right:0}.setting select{border:2px solid var(--ink);background:white;padding:8px}
+    .toast{position:fixed;right:28px;bottom:28px;background:var(--ink);color:white;border:4px solid var(--yellow);padding:14px 20px;font-weight:900;transform:translateY(120px);transition:.2s;z-index:5}.toast.show{transform:none}
+    @media(max-width:900px){.shell{width:calc(100% - 20px);margin:10px}.intro{grid-template-columns:100px 1fr}.mixer-row{grid-template-columns:60px 45px 1fr 200px 60px 78px}.device-manage{grid-template-columns:45px 1fr 145px 85px 85px}.settings{grid-template-columns:1fr}.setting{border-right:0;border-bottom:2px solid var(--ink)}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand"><span class="brandmark" aria-hidden="true"></span><div><strong>Audio<br>Deck</strong><small>Signal order</small></div></div>
+    <div class="headright"><div class="kicker">Windows audio, arranged</div><nav aria-label="Main pages"><button class="tab active" data-page="priority">Priority</button><button class="tab" data-page="mixer">Mixer</button><button class="tab" data-page="devices">Devices</button></nav></div>
+  </header>
+  <main>
+    <section id="priority" class="page active"></section>
+    <section id="mixer" class="page"></section>
+    <section id="devices" class="page"></section>
+  </main>
+  <footer class="settings">
+    <div class="setting"><span>Start with Windows</span><button class="switch on" role="switch" aria-checked="true" aria-label="Start with Windows"></button></div>
+    <div class="setting"><span>Pause automation</span><button class="switch" role="switch" aria-checked="false" aria-label="Pause automation"></button></div>
+    <label class="setting">Check devices every <select aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option></select></label>
+  </footer>
+</div>
+<div class="toast" role="status"></div>
+<script>
+  const outputs=[
+    {name:'AirPods Pro',sub:'Apple · Headphones',state:'offline',status:'OFFLINE'},
+    {name:'Arctis Nova Pro',sub:'Steelseries · Headset',state:'in-use',status:'IN USE',vol:100},
+    {name:'Quest',sub:'Meta · Headphones',vol:62},
+    {name:'NVIDIA High Definition Audio',sub:'LG · TV',vol:45}
+  ];
+  const microphones=[
+    {name:'Arctis Nova Pro Mic',sub:'Steelseries · Microphone',vol:100,mic:true},
+    {name:'DJI MIC MINI',sub:'DJI · Wireless microphone',state:'override',status:'MANUAL OVERRIDE',vol:62,mic:true}
+  ];
+  const icon=t=>`<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">${t?'<rect x="11" y="3" width="10" height="18" rx="5"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4M11 29h10"/>':'<path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2zM27 17h-5v10h3a2 2 0 0 0 2-2z"/>'}</svg></span>`;
+  const ctl=(path,label)=>`<button class="icon-btn ${label==='Remove'?'remove':'move'}" ${label!=='Remove'?`data-dir="${label==='Move up'?'-1':'1'}"`:''} title="${label}" aria-label="${label}"><svg viewBox="0 0 20 20"><path d="${path}"/></svg></button>`;
+  const actions=()=>`<div class="row-actions">${ctl('M4 12l6-6 6 6','Move up')}${ctl('M4 8l6 6 6-6','Move down')}${ctl('M5 5l10 10M15 5L5 15','Remove')}</div>`;
+  function priorityRow(d,i){return `<article class="device-row ${d.state||''}" draggable="${d.state!=='offline'}"><span class="rank">${i+1}</span>${icon(d.mic)}<div class="device-name"><strong>${d.name}${d.status?`<span class="badge">${d.status}</span>`:''}</strong><small>${d.sub}</small></div>${actions()}</article>`}
+  function mixerRow(d,i){return `<article class="device-row mixer-row ${d.state||''}"><span class="rank">${i+1}</span>${icon(d.mic)}<div class="device-name"><strong>${d.name}${d.status?`<span class="badge">${d.status}</span>`:''}</strong><small>${d.sub}</small></div>${d.state==='offline'?'<div class="mix-control"><strong>Unavailable</strong></div><span class="percent">--</span><button class="mute" disabled>Mute</button>':`<div class="mix-control"><input type="range" min="0" max="100" value="${d.vol}" aria-label="${d.name} volume"></div><span class="percent">${d.vol}%</span><button class="mute">Mute</button>`}</article>`}
+  function listBlock(title,items,mode){return `<section class="section"><div class="section-head"><h2>${title}</h2><span>${items.length} ranked endpoints</span></div><div class="rows">${items.map((d,i)=>mode==='mix'?mixerRow(d,i):priorityRow(d,i)).join('')}</div>${mode==='priority'?'<button class="add-device">+ Add a device (2 more)</button>':''}</section>`}
+  document.querySelector('#priority').innerHTML=`<div class="intro"><div class="page-index">01</div><div><h1>First in line gets the sound.</h1><p>The highest available device automatically becomes the Windows default. Click a row to switch to it now. Drag to reorder.</p></div></div>${listBlock('OUTPUTS',outputs,'priority')}${listBlock('MICROPHONES',microphones,'priority')}<div class="legend"><span><i class="swatch"></i> Automatic, in use</span><span><i class="swatch manual"></i> Manual override</span></div>`;
+  document.querySelector('#mixer').innerHTML=`<div class="intro"><div class="page-index">02</div><div><h1>Every level, one surface.</h1><p>Set the volume for each ranked endpoint. Your values stay attached to the device when Windows switches.</p></div></div>${listBlock('OUTPUTS',outputs,'mix')}${listBlock('MICROPHONES',microphones,'mix')}`;
+  const all=[...outputs,...microphones,{name:'Realtek Digital Output',sub:'Realtek · Disabled endpoint',state:'disabled-device'}];
+  const types=['Speakers','Headphones','Headset','TV'];
+  document.querySelector('#devices').innerHTML=`<div class="intro"><div class="page-index">03</div><div><h1>Name every connection.</h1><p>Review every Windows audio endpoint, including disabled devices.</p></div></div><div class="note">Renames apply to Windows itself, so the new name appears in other audio menus too.</div><div class="remembered"><span>Show remembered devices (31)</span><button class="switch" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></div><section class="section"><div class="section-head"><h2>ALL ENDPOINTS</h2><span>${all.length} on this PC</span></div>${all.map((d,i)=>`<article class="device-row device-manage ${d.state||''}">${icon(d.mic)}<div class="device-name"><strong>${d.name}</strong><small>${d.sub}</small></div><select aria-label="${d.name} device type">${types.map((x,n)=>`<option ${n===i%4?'selected':''}>${x}</option>`).join('')}</select><button class="text-btn rename">Rename</button><button class="text-btn disable">${d.name.includes('Realtek')?'Enable':'Disable'}</button></article>`).join('')}</section>`;
+  const toast=m=>{const t=document.querySelector('.toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),1500)};
+  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab,.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector('#'+b.dataset.page).classList.add('active')}));
+  document.addEventListener('input',e=>{if(e.target.matches('input[type=range]'))e.target.closest('.device-row').querySelector('.percent').textContent=e.target.value+'%'});
+  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.classList.contains('switch')){b.classList.toggle('on');b.setAttribute('aria-checked',b.classList.contains('on'))}if(b.classList.contains('mute')){b.classList.toggle('on');b.textContent=b.classList.contains('on')?'Muted':'Mute'}if(b.classList.contains('rename')){const n=b.closest('.device-row').querySelector('strong');const v=prompt('Rename this Windows device',n.textContent);if(v){n.textContent=v;toast('Device renamed in Windows')}}if(b.classList.contains('disable')){b.textContent=b.textContent==='Enable'?'Disable':'Enable';toast('Device setting updated')}if(b.classList.contains('remove')){toast('Device removed from this ranking')}if(b.classList.contains('move')){const row=b.closest('.device-row'),parent=row.parentElement,sib=Number(b.dataset.dir)<0?row.previousElementSibling:row.nextElementSibling;if(sib)Number(b.dataset.dir)<0?parent.insertBefore(row,sib):parent.insertBefore(sib,row)}})
+</script>
+</body>
+</html>
