@@ -8,8 +8,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const dir = path.join(repoRoot, "src", "renderer", "src", "assets", "cursors");
 const outDir = process.argv[2] ?? repoRoot;
+const dir = process.argv[3] ?? path.join(repoRoot, "src", "renderer", "src", "assets", "cursors");
+const sheetName = process.argv[4] ?? "cursor-sheet.png";
 
 const files = (await readdir(dir)).filter((f) => f.endsWith(".svg")).sort();
 const cards = await Promise.all(
@@ -40,6 +41,6 @@ const html = `<!doctype html><meta charset="utf-8"><style>
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 820, height: 1400 } });
 await page.setContent(html);
-await page.screenshot({ path: path.join(outDir, "cursor-sheet.png"), fullPage: true });
+await page.screenshot({ path: path.join(outDir, sheetName), fullPage: true });
 await browser.close();
-console.log("wrote cursor-sheet.png");
+console.log(`wrote ${sheetName}`);
