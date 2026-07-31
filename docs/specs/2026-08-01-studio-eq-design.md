@@ -50,10 +50,36 @@ more than an equalizer, and because it fits the tab strip at the display font's 
 
 ### When Equalizer APO is absent
 
-The tab shows only a setup panel: what Equalizer APO is, that it processes the audio, that it
-installs once and needs a restart, and a button that runs the bundled installer. AudioDeck states
-plainly that this is a third-party GPL-3 component before running anything, and the button triggers
-the normal Windows elevation prompt rather than acquiring admin silently.
+Every user goes through this once, not just the developer. Bundling removes the download; it cannot
+remove the installation. Windows loads audio processing objects when the audio engine starts, so
+registering one and restarting is unavoidable on any route to system-wide audio effects.
+
+What is avoidable is how much of it the user sees. The bundled installer is NSIS, so it accepts
+`/S` and can run silently while AudioDeck shows its own progress. The target experience is:
+
+```
+STUDIO
+
+ +----------------------------------------------------------+
+ | Audio effects need a processing component installed on    |
+ | this PC. AudioDeck includes it: nothing to download.      |
+ |                                                           |
+ | Equalizer APO, by Jonas Thedering, GPL-3.                 |
+ | It needs administrator approval and one restart.          |
+ |                                                           |
+ |                          [ SET UP AUDIO EFFECTS ]         |
+ +----------------------------------------------------------+
+```
+
+One button, one elevation prompt, a progress line, then "restart to finish". No third-party
+installer UI, no device picker, no browser.
+
+That depends on AudioDeck being able to enable the APO per device itself, which Equalizer APO
+normally does through its own Configurator. Whether that is reachable programmatically is verified
+in stage 0. If it is not, the fallback is the installer's own device page shown once, which is
+worse but still requires no download.
+
+The reboot cannot be removed either way. The panel says so before the user commits to anything.
 
 After the installer exits, the panel asks for a restart and offers a Recheck button. Nothing else
 in the tab renders until detection succeeds.

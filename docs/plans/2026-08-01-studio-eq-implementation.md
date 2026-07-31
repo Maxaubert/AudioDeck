@@ -13,7 +13,13 @@ observation rather than documentation:
    and record the exact string Equalizer APO matched on.
 2. Whether `Include:` from `config.txt` behaves as documented, so the user's own config survives.
 3. What detection looks like when installed: registry key, install path, config directory.
-4. Whether the installer can be launched from the app and what it does about device selection.
+4. **How little of the install the end user has to see.** The bundled installer is NSIS, so `/S`
+   should install it silently. The open question is enabling the APO per device, which Equalizer
+   APO normally does through its Configurator: find what that writes (expected to be the endpoint's
+   `FxProperties` in the MMDevices registry) by diffing the registry before and after enabling a
+   device by hand. If AudioDeck can write the same thing, the user sees only AudioDeck's own UI,
+   one elevation prompt and one restart. If not, the fallback is the installer's device page shown
+   once.
 
 Written up as a short findings note in `docs/reference/`. If device matching turns out not to be
 reliable, the design needs revisiting before any UI exists, and this stage is where that is cheap.
