@@ -2,7 +2,7 @@
 // backend and a throwaway APPDATA, so config writes land in a temp file.
 
 import { _electron } from "@playwright/test";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,8 +24,19 @@ export interface LaunchedApp {
  * Test mode opens the window immediately, skips tray and registry; the mock
  * backend supplies deterministic device data.
  */
-export async function launchApp(): Promise<LaunchedApp> {
+export async function launchApp(
+  /** Partial config written before launch; missing fields take their defaults. */
+  seedConfig?: Record<string, unknown>,
+): Promise<LaunchedApp> {
   const appData = await mkdtemp(path.join(os.tmpdir(), "audiodeck-e2e-"));
+  if (seedConfig !== undefined) {
+    await mkdir(path.join(appData, "AudioDeck"), { recursive: true });
+    await writeFile(
+      path.join(appData, "AudioDeck", "config.json"),
+      JSON.stringify(seedConfig, null, 2),
+      "utf8",
+    );
+  }
   const app = await _electron.launch({
     args: ["."],
     cwd: repoRoot,

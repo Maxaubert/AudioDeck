@@ -43,21 +43,32 @@ export function PriorityList({
     setOverIndex(null);
   };
 
-  if (ids.length === 0) {
+  // A ranked id Windows no longer reports at all gets no row: it has no name
+  // to print and nothing to act on. The entry stays in the config, because the
+  // daemon only prunes after a long absence and a brief enumeration hiccup
+  // must not cost a real rank; it is simply not drawn while it cannot resolve.
+  // Virtual devices (VR streaming, per-session endpoints) mint a fresh id per
+  // session and delete the old one, so this is routine, not exceptional.
+  const rows = ids
+    .map((id, index) => ({ id, index, device: devicesById.get(id) }))
+    .filter((row): row is { id: string; index: number; device: DeviceView } =>
+      row.device !== undefined,
+    );
+
+  if (rows.length === 0) {
     return <p className="empty-note">No devices yet. They appear here once detected.</p>;
   }
 
   return (
     <ol className="strip-list" aria-label={label}>
-      {ids.map((id, index) => {
-        const device = devicesById.get(id);
-        const isManual = device?.isDefault === true && manualOverride;
-        const clickable = device !== undefined && device.available && !device.isDefault;
+      {rows.map(({ id, index, device }, position) => {
+        const isManual = device.isDefault && manualOverride;
+        const clickable = device.available && !device.isDefault;
         const classes = [
           "strip",
-          device?.isDefault ? "is-default" : "",
+          device.isDefault ? "is-default" : "",
           isManual ? "is-manual" : "",
-          device === undefined || !device.available ? "is-offline" : "",
+          !device.available ? "is-offline" : "",
           clickable ? "is-clickable" : "",
           dragIndex === index ? "is-dragging" : "",
           overIndex === index && dragIndex !== null && dragIndex !== index
@@ -118,45 +129,49 @@ export function PriorityList({
             }}
           >
             <span className="rank" aria-hidden="true">
-              {index + 1}
+              {position + 1}
             </span>
-            <DeviceGlyph formFactor={device?.formFactor ?? null} />
+            <DeviceGlyph formFactor={device.formFactor} />
             <div className="strip-body">
               <div className="device-name">
-                {device !== undefined ? displayName(device) : "Not connected"}
-                {device !== undefined ? (
-                  <StateBadge device={device} manualOverride={manualOverride} />
-                ) : (
-                  <span className="badge badge-offline">Offline</span>
-                )}
+                {displayName(device)}
+                <StateBadge device={device} manualOverride={manualOverride} />
               </div>
-              {device !== undefined && displayDetail(device) !== null ? (
+              {displayDetail(device) !== null ? (
                 <div className="device-sub">{displayDetail(device)}</div>
               ) : null}
             </div>
             <div className="move-controls">
+              {/* Targets the neighbouring VISIBLE row's slot, so a hidden
+                  unresolved entry in between never swallows a press. */}
               <button
                 type="button"
                 className="btn btn-icon"
-                aria-label={`Move ${device !== undefined ? device.name : "device"} up`}
-                disabled={index === 0}
-                onClick={() => onReorder(moveItem(ids, index, index - 1))}
+                aria-label={`Move ${device.name} up`}
+                disabled={position === 0}
+                onClick={() => {
+                  const target = rows[position - 1];
+                  if (target !== undefined) onReorder(moveItem(ids, index, target.index));
+                }}
               >
                 &#9650;
               </button>
               <button
                 type="button"
                 className="btn btn-icon"
-                aria-label={`Move ${device !== undefined ? device.name : "device"} down`}
-                disabled={index === ids.length - 1}
-                onClick={() => onReorder(moveItem(ids, index, index + 1))}
+                aria-label={`Move ${device.name} down`}
+                disabled={position === rows.length - 1}
+                onClick={() => {
+                  const target = rows[position + 1];
+                  if (target !== undefined) onReorder(moveItem(ids, index, target.index));
+                }}
               >
                 &#9660;
               </button>
               <button
                 type="button"
                 className="btn btn-icon btn-remove"
-                aria-label={`Remove ${device !== undefined ? device.name : "device"} from list`}
+                aria-label={`Remove ${device.name} from list`}
                 title="Remove from list"
                 onClick={() => onRemove(id)}
               >

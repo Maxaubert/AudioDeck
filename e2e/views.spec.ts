@@ -2,7 +2,7 @@
 // data (priority lists, the merged Devices view with its faders and panels).
 
 import { expect, test } from "@playwright/test";
-import { launchApp } from "./helpers.js";
+import { launchApp, readConfigFile } from "./helpers.js";
 import type { LaunchedApp } from "./helpers.js";
 
 let ctx: LaunchedApp;
@@ -45,6 +45,30 @@ test("launches into the Priority view with both mocked lists", async () => {
   await expect(
     mics.getByRole("listitem").filter({ hasText: "Logitech BRIO" }),
   ).toBeVisible();
+});
+
+test("a ranked device Windows no longer reports gets no row", async () => {
+  // Per-session virtual endpoints (VR streaming, Sonar) mint a fresh id every
+  // session and delete the old one, leaving ranked ids that resolve to nothing.
+  // The daemon prunes them only after a long absence, so the list must not
+  // print a nameless "Not connected" row in the meantime.
+  await ctx.close();
+  ctx = await launchApp({ outputPriority: ["{0.0.0.00000000}.{dead-endpoint}", "mock-out-tv"] });
+  const { page } = ctx;
+
+  const outputs = page.getByRole("list", { name: "Output priority" });
+  await expect(outputs.getByText("Not connected")).toHaveCount(0);
+
+  // The real devices still render, numbered from 1 with no gap where the
+  // orphan sat, and the orphan stays in the config for the daemon to prune.
+  const rows = outputs.getByRole("listitem");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("LG TV");
+  await expect(rows.nth(0).locator(".rank")).toHaveText("1");
+  await expect(rows.nth(1).locator(".rank")).toHaveText("2");
+  await expect
+    .poll(async () => (await readConfigFile(ctx.configFile)).outputPriority[0])
+    .toBe("{0.0.0.00000000}.{dead-endpoint}");
 });
 
 test("clicking a priority row switches audio to it", async () => {
