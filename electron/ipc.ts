@@ -4,6 +4,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
+import { dedupeEndpoints } from "./dedupe.js";
 import { restartShellHost } from "./reapply.js";
 import { IPC } from "../shared/ipc.js";
 import type { AudioControl, EndpointFlow } from "./audioctl.js";
@@ -263,6 +264,6 @@ function fingerprintFor(
 
 /** Direct gather for the rare window-open before the poller's first tick. */
 async function freshSnapshot(audioctl: AudioControl): Promise<PollSnapshot> {
-  const endpoints = await audioctl.list();
+  const { endpoints } = dedupeEndpoints(await audioctl.list());
   return { endpoints, availability: evaluateAvailability(endpoints, null) };
 }

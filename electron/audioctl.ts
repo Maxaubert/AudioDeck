@@ -16,6 +16,12 @@ export interface Endpoint {
   isDefaultComms: boolean;
   /** PKEY_AudioEndpoint_FormFactor value; null when unreadable. */
   formFactor: number | null;
+  /**
+   * PKEY_AudioEndpoint_Association: the device interface path of the adapter
+   * this endpoint hangs off. Shared by every endpoint of one adapter, so it
+   * identifies the hardware but not the endpoint; null when unreadable.
+   */
+  association: string | null;
   volume: number | null;
   mute: boolean | null;
 }

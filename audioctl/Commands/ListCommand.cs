@@ -5,7 +5,7 @@ using AudioCtl.Output;
 namespace AudioCtl.Commands;
 
 // list: prints every render and capture endpoint in every state as a JSON array of
-// {id, name, flow, state, isDefault, isDefaultComms, volume, mute}.
+// {id, name, flow, state, isDefault, isDefaultComms, formFactor, association, volume, mute}.
 internal static class ListCommand
 {
     private const int RoleConsole = 0;
@@ -59,6 +59,8 @@ internal static class ListCommand
         w.WriteBoolean("isDefaultComms", id == defaultCommsId);
         uint? formFactor = ReadFormFactor(device);
         if (formFactor is uint ff) w.WriteNumber("formFactor", ff); else w.WriteNull("formFactor");
+        string? association = ReadAssociation(device);
+        if (association is string assoc) w.WriteString("association", assoc); else w.WriteNull("association");
 
         int? volume = null;
         bool? mute = null;
@@ -85,6 +87,19 @@ internal static class ListCommand
         catch
         {
             return "(unknown)";
+        }
+    }
+
+    private static string? ReadAssociation(Device device)
+    {
+        try
+        {
+            using var store = device.OpenPropertyStore();
+            return store.GetAssociation();
+        }
+        catch
+        {
+            return null;
         }
     }
 

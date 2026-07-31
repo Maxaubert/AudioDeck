@@ -8,6 +8,7 @@
 
 import type { Endpoint, EndpointState } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
+import type { Supersession } from "./dedupe.js";
 
 const STATE_PREFERENCE: EndpointState[] = ["active", "unplugged", "disabled", "notpresent"];
 
@@ -32,6 +33,45 @@ export function migrateIdentities(
   return changed ? next : null;
 }
 
+/**
+ * Move settings off endpoint ids that Windows superseded (see dedupe.ts). This
+ * is the reliable half of identity migration: the fingerprint above only fires
+ * when the dead id vanishes AND the replacement wears the driver's name, and
+ * neither holds for an endpoint Windows merely remembers as notpresent while
+ * the replacement inherited the user's own name.
+ *
+ * Returns the migrated config, or null when nothing needed to move.
+ */
+export function migrateSupersessions(
+  config: AudioDeckConfig,
+  supersessions: readonly Supersession[],
+): AudioDeckConfig | null {
+  let next = config;
+  let changed = false;
+
+  for (const { ghostId, liveId } of supersessions) {
+    if (!carriesSettings(next, ghostId)) continue;
+    console.log(`[identity] ${ghostId} was superseded by ${liveId}`);
+    next = rekey(next, ghostId, liveId);
+    changed = true;
+  }
+
+  return changed ? next : null;
+}
+
+function carriesSettings(config: AudioDeckConfig, id: string): boolean {
+  return (
+    config.customizations[id] !== undefined ||
+    config.aliases[id] !== undefined ||
+    config.outputPriority.includes(id) ||
+    config.micPriority.includes(id) ||
+    config.excluded.output.includes(id) ||
+    config.excluded.mic.includes(id) ||
+    config.volumeLocked.includes(id) ||
+    config.hiddenDevices.includes(id)
+  );
+}
+
 function findReincarnation(
   fingerprint: string,
   endpoints: Endpoint[],
@@ -50,17 +90,23 @@ function findReincarnation(
   return null;
 }
 
+/**
+ * Move everything keyed on oldId onto newId. Settings newId already has of its
+ * own always win: the live endpoint's own name is never replaced by the name
+ * of the dead id it happens to supersede.
+ */
 function rekey(config: AudioDeckConfig, oldId: string, newId: string): AudioDeckConfig {
   const customizations = { ...config.customizations };
-  const moved = customizations[oldId];
+  const movedCustomization = customizations[oldId];
   delete customizations[oldId];
-  if (moved !== undefined) customizations[newId] = moved;
+  if (movedCustomization !== undefined && customizations[newId] === undefined) {
+    customizations[newId] = movedCustomization;
+  }
 
   const aliases = { ...config.aliases };
-  if (aliases[oldId] !== undefined) {
-    aliases[newId] = aliases[oldId];
-    delete aliases[oldId];
-  }
+  const movedAlias = aliases[oldId];
+  delete aliases[oldId];
+  if (movedAlias !== undefined && aliases[newId] === undefined) aliases[newId] = movedAlias;
 
   return {
     ...config,
@@ -69,10 +115,18 @@ function rekey(config: AudioDeckConfig, oldId: string, newId: string): AudioDeck
     outputPriority: replaceRank(config.outputPriority, oldId, newId),
     micPriority: replaceRank(config.micPriority, oldId, newId),
     excluded: {
-      output: config.excluded.output.map((id) => (id === oldId ? newId : id)),
-      mic: config.excluded.mic.map((id) => (id === oldId ? newId : id)),
+      output: replaceMember(config.excluded.output, oldId, newId),
+      mic: replaceMember(config.excluded.mic, oldId, newId),
     },
+    volumeLocked: replaceMember(config.volumeLocked, oldId, newId),
+    hiddenDevices: replaceMember(config.hiddenDevices, oldId, newId),
   };
+}
+
+/** Swap oldId for newId in an unordered id set, without duplicating newId. */
+function replaceMember(ids: string[], oldId: string, newId: string): string[] {
+  if (!ids.includes(oldId)) return ids;
+  return [...new Set(ids.map((id) => (id === oldId ? newId : id)))];
 }
 
 /**

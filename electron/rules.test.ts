@@ -18,6 +18,7 @@ function endpoint(
     mute: false,
     ...overrides,
     formFactor: overrides.formFactor ?? 1,
+    association: overrides.association ?? null,
   };
 }
 

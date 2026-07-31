@@ -21,6 +21,12 @@ internal readonly unsafe struct PropertyStore : IDisposable
     // "(unknown)" and an empty string renders as "name ()".
     private static readonly Guid EndpointInterfaceFmtid = new("b3f8fa53-0004-438e-9003-51a46e139bfc");
     private const uint EndpointInterfacePid = 6;
+    // PKEY_AudioEndpoint_Association (same fmtid, pid 2): the device interface path of
+    // the KS filter the endpoint hangs off, e.g.
+    // "{1}.HDAUDIO\FUNC_01&VEN_10DE&...\5&2A12AD2E&0&0001". It identifies the ADAPTER,
+    // not the pin, so several live endpoints share one; paired with the composed name
+    // it tells a re-created endpoint from a genuinely different device.
+    private const uint AssociationPid = 2;
     // PKEY_AudioEndpoint_FormFactor: drives which glyph the modern flyout shows.
     // PKEY_DeviceClass_IconPath: the classic icon ("%windir%\system32\mmres.dll,-3010").
     // Both writable without elevation (proven live 2026-07-27).
@@ -109,9 +115,14 @@ internal readonly unsafe struct PropertyStore : IDisposable
     }
 
     // Slot 5: GetValue(ref PROPERTYKEY, out PROPVARIANT); GetCount and GetAt precede it.
-    public string? GetFriendlyName()
+    public string? GetFriendlyName() =>
+        GetString(new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = FriendlyNamePid });
+
+    public string? GetAssociation() =>
+        GetString(new PropertyKey { Fmtid = EndpointInterfaceFmtid, Pid = AssociationPid });
+
+    private string? GetString(PropertyKey key)
     {
-        var key = new PropertyKey { Fmtid = DeviceKeyFmtid, Pid = FriendlyNamePid };
         var value = default(PropVariant);
         int hr = ((delegate* unmanaged<IntPtr, PropertyKey*, PropVariant*, int>)ComRuntime.Slot(_ptr, 5))(
             _ptr, &key, &value);

@@ -5,7 +5,8 @@
 
 import { evaluateAvailability } from "./availability.js";
 import { decide, diffEvents, pruneMissing, seedPriorityList } from "./rules.js";
-import { migrateIdentities } from "./identity.js";
+import { dedupeEndpoints } from "./dedupe.js";
+import { migrateIdentities, migrateSupersessions } from "./identity.js";
 import { reapplyCustomizations } from "./reapply.js";
 import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
@@ -118,12 +119,22 @@ export class Poller {
   }
 
   private async evaluateOnce(): Promise<void> {
-    let endpoints: Endpoint[];
+    let listed: Endpoint[];
     try {
-      endpoints = await this.deps.audioctl.list();
+      listed = await this.deps.audioctl.list();
     } catch (err) {
       console.error("[poller] audioctl list failed, keeping last known state:", err);
       return;
+    }
+
+    // One row per physical device: Windows keeps the old id of anything it
+    // re-enumerated, so the same device is listed live and as a leftover.
+    // Settings the leftover carried move to the live id before anything else
+    // reads the config, so the device stays ranked exactly where it was.
+    const { endpoints, supersessions } = dedupeEndpoints(listed);
+    if (supersessions.length > 0) {
+      const merged = migrateSupersessions(this.deps.getConfig(), supersessions);
+      if (merged !== null) await this.deps.saveConfig(merged);
     }
 
     let headsets: HeadsetSnapshot | null;

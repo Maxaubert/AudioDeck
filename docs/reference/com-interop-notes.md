@@ -62,6 +62,24 @@ The quick-settings flyout (ShellHost.exe) caches endpoint names for its process
 lifetime; kill ShellHost after a rename (it respawns on demand) or the flyout keeps
 showing the old name indefinitely.
 
+## Endpoint identity: which adapter an endpoint belongs to (proven live 2026-07-31)
+
+PKEY_AudioEndpoint_Association `{b3f8fa53-0004-438e-9003-51a46e139bfc},2` (VT_LPWSTR)
+reads back the device interface path of the KS filter behind the endpoint, e.g.
+`{1}.HDAUDIO\FUNC_01&VEN_10DE&DEV_00AA&SUBSYS_10DE0000&REV_1001\5&2A12AD2E&0&0001`.
+It names the ADAPTER, not the jack or HDMI pin: 14 endpoints on this machine share the
+one above, and six live ones share the Realtek USB adapter's. So it can rule two
+endpoints out as the same device, never in on its own; the composed name separates
+pins on one adapter.
+
+Endpoint ids are NOT stable. When a driver re-enumerates (HDMI display after a reboot,
+driver update, virtual audio service) the endpoint reappears under a fresh GUID and
+Windows keeps the old GUID forever in the notpresent state, wearing the same name.
+Worse for name-based matching: the recreated endpoint INHERITS the user's written
+PKEY_Device_DeviceDesc, so it does not come back under the driver's original name.
+Both registry keys under `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\
+Audio\Render\{guid}\Properties` were observed holding `DeviceDesc = LG` at once.
+
 ## Device kind: form factor + icon (proven live 2026-07-27)
 
 Both writable via the endpoint property store without elevation:
