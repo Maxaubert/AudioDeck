@@ -4,6 +4,7 @@
 // are controls, not a request to change device.
 
 import { useId } from "react";
+import type { MutableRefObject } from "react";
 import { deviceTypeByKey, typeKeyForFormFactor } from "../../../../shared/deviceTypes.js";
 import { displayDetail, displayName } from "../useAppState.js";
 import { usePendingEdits } from "../usePendingEdits.js";
@@ -26,12 +27,29 @@ function ExpandMark() {
   );
 }
 
+/** Everything a ranked row needs to take part in drag-to-reorder. */
+export interface RowDrag {
+  dragging: boolean;
+  dropTarget: boolean;
+  /** True for one tick after a drop, so the trailing click is not a switch. */
+  suppressedClick: MutableRefObject<boolean>;
+  onDragStart: () => void;
+  onDragOver: () => void;
+  onDragLeave: () => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
+}
+
 export function DeviceRow({
   device,
   rank,
   manualOverride,
   expanded,
   onToggleExpand,
+  onRank,
+  onUnrank,
+  onMove,
+  drag,
   actions,
 }: {
   device: DeviceView;
@@ -40,6 +58,14 @@ export function DeviceRow({
   manualOverride: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
+  /** Put an unranked device into the list. Absent on ranked rows. */
+  onRank?: () => void;
+  /** Take a ranked device out of the list. Absent on unranked rows. */
+  onUnrank?: () => void;
+  /** Move a ranked row by ±1. Absent on unranked rows. */
+  onMove?: (delta: number) => void;
+  /** Absent on unranked rows, which do not drag. */
+  drag?: RowDrag;
   actions: AudioDeckApi;
 }) {
   const panelId = useId();
@@ -75,28 +101,85 @@ export function DeviceRow({
     device.isDefault && manualOverride ? "is-manual" : "",
     clickable ? "is-clickable" : "",
     expanded ? "is-expanded" : "",
+    drag !== undefined ? "is-draggable" : "",
+    drag?.dragging === true ? "is-dragging" : "",
+    drag?.dropTarget === true ? "is-drop-target" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
+  const hint =
+    drag !== undefined
+      ? "Drag to reorder, or Alt with the arrow keys. Click to switch audio here now."
+      : clickable
+        ? "Click to switch audio here now"
+        : undefined;
+
   return (
     <li
       className={classes}
-      title={clickable ? "Click to switch audio here now" : undefined}
-      tabIndex={clickable ? 0 : undefined}
+      title={hint}
+      tabIndex={clickable || drag !== undefined ? 0 : undefined}
+      draggable={drag !== undefined}
+      onDragStart={drag?.onDragStart}
+      onDragOver={
+        drag === undefined
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              drag.onDragOver();
+            }
+      }
+      onDragLeave={drag?.onDragLeave}
+      onDrop={
+        drag === undefined
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              drag.onDrop();
+            }
+      }
+      onDragEnd={drag?.onDragEnd}
       onClick={(e) => {
         if (!clickable || isControl(e.target)) return;
+        if (drag?.suppressedClick.current === true) return;
         switchToThis();
       }}
       onKeyDown={(e) => {
-        if (!clickable || isControl(e.target)) return;
+        if (isControl(e.target)) return;
+        // Alt distinguishes reordering from the plain Enter/Space switch.
+        if (e.altKey && onMove !== undefined) {
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            onMove(e.key === "ArrowUp" ? -1 : 1);
+            return;
+          }
+        }
+        if (!clickable) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           switchToThis();
         }
       }}
     >
-      <span className={rank === null ? "rank is-unranked" : "rank"}>{rank ?? ""}</span>
+      {rank === null ? (
+        <span className="rank is-unranked">
+          {onRank !== undefined ? (
+            <button
+              type="button"
+              className="rank-add"
+              aria-label={`Add ${name} to priority`}
+              title="Add to the priority list"
+              onClick={onRank}
+            >
+              +
+            </button>
+          ) : null}
+        </span>
+      ) : (
+        <span className="rank">{rank}</span>
+      )}
       <DeviceGlyph formFactor={formFactor} />
       <div className="strip-body">
         <div className="device-name">
@@ -166,7 +249,12 @@ export function DeviceRow({
 
       {expanded ? (
         <div className="device-panel" id={panelId} aria-label={`${name} settings`} role="group">
-          <DeviceControls device={device} pending={pending} actions={actions} />
+          <DeviceControls
+            device={device}
+            pending={pending}
+            onUnrank={onUnrank}
+            actions={actions}
+          />
         </div>
       ) : null}
     </li>

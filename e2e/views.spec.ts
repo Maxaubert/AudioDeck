@@ -15,9 +15,11 @@ test.afterEach(async () => {
   await ctx.close();
 });
 
-test("launches into the Priority view with both mocked lists", async () => {
+test("launches into the one device page, ranked devices only", async () => {
   const { page } = ctx;
-  await expect(page.getByRole("heading", { name: "Priority", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Devices", exact: true })).toBeVisible();
+  // The Priority tab is gone; its job is this page's ordering.
+  await expect(page.getByRole("button", { name: "Priority", exact: true })).toHaveCount(0);
 
   // Names render split: clean title, technical part as the sub line.
   const outputs = page.getByRole("list", { name: "Output priority" });
@@ -30,13 +32,12 @@ test("launches into the Priority view with both mocked lists", async () => {
   // Windows default seeds first and carries the amber outline (no badge).
   await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
   await expect(outputs.getByRole("listitem").first()).toHaveClass(/is-default/);
-  // Non-active endpoints stay out of the ranking. The picker offers only real
-  // devices (disconnected AirPods), never disabled endpoints or ghosts.
-  await expect(outputs.getByText("Realtek(R) Audio")).toHaveCount(0);
-  await page.getByRole("button", { name: /Add a device \(1 more\)/ }).click();
-  await expect(page.getByRole("button", { name: /AirPods Pro/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Realtek\(R\) Audio/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Digital Output/ })).toHaveCount(0);
+
+  // Everything outside the ranking stays hidden until asked for.
+  await expect(outputs.getByRole("listitem")).toHaveCount(2);
+  await expect(page.locator(".device-name", { hasText: "Realtek(R) Audio" })).toHaveCount(0);
+  await expect(page.locator(".device-name", { hasText: "AirPods Pro" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Show remembered devices/ })).toHaveCount(0);
 
   const mics = page.getByRole("list", { name: "Microphone priority" });
   await expect(
@@ -45,6 +46,36 @@ test("launches into the Priority view with both mocked lists", async () => {
   await expect(
     mics.getByRole("listitem").filter({ hasText: "Logitech BRIO" }),
   ).toBeVisible();
+  // Every mic is ranked, so that section offers no reveal at all.
+  await expect(page.getByRole("button", { name: /More microphones/ })).toHaveCount(0);
+});
+
+test("More devices reveals the rest, and ghosts hide one level deeper", async () => {
+  const { page } = ctx;
+  const outputs = page.getByRole("list", { name: "Output priority" });
+
+  const reveal = page.getByRole("button", { name: "+ More outputs (2)" });
+  await expect(reveal).toHaveAttribute("aria-expanded", "false");
+  await reveal.click();
+
+  // The unranked devices join the same list, under the break, as normal rows
+  // with no rank number and a + to rank them.
+  await expect(page.locator(".section-break")).toHaveText("Not in priority");
+  const airpods = outputs.locator(".device-strip", { hasText: "AirPods Pro" });
+  await expect(airpods).toBeVisible();
+  await expect(airpods.locator(".rank.is-unranked")).toBeVisible();
+  await expect(airpods.getByRole("button", { name: "Add Headphones to priority" })).toBeVisible();
+  // Ranked rows offer no +; they already have a place.
+  await expect(outputs.getByRole("button", { name: /Add LG TV to priority/ })).toHaveCount(0);
+
+  // Remembered endpoints are one press further in, never in the default view.
+  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toHaveCount(0);
+  await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
+  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toBeVisible();
+
+  // And it collapses again.
+  await page.getByRole("button", { name: "Fewer devices" }).first().click();
+  await expect(outputs.getByRole("listitem")).toHaveCount(2);
 });
 
 test("a ranked device Windows no longer reports gets no row", async () => {
@@ -71,22 +102,8 @@ test("a ranked device Windows no longer reports gets no row", async () => {
     .toBe("{0.0.0.00000000}.{dead-endpoint}");
 });
 
-test("clicking a priority row switches audio to it", async () => {
+test("every ranked active device has a fader and a mute", async () => {
   const { page } = ctx;
-  const outputs = page.getByRole("list", { name: "Output priority" });
-  const tvRow = outputs.getByRole("listitem").filter({ hasText: "NVIDIA High Definition Audio" });
-  await expect(outputs.getByRole("listitem").first()).toHaveClass(/is-default/);
-  await tvRow.click();
-  // The clicked device becomes the one in use, marked as a manual override.
-  await expect(tvRow).toHaveClass(/is-default/, { timeout: 5000 });
-  await expect(tvRow).toHaveClass(/is-manual/, { timeout: 5000 });
-});
-
-test("Devices view gives every active device a fader and a mute", async () => {
-  const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Devices", exact: true })).toBeVisible();
-
   await expect(
     page.getByRole("slider", { name: "Speakers (Arctis Nova Pro Wireless) volume" }),
   ).toHaveValue("40");
@@ -96,48 +113,24 @@ test("Devices view gives every active device a fader and a mute", async () => {
   await expect(
     page.getByRole("slider", { name: "Microphone (Logitech BRIO) volume" }),
   ).toHaveValue("65");
-  // Non-active endpoints get no fader, and say so where the meter would be.
+  await expect(page.getByRole("button", { name: "Mute", exact: true })).toHaveCount(4);
+
+  // A revealed disabled endpoint gets no fader, and carries Enable in the
+  // collapsed row: it is the only thing that row can do. Disable is the one
+  // that hides in the panel.
+  await page.getByRole("button", { name: /More outputs/ }).click();
+  const realtek = page.locator(".device-strip", { hasText: "Realtek(R) Audio" });
   await expect(
     page.getByRole("slider", { name: "Speakers (Realtek(R) Audio) volume" }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Mute", exact: true })).toHaveCount(4);
-});
-
-test("Devices view ranks first, then the rest, with ghosts behind the toggle", async () => {
-  const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-
-  // Ranked devices lead, numbered, in priority order.
-  const rows = page.locator(".device-strip");
-  await expect(rows.nth(0)).toContainText("Arctis Nova Pro Wireless");
-  await expect(rows.nth(0).locator(".rank")).toHaveText("1");
-  await expect(rows.nth(1)).toContainText("NVIDIA High Definition Audio");
-  await expect(rows.nth(1).locator(".rank")).toHaveText("2");
-
-  // Then the break, then the endpoints that are not in the ranking at all.
-  await expect(page.locator(".section-break").first()).toHaveText("Not in priority");
-  const airpods = page.locator(".device-strip", { hasText: "AirPods Pro" });
-  const realtek = page.locator(".device-strip", { hasText: "Realtek(R) Audio" });
-  await expect(airpods.locator(".rank")).toBeEmpty();
-  await expect(realtek.locator(".rank")).toBeEmpty();
-  await expect(airpods.locator(".na")).toHaveText("Unavailable");
-
-  // A disabled endpoint carries Enable in the collapsed row: it is the only
-  // thing that row can do. Disable is the one that hides in the panel.
+  await expect(realtek.locator(".na")).toHaveText("Unavailable");
   await expect(realtek.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
+  const airpods = page.locator(".device-strip", { hasText: "AirPods Pro" });
   await expect(airpods.getByRole("button", { name: "Enable", exact: true })).toHaveCount(0);
-
-  // The notpresent ghost hides until the toggle reveals it. Scope to the
-  // device-name element: "Digital output" also appears as a dropdown option.
-  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toHaveCount(0);
-  await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
-  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toBeVisible();
 });
 
 test("the expander holds the management controls, one panel at a time", async () => {
   const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-
   const tv = page.locator(".device-strip", { hasText: "NVIDIA High Definition Audio" });
   const arctis = page.locator(".device-strip", { hasText: "Arctis Nova Pro Wireless" }).first();
 
@@ -169,8 +162,6 @@ test("the expander holds the management controls, one panel at a time", async ()
 
 test("renaming from the panel changes the device name globally", async () => {
   const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-
   const tv = page.locator(".device-strip", { hasText: "LG TV" });
   await tv.getByRole("button", { name: /^Settings for/ }).click();
   await tv.getByRole("button", { name: "Rename", exact: true }).click();
@@ -186,33 +177,28 @@ test("renaming from the panel changes the device name globally", async () => {
 
 test("an active device outside the ranking still has a working fader", async () => {
   const { page } = ctx;
-  // Dropping a device from the priority list leaves it active but unranked.
-  // The old Mixer listed only ranked devices, so this row lost its fader
-  // entirely; the merged view is the reason to keep it.
-  await page
-    .getByRole("list", { name: "Output priority" })
-    .getByRole("button", { name: "Remove LG TV (NVIDIA High Definition Audio) from list" })
-    .click();
-
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
+  // Dropping a device from the ranking leaves it active but unranked. The old
+  // Mixer listed only ranked devices, so this row lost its fader entirely.
   const tv = page.locator(".device-strip", { hasText: "NVIDIA High Definition Audio" });
+  await tv.getByRole("button", { name: /^Settings for/ }).click();
+  await tv.getByRole("button", { name: "Remove from priority", exact: true }).click();
 
-  // Below the break, no rank slab, and its volume is still controllable.
-  await expect(tv.locator(".rank")).toBeEmpty();
+  await page.getByRole("button", { name: /More outputs/ }).click();
+
+  // Below the break, no rank number, and its volume is still controllable.
+  await expect(tv.locator(".rank.is-unranked")).toBeVisible();
   const fader = tv.getByRole("slider");
   await expect(fader).toBeVisible();
   await fader.fill("70");
   await expect(fader).toHaveValue("70", { timeout: 5000 });
 });
 
-test("a volume change survives leaving the Devices tab immediately", async () => {
+test("a volume change survives leaving the page immediately", async () => {
   const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-
   const fader = page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" });
   await fader.fill("70");
   // Leave well inside the 200ms debounce window.
-  await page.getByRole("button", { name: "Priority", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.waitForTimeout(900);
 
   // Coming back, the daemon holds the new level rather than the old one.
@@ -224,7 +210,6 @@ test("a volume change survives leaving the Devices tab immediately", async () =>
 
 test("a device that ignores volume writes gets the on-device stamp", async () => {
   const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
   const arctis = page
     .locator(".device-strip")
     .filter({ hasText: "Arctis Nova Pro Wireless" })
@@ -260,14 +245,14 @@ test("a device that ignores volume writes gets the on-device stamp", async () =>
 
 test("clicking a device row switches to it, but the fader does not", async () => {
   const { page } = ctx;
-  await page.getByRole("button", { name: "Devices", exact: true }).click();
-
   const lg = page.locator(".device-strip", { hasText: "NVIDIA High Definition Audio" });
   await expect(lg).not.toHaveClass(/is-default/);
 
-  // The name area switches device, and the UI shows it without waiting for Windows.
+  // The name area switches device, and the UI shows it without waiting for
+  // Windows. Choosing by hand is a manual override until the next event.
   await lg.locator(".strip-body").click();
   await expect(lg).toHaveClass(/is-default/, { timeout: 2000 });
+  await expect(lg).toHaveClass(/is-manual/, { timeout: 5000 });
 
   // The fader is a control, not a device switch.
   const arctis = page.locator(".device-strip", { hasText: "Arctis Nova Pro Wireless" }).first();
@@ -299,8 +284,8 @@ test("Settings tab exposes the working controls and hides the old footer", async
   await pause.click();
   await expect(pause).toHaveAttribute("aria-checked", "false", { timeout: 5000 });
 
-  // The device pages are still reachable from here.
-  await page.getByRole("button", { name: "Priority", exact: true }).click();
+  // The device page is still reachable from here.
+  await page.getByRole("button", { name: "Devices", exact: true }).click();
   await expect(page.getByRole("list", { name: "Output priority" })).toBeVisible();
 });
 

@@ -16,10 +16,13 @@ import type { PendingEdits } from "../usePendingEdits.js";
 export function DeviceControls({
   device,
   pending,
+  onUnrank,
   actions,
 }: {
   device: DeviceView;
   pending: PendingEdits;
+  /** Take the device out of the priority list. Absent when it is not in one. */
+  onUnrank?: () => void;
   actions: AudioDeckApi;
 }) {
   const [editing, setEditing] = useState(false);
@@ -104,6 +107,14 @@ export function DeviceControls({
           onClick={() => void actions.setEndpointEnabled(device.id, true)}
         >
           Enable
+        </button>
+      ) : null}
+
+      {onUnrank !== undefined ? (
+        // Not destructive to the device, but it does stop auto-switch ever
+        // choosing it, so it sits here rather than on the row.
+        <button type="button" className="btn" onClick={onUnrank}>
+          Remove from priority
         </button>
       ) : null}
 

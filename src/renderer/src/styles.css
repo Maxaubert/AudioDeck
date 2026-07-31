@@ -523,9 +523,56 @@ select {
   grid-template-columns: 72px 58px minmax(170px, 1fr) minmax(190px, 1.05fr) 86px 120px 58px;
 }
 
-/* Unranked rows keep the column so every row lines up, without the slab. */
+/* Unranked rows keep the column so every row lines up, without the slab. The
+   left column means "position in the order", so the control that grants a
+   position lives there and costs no width. */
 .rank.is-unranked {
   background: transparent;
+}
+
+.rank-add {
+  width: 46px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 100ms linear,
+    color 100ms linear;
+}
+
+.rank-add:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* ---------- reordering ---------- */
+
+.strip.is-draggable {
+  cursor: grab;
+}
+
+.strip.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* The row being carried, faded so the hole it leaves is readable. */
+.strip.is-dragging {
+  opacity: 0.4;
+}
+
+/* Where it lands: a marker rule struck across the top of the target row. */
+.strip.is-drop-target {
+  box-shadow: inset 0 6px 0 0 var(--marker);
+}
+
+/* Dragging must not also trigger the row's hover nudge. */
+.strip.is-dragging.is-clickable:hover {
+  transform: none;
 }
 
 /* ---------- badges ---------- */
@@ -602,13 +649,6 @@ select {
   cursor: default;
 }
 
-.btn-icon {
-  width: 46px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-}
-
 .btn-danger {
   border-color: var(--red);
   color: var(--red);
@@ -637,15 +677,7 @@ select {
   border-color: var(--ink);
 }
 
-/* Reorder buttons on the Priority rows. */
-.move-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 16px;
-}
-
-/* ---------- add a device ---------- */
+/* ---------- revealing the rest of the hardware ---------- */
 
 .btn-add-device {
   display: block;
@@ -667,46 +699,23 @@ select {
   color: var(--paper);
 }
 
-.add-device {
-  margin: 0 0 10px;
-  padding: 14px 16px;
-  border: 5px solid var(--ink);
-  background: var(--sheet);
-}
-
-.add-device-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.add-device-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 17rem;
-  overflow-y: auto;
-}
-
-.btn-add-row {
+/* Secondary to the reveal above it: same shape, lighter frame. */
+.btn-ghost-toggle {
+  display: block;
   width: 100%;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 12px 14px;
-  text-align: left;
+  min-height: 52px;
+  margin: 0 0 8px;
   background: transparent;
   color: var(--ink);
   border: 3px solid var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
-.btn-add-row:hover {
+.btn-ghost-toggle:hover {
   background: var(--ink);
   color: var(--paper);
 }
@@ -915,12 +924,15 @@ select {
   gap: 10px;
 }
 
-/* The break between ranked devices and the rest of the hardware. */
+/* The break between ranked devices and the rest of the hardware. It is a row
+   of the same list, so it carries the row's bottom rule rather than margins. */
 .section-break {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 20px 0 10px;
+  padding: 13px 18px;
+  background: var(--paper);
+  border-bottom: var(--rule) solid var(--ink);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.16em;

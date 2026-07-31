@@ -1,4 +1,4 @@
-// Captures docs/screenshots/{priority,devices}.png from the real app
+// Captures docs/screenshots/{devices,settings}.png from the real app
 // window (built output, AUDIODECK_TEST_MODE=1: no tray, no registry writes).
 // Run `npm run build` first; `npm run screenshots` does both.
 
@@ -24,8 +24,8 @@ await page.waitForSelector('[data-loaded="true"]', { timeout: 30_000 });
 await page.waitForTimeout(2500);
 
 const views = [
-  { tab: "Priority", file: "priority.png" },
   { tab: "Devices", file: "devices.png" },
+  { tab: "Settings", file: "settings.png" },
 ];
 
 for (const { tab, file } of views) {
