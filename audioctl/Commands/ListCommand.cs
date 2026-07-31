@@ -50,17 +50,16 @@ internal static class ListCommand
         string? defaultId, string? defaultCommsId)
     {
         string id = device.GetId();
+        var props = ReadProps(device);
         w.WriteStartObject();
         w.WriteString("id", id);
-        w.WriteString("name", ReadName(device));
+        w.WriteString("name", props.Name);
         w.WriteString("flow", flow == DataFlow.Render ? "render" : "capture");
         w.WriteString("state", state);
         w.WriteBoolean("isDefault", id == defaultId);
         w.WriteBoolean("isDefaultComms", id == defaultCommsId);
-        uint? formFactor = ReadFormFactor(device);
-        if (formFactor is uint ff) w.WriteNumber("formFactor", ff); else w.WriteNull("formFactor");
-        string? association = ReadAssociation(device);
-        if (association is string assoc) w.WriteString("association", assoc); else w.WriteNull("association");
+        if (props.FormFactor is uint ff) w.WriteNumber("formFactor", ff); else w.WriteNull("formFactor");
+        if (props.Association is string assoc) w.WriteString("association", assoc); else w.WriteNull("association");
 
         int? volume = null;
         bool? mute = null;
@@ -77,42 +76,36 @@ internal static class ListCommand
         w.WriteEndObject();
     }
 
-    private static string ReadName(Device device)
+    private readonly record struct DeviceProps(string Name, string? Association, uint? FormFactor);
+
+    // One property store per device, not one per property. Opening the store is
+    // the expensive part of listing (a COM call into the audio service), and a
+    // machine that has seen a lot of hardware enumerates 50+ endpoints on every
+    // poll, so three opens each was three times the work for the same answer.
+    // Each read still fails independently: an endpoint that cannot answer for
+    // one property must not lose the others.
+    private static DeviceProps ReadProps(Device device)
     {
         try
         {
             using var store = device.OpenPropertyStore();
-            return store.GetFriendlyName() ?? "(unknown)";
+            return new DeviceProps(Read(store.GetFriendlyName) ?? "(unknown)",
+                                   Read(store.GetAssociation),
+                                   ReadValue(store.GetFormFactor));
         }
         catch
         {
-            return "(unknown)";
+            return new DeviceProps("(unknown)", null, null);
         }
     }
 
-    private static string? ReadAssociation(Device device)
+    private static T? Read<T>(Func<T?> get) where T : class
     {
-        try
-        {
-            using var store = device.OpenPropertyStore();
-            return store.GetAssociation();
-        }
-        catch
-        {
-            return null;
-        }
+        try { return get(); } catch { return null; }
     }
 
-    private static uint? ReadFormFactor(Device device)
+    private static T? ReadValue<T>(Func<T?> get) where T : struct
     {
-        try
-        {
-            using var store = device.OpenPropertyStore();
-            return store.GetFormFactor();
-        }
-        catch
-        {
-            return null;
-        }
+        try { return get(); } catch { return null; }
     }
 }

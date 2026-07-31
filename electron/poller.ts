@@ -5,6 +5,8 @@
 
 import { evaluateAvailability } from "./availability.js";
 import { decide, diffEvents, pruneMissing, seedPriorityList } from "./rules.js";
+import { endpointFingerprint, shouldQueryHeadsets } from "./headset-gate.js";
+import { matchesEndpoint } from "./headsetcontrol.js";
 import { dedupeEndpoints } from "./dedupe.js";
 import { migrateIdentities, migrateSupersessions } from "./identity.js";
 import { reapplyCustomizations } from "./reapply.js";
@@ -12,6 +14,7 @@ import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { DeviceAvailability } from "./availability.js";
 import type { HeadsetQuerier, HeadsetSnapshot } from "./headsetcontrol.js";
+import type { GateState } from "./headset-gate.js";
 
 export interface PollerDeps {
   audioctl: AudioControl;
@@ -55,6 +58,10 @@ export class Poller {
   private last: PollSnapshot | null = null;
   /** Consecutive ticks each ranked id has been missing from Windows entirely. */
   private missingTicks = new Map<string, number>();
+  /** Whether HeadsetControl is worth asking, and when it was last asked. */
+  private headsetGate: GateState | null = null;
+  /** Last HeadsetControl answer, reused on ticks that skip the query. */
+  private headsets: HeadsetSnapshot | null = null;
 
   constructor(private readonly deps: PollerDeps) {}
 
@@ -137,12 +144,26 @@ export class Poller {
       if (merged !== null) await this.deps.saveConfig(merged);
     }
 
-    let headsets: HeadsetSnapshot | null;
-    try {
-      headsets = await this.deps.headsetControl.query();
-    } catch {
-      // HeadsetControl unavailable: fall back to endpoint-state detection.
-      headsets = null;
+    // Asking HeadsetControl costs ~0.7 s of USB HID transaction, and answers
+    // nothing at all for hardware it does not support. Skip it in that case,
+    // reusing the last snapshot so availability still reads the same.
+    const endpointKey = endpointFingerprint(endpoints);
+    let headsets: HeadsetSnapshot | null = this.headsets;
+    if (shouldQueryHeadsets(this.headsetGate, endpointKey, Date.now())) {
+      try {
+        headsets = await this.deps.headsetControl.query();
+      } catch {
+        // HeadsetControl unavailable: fall back to endpoint-state detection.
+        headsets = null;
+      }
+      const relevant =
+        headsets !== null &&
+        headsets.devices.some((d) => endpoints.some((e) => matchesEndpoint(d, e)));
+      if (this.headsetGate !== null && this.headsetGate.relevant !== relevant) {
+        console.log(`[poller] headset polling ${relevant ? "on" : "idle"}`);
+      }
+      this.headsetGate = { relevant, probedAt: Date.now(), endpointKey };
+      this.headsets = headsets;
     }
 
     const availability = evaluateAvailability(endpoints, headsets);
