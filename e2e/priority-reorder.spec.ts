@@ -37,7 +37,16 @@ test("dragging a row reorders it and persists to config.json", async () => {
     "mock-out-tv",
   ]);
 
-  await rows.nth(0).dragTo(rows.nth(1));
+  // An explicit press-move-release rather than dragTo: a real drag moves in
+  // many small steps, and the row body is where you grab, not its centre,
+  // which is the fader.
+  const src = await rows.nth(0).boundingBox();
+  const dst = await rows.nth(1).boundingBox();
+  if (src === null || dst === null) throw new Error("rows not laid out");
+  await page.mouse.move(src.x + 300, src.y + src.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(src.x + 300, dst.y + dst.height / 2, { steps: 12 });
+  await page.mouse.up();
 
   await expect(rows.first()).toContainText("LG TV");
   await expect(rows.nth(1)).toContainText("Arctis Nova Pro");
@@ -45,6 +54,55 @@ test("dragging a row reorders it and persists to config.json", async () => {
     "mock-out-tv",
     "mock-out-arctis",
   ]);
+});
+
+test("dragging previews the landing position before the drop", async () => {
+  const { page } = ctx;
+  const list = page.getByRole("list", { name: "Output priority" });
+  const rows = list.getByRole("listitem");
+
+  const src = await rows.nth(0).boundingBox();
+  const dst = await rows.nth(1).boundingBox();
+  if (src === null || dst === null) throw new Error("rows not laid out");
+
+  // Press on the row body, away from the fader, and carry it over the next row.
+  await page.mouse.move(src.x + 300, src.y + src.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(src.x + 300, dst.y + dst.height / 2, { steps: 12 });
+
+  // The row below has stepped aside by exactly one row, so the gap under the
+  // cursor is the slot the drop will land in. The target comes from the
+  // pointer position, not from whichever row is under it: a row that has
+  // moved out of the way must not hand the target back.
+  await expect(list).toHaveAttribute("data-drag", "0");
+  await expect(list).toHaveAttribute("data-over", "1");
+  await expect(list).toHaveAttribute("data-step", "84");
+  await expect(rows.nth(0)).toHaveClass(/is-dragging/);
+
+  await page.mouse.up();
+  await expect(list).not.toHaveAttribute("data-drag", /./);
+});
+
+test("pressing the fader moves the fader, never the row", async () => {
+  const { page, configFile } = ctx;
+  const before = (await readConfigFile(configFile)).outputPriority;
+
+  // A draggable row makes its children draggable too, so without care a press
+  // on the fader carries the whole row instead of moving the thumb.
+  const fader = page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" });
+  const box = await fader.boundingBox();
+  if (box === null) throw new Error("fader not laid out");
+
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
+  await page.mouse.down();
+  // Sideways to set a level, then well past the row's own height.
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2, { steps: 10 });
+  await page.mouse.move(box.x + box.width * 0.8, box.y + 200, { steps: 10 });
+  await page.mouse.up();
+
+  await expect(fader).not.toHaveValue("25");
+  await page.waitForTimeout(600);
+  expect((await readConfigFile(configFile)).outputPriority).toEqual(before);
 });
 
 test("Alt with the arrow keys reorders and persists to config.json", async () => {

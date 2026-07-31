@@ -3,7 +3,7 @@
 // audio here, as the Priority list does; the fader, the buttons and the panel
 // are controls, not a request to change device.
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { MutableRefObject } from "react";
 import { deviceTypeByKey, typeKeyForFormFactor } from "../../../../shared/deviceTypes.js";
 import { displayDetail, displayName } from "../useAppState.js";
@@ -30,13 +30,11 @@ function ExpandMark() {
 /** Everything a ranked row needs to take part in drag-to-reorder. */
 export interface RowDrag {
   dragging: boolean;
-  dropTarget: boolean;
+  /** Pixels to step aside for the row being carried, 0 when unaffected. */
+  shift: number;
   /** True for one tick after a drop, so the trailing click is not a switch. */
   suppressedClick: MutableRefObject<boolean>;
-  onDragStart: () => void;
-  onDragOver: () => void;
-  onDragLeave: () => void;
-  onDrop: () => void;
+  onDragStart: (e: React.DragEvent<HTMLLIElement>) => void;
   onDragEnd: () => void;
 }
 
@@ -69,6 +67,10 @@ export function DeviceRow({
   actions: AudioDeckApi;
 }) {
   const panelId = useId();
+  // A draggable row makes every child draggable too, so pressing the fader
+  // would carry the whole row instead of moving the thumb. The row gives up
+  // its draggability for the duration of any press that starts on a control.
+  const [pressedControl, setPressedControl] = useState(false);
   const liveType = typeKeyForFormFactor(device.formFactor, device.flow);
   const pending = usePendingEdits({
     name: displayName(device),
@@ -103,7 +105,6 @@ export function DeviceRow({
     expanded ? "is-expanded" : "",
     drag !== undefined ? "is-draggable" : "",
     drag?.dragging === true ? "is-dragging" : "",
-    drag?.dropTarget === true ? "is-drop-target" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -120,26 +121,20 @@ export function DeviceRow({
       className={classes}
       title={hint}
       tabIndex={clickable || drag !== undefined ? 0 : undefined}
-      draggable={drag !== undefined}
+      draggable={drag !== undefined && !pressedControl}
+      // pointerdown is a discrete event, so this lands in the DOM before the
+      // browser decides whether the pointer movement is a drag.
+      onPointerDown={(e) => setPressedControl(isControl(e.target))}
+      onPointerUp={() => setPressedControl(false)}
+      // Inline so it beats the hover nudge, which is a transform too.
+      style={
+        drag !== undefined && drag.shift !== 0
+          ? { transform: `translateY(${drag.shift}px)` }
+          : undefined
+      }
+      // dragover and drop are handled by the list, which reads the pointer
+      // position: a row that has stepped aside is no longer under the cursor.
       onDragStart={drag?.onDragStart}
-      onDragOver={
-        drag === undefined
-          ? undefined
-          : (e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              drag.onDragOver();
-            }
-      }
-      onDragLeave={drag?.onDragLeave}
-      onDrop={
-        drag === undefined
-          ? undefined
-          : (e) => {
-              e.preventDefault();
-              drag.onDrop();
-            }
-      }
       onDragEnd={drag?.onDragEnd}
       onClick={(e) => {
         if (!clickable || isControl(e.target)) return;
