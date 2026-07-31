@@ -3,23 +3,19 @@
 
 import { useState } from "react";
 import { useAppState } from "./useAppState.js";
-import { PriorityView } from "./views/PriorityView.js";
-import { MixerView } from "./views/MixerView.js";
-import { DevicesView } from "./views/DevicesView.js";
+import { DeviceManagerView } from "./views/DeviceManagerView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { WindowCaption } from "./components/WindowCaption.js";
 
-type ViewName = "priority" | "mixer" | "devices" | "settings";
+type ViewName = "devices" | "settings";
 
 const TABS: { name: ViewName; label: string }[] = [
-  { name: "priority", label: "Priority" },
-  { name: "mixer", label: "Mixer" },
   { name: "devices", label: "Devices" },
   { name: "settings", label: "Settings" },
 ];
 
 export default function App() {
-  const [view, setView] = useState<ViewName>("priority");
+  const [view, setView] = useState<ViewName>("devices");
   const { state, error, actions } = useAppState();
 
   return (
@@ -55,12 +51,8 @@ export default function App() {
       ) : null}
       {state === null ? (
         <div className="loading">Reading your audio devices&hellip;</div>
-      ) : view === "priority" ? (
-        <PriorityView state={state} actions={actions} />
-      ) : view === "mixer" ? (
-        <MixerView state={state} actions={actions} />
       ) : view === "devices" ? (
-        <DevicesView state={state} actions={actions} />
+        <DeviceManagerView state={state} actions={actions} />
       ) : (
         <SettingsView state={state} actions={actions} />
       )}

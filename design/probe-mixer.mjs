@@ -15,10 +15,10 @@ const app = await electron.launch({
 });
 const page = await app.firstWindow();
 await page.waitForSelector(".shell[data-loaded=true]");
-await page.getByRole("button", { name: "Mixer", exact: true }).click();
+await page.getByRole("button", { name: "Devices", exact: true }).click();
 await page.waitForTimeout(400);
 
-const row = page.locator(".mixer-strip").first();
+const row = page.locator(".device-strip").first();
 const slider = row.locator("input[type=range]");
 const before = await slider.inputValue();
 const pctBefore = await row.locator(".volume-value").innerText();

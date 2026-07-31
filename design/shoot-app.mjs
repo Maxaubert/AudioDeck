@@ -20,7 +20,7 @@ page.on("pageerror", (e) => errors.push(e.message));
 await page.setViewportSize({ width: 1240, height: 920 });
 await page.waitForSelector(".shell[data-loaded=true]", { timeout: 15000 });
 
-for (const tab of ["Priority", "Mixer", "Devices", "Settings"]) {
+for (const tab of ["Priority", "Devices", "Settings"]) {
   await page.getByRole("button", { name: tab, exact: true }).click();
   await page.waitForTimeout(450);
   await page.screenshot({ path: path.join(shots, `app-${tab.toLowerCase()}.png`) });

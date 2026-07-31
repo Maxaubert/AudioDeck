@@ -1,5 +1,5 @@
-// e2e: reordering the output priority list updates the UI and persists the
-// new order to the temp config file (the atomic-write path under APPDATA).
+// e2e: ranking on the one device page. Reordering, adding and removing all
+// persist to the temp config file (the atomic-write path under APPDATA).
 
 import { expect, test } from "@playwright/test";
 import { launchApp, readConfigFile } from "./helpers.js";
@@ -15,62 +15,162 @@ test.afterEach(async () => {
   await ctx.close();
 });
 
-test("moving the top output down persists the new order to config.json", async () => {
+/** The file may not exist for the first few ms, so this tolerates that. */
+async function outputPriorityOnDisk(configFile: string): Promise<string[] | null> {
+  try {
+    return (await readConfigFile(configFile)).outputPriority;
+  } catch {
+    return null;
+  }
+}
+
+test("dragging a row reorders it and persists to config.json", async () => {
   const { page, configFile } = ctx;
   const outputs = page.getByRole("list", { name: "Output priority" });
-
-  // The file may not exist for the first few ms, so the poll tolerates that.
-  const outputPriorityOnDisk = async (): Promise<string[] | null> => {
-    try {
-      return (await readConfigFile(configFile)).outputPriority;
-    } catch {
-      return null;
-    }
-  };
+  const rows = outputs.getByRole("listitem");
 
   // Seeded order: default (Arctis) first, then enumeration order. The
   // disabled Realtek mock never seeds (active endpoints only).
+  await expect(rows.first()).toContainText("Arctis Nova Pro");
+  await expect.poll(() => outputPriorityOnDisk(configFile)).toEqual([
+    "mock-out-arctis",
+    "mock-out-tv",
+  ]);
+
+  // An explicit press-move-release rather than dragTo: a real drag moves in
+  // many small steps, and the row body is where you grab, not its centre,
+  // which is the fader.
+  const src = await rows.nth(0).boundingBox();
+  const dst = await rows.nth(1).boundingBox();
+  if (src === null || dst === null) throw new Error("rows not laid out");
+  await page.mouse.move(src.x + 300, src.y + src.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(src.x + 300, dst.y + dst.height / 2, { steps: 12 });
+  await page.mouse.up();
+
+  await expect(rows.first()).toContainText("LG TV");
+  await expect(rows.nth(1)).toContainText("Arctis Nova Pro");
+  await expect.poll(() => outputPriorityOnDisk(configFile)).toEqual([
+    "mock-out-tv",
+    "mock-out-arctis",
+  ]);
+});
+
+test("dragging previews the landing position before the drop", async () => {
+  const { page } = ctx;
+  const list = page.getByRole("list", { name: "Output priority" });
+  const rows = list.getByRole("listitem");
+
+  const src = await rows.nth(0).boundingBox();
+  const dst = await rows.nth(1).boundingBox();
+  if (src === null || dst === null) throw new Error("rows not laid out");
+
+  // Press on the row body, away from the fader, and carry it over the next row.
+  await page.mouse.move(src.x + 300, src.y + src.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(src.x + 300, dst.y + dst.height / 2, { steps: 12 });
+
+  // The row below has stepped aside by exactly one row, so the gap under the
+  // cursor is the slot the drop will land in. The target comes from the
+  // pointer position, not from whichever row is under it: a row that has
+  // moved out of the way must not hand the target back.
+  await expect(list).toHaveAttribute("data-drag", "0");
+  await expect(list).toHaveAttribute("data-over", "1");
+  await expect(list).toHaveAttribute("data-step", "84");
+  await expect(rows.nth(0)).toHaveClass(/is-dragging/);
+
+  await page.mouse.up();
+  await expect(list).not.toHaveAttribute("data-drag", /./);
+});
+
+test("pressing the fader moves the fader, never the row", async () => {
+  const { page, configFile } = ctx;
+  const before = (await readConfigFile(configFile)).outputPriority;
+
+  // A draggable row makes its children draggable too, so without care a press
+  // on the fader carries the whole row instead of moving the thumb.
+  const fader = page.getByRole("slider", { name: "LG TV (NVIDIA High Definition Audio) volume" });
+  const box = await fader.boundingBox();
+  if (box === null) throw new Error("fader not laid out");
+
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
+  await page.mouse.down();
+  // Sideways to set a level, then well past the row's own height.
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2, { steps: 10 });
+  await page.mouse.move(box.x + box.width * 0.8, box.y + 200, { steps: 10 });
+  await page.mouse.up();
+
+  await expect(fader).not.toHaveValue("25");
+  await page.waitForTimeout(600);
+  expect((await readConfigFile(configFile)).outputPriority).toEqual(before);
+});
+
+test("Alt with the arrow keys reorders and persists to config.json", async () => {
+  const { page, configFile } = ctx;
+  const outputs = page.getByRole("list", { name: "Output priority" });
+
   await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
-  await expect.poll(outputPriorityOnDisk).toEqual(["mock-out-arctis", "mock-out-tv"]);
+  await expect.poll(() => outputPriorityOnDisk(configFile)).toEqual([
+    "mock-out-arctis",
+    "mock-out-tv",
+  ]);
 
-  await outputs
-    .getByRole("button", { name: "Move Speakers (Arctis Nova Pro Wireless) down" })
-    .click();
+  // The keyboard route onto the same reorder, for anyone who cannot drag.
+  await outputs.getByRole("listitem").first().focus();
+  await page.keyboard.press("Alt+ArrowDown");
 
-  // UI reflects the swap.
   await expect(outputs.getByRole("listitem").first()).toContainText("LG TV");
   await expect(outputs.getByRole("listitem").nth(1)).toContainText("Arctis Nova Pro");
-
-  // And the temp config file holds the reordered list.
-  await expect.poll(outputPriorityOnDisk).toEqual(["mock-out-tv", "mock-out-arctis"]);
+  await expect.poll(() => outputPriorityOnDisk(configFile)).toEqual([
+    "mock-out-tv",
+    "mock-out-arctis",
+  ]);
 
   // The mic list is untouched.
   const config = await readConfigFile(configFile);
   expect(config.micPriority).toEqual(["mock-mic-arctis", "mock-mic-brio"]);
 });
 
-test("removing a device excludes it until added back through the picker", async () => {
+test("Alt+ArrowUp at the top of the list does nothing", async () => {
   const { page, configFile } = ctx;
   const outputs = page.getByRole("list", { name: "Output priority" });
-  await expect(outputs.getByRole("listitem")).toHaveCount(2);
 
-  await outputs
-    .getByRole("button", { name: "Remove LG TV (NVIDIA High Definition Audio) from list" })
-    .click();
+  await outputs.getByRole("listitem").first().focus();
+  await page.keyboard.press("Alt+ArrowUp");
+  await page.waitForTimeout(400);
+
+  await expect(outputs.getByRole("listitem").first()).toContainText("Arctis Nova Pro");
+  expect((await readConfigFile(configFile)).outputPriority).toEqual([
+    "mock-out-arctis",
+    "mock-out-tv",
+  ]);
+});
+
+test("removing from priority excludes a device until the + adds it back", async () => {
+  const { page, configFile } = ctx;
+  const ranked = page.getByRole("list", { name: "Output priority" }).getByRole("listitem");
+  await expect(ranked).toHaveCount(2);
+
+  // Remove lives in the row's own panel.
+  const tv = page.locator(".device-strip", { hasText: "LG TV" });
+  await tv.getByRole("button", { name: /^Settings for/ }).click();
+  await tv.getByRole("button", { name: "Remove from priority", exact: true }).click();
 
   // Gone from the ranking, recorded as excluded, and not re-appended by the
   // next poll even though the endpoint is still active.
-  await expect(outputs.getByRole("listitem")).toHaveCount(1);
+  await expect(ranked).toHaveCount(1);
   await expect
     .poll(async () => (await readConfigFile(configFile)).excluded.output)
     .toEqual(["mock-out-tv"]);
-  await expect(outputs.getByRole("listitem")).toHaveCount(1);
+  await expect(ranked).toHaveCount(1);
 
-  // The picker offers it back; adding restores it to the bottom of the list.
-  await page.getByRole("button", { name: /Add a device/ }).first().click();
-  await page.getByRole("button", { name: /LG TV/ }).click();
-  await expect(outputs.getByRole("listitem")).toHaveCount(2);
-  await expect(outputs.getByRole("listitem").nth(1)).toContainText("LG TV");
+  // It is still real hardware, so it waits under the reveal with a + to
+  // restore it to the bottom of the list.
+  await page.getByRole("button", { name: /More outputs/ }).click();
+  await page.getByRole("button", { name: "Add LG TV to priority" }).click();
+
+  await expect(ranked).toHaveCount(2);
+  await expect(ranked.nth(1)).toContainText("LG TV");
   await expect
     .poll(async () => (await readConfigFile(configFile)).excluded.output)
     .toEqual([]);

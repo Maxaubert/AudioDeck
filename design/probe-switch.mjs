@@ -31,13 +31,13 @@ await timeSwitch(
 );
 
 // Mixer page
-await page.getByRole("button", { name: "Mixer", exact: true }).click();
+await page.getByRole("button", { name: "Devices", exact: true }).click();
 await page.waitForTimeout(300);
-const mixerRow = page.locator(".mixer-strip").filter({ hasText: "Arctis Nova Pro Wireless" }).first();
+const mixerRow = page.locator(".device-strip").filter({ hasText: "Arctis Nova Pro Wireless" }).first();
 await timeSwitch("mixer row (name area)", mixerRow, mixerRow.locator(".strip-body"));
 
 // Clicking the fader must not switch device.
-const lgRow = page.locator(".mixer-strip").filter({ hasText: "NVIDIA High Definition Audio" });
+const lgRow = page.locator(".device-strip").filter({ hasText: "NVIDIA High Definition Audio" });
 const before = await lgRow.getAttribute("class");
 await lgRow.locator(".vol").click();
 await page.waitForTimeout(600);

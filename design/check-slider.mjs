@@ -6,7 +6,7 @@ const dir = "C:/Users/Admin/Documents/Claude/Github/AudioDeck/design/mockups";
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1360, height: 1000 } });
 await page.goto(pathToFileURL(path.join(dir, "pal-amber.html")).href);
-await page.getByRole("tab", { name: "Mixer" }).click();
+await page.getByRole("button", { name: "Devices", exact: true }).click();
 await page.waitForTimeout(300);
 
 const fader = page.locator(".vol input[type=range]").first();

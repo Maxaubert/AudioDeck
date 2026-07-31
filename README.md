@@ -7,7 +7,7 @@
 [![Electron](https://img.shields.io/badge/Electron-app-0EA5E9?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![.NET 8](https://img.shields.io/badge/.NET%208-audioctl-0EA5E9?logo=dotnet&logoColor=white)](audioctl/)
 
-A tray-resident Windows audio manager: priority auto-switch, volume mixer, and device manager in one place.
+A tray-resident Windows audio manager: one page listing your audio devices in priority order, each row carrying every control it has.
 
 </div>
 
@@ -26,13 +26,18 @@ volumes, enabling and disabling endpoints, renaming) into a single tray app.
 
 ## Features
 
-- **Priority auto-switch.** Order your output devices in a priority list (and your microphones in
-  a separate one). AudioDeck continuously determines which devices are actually available and sets
-  the Windows default to the highest-priority available device. Manual overrides are respected:
-  pick a different default yourself and automation pauses until the next time some device's
-  availability changes.
-- **Volume mixer.** Volume slider and mute for every active device in one window.
-- **Device manager.** Every endpoint, including disabled ones; enable, disable, and rename.
+- **Priority auto-switch.** Drag your outputs into the order you want them (microphones have their
+  own list). AudioDeck continuously determines which devices are actually available and sets the
+  Windows default to the highest-priority available device. Manual overrides are respected: pick a
+  different default yourself and automation pauses until the next time some device's availability
+  changes.
+- **One page, one row per device.** Each row carries volume, mute, and click-to-switch, with the
+  device type, rename and enable/disable behind a per-row expander. Renaming applies to Windows
+  itself, so every app sees the new name.
+- **Only what you use.** Devices outside your priority order stay hidden until you ask for them,
+  and the endpoints Windows merely remembers hide one level further in.
+- **Honest about what it cannot set.** Hardware that owns its own volume (headset base stations,
+  some TVs over HDMI) gets a stamp saying so instead of a fader that does nothing.
 - Tray-resident with near-zero idle cost; the window is created on demand and destroyed on close.
 - Autostart with Windows (on by default, toggleable), 2 s poll interval (adjustable).
 
@@ -61,9 +66,9 @@ operation, JSON in and out.
 
 ## Screenshots
 
-| Priority | Mixer | Devices |
-|---|---|---|
-| ![Priority view: drag-to-reorder output and mic lists with availability badges](docs/screenshots/priority.png) | ![Mixer view: volume slider and mute per active device](docs/screenshots/mixer.png) | ![Devices view: all endpoints with enable, disable, and rename](docs/screenshots/devices.png) |
+| Devices | Settings |
+|---|---|
+| ![Devices page: outputs and microphones in priority order, each row with its volume, mute and expander](docs/screenshots/devices.png) | ![Settings page: pause automation, start with Windows, poll interval](docs/screenshots/settings.png) |
 
 ## Install
 

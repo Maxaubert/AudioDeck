@@ -432,7 +432,13 @@ select {
   background: var(--bg);
   color: var(--fg);
   border-bottom: var(--rule) solid var(--ink);
-  transition: transform 90ms linear;
+  transition: transform 150ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip {
+    transition: none;
+  }
 }
 
 .strip.is-clickable {
@@ -495,15 +501,31 @@ select {
   min-width: 0;
 }
 
+/* Never wraps. Every row is a title line plus at most one sub line, so the
+   list keeps one height throughout and long names truncate instead of pushing
+   a row to three lines. */
 .device-name {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
   font-size: 21px;
   font-weight: 800;
   letter-spacing: 0.01em;
-  overflow-wrap: anywhere;
+}
+
+.device-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Badges keep their size; the name gives way instead. */
+.device-name .badge,
+.device-name .saving-slot {
+  flex: 0 0 auto;
 }
 
 .device-sub {
@@ -513,18 +535,46 @@ select {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.82;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.strip-tags {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 14px;
-}
-
-/* Devices rows carry no rank slab. */
+/* One row per device: rank, glyph, name, volume, level, action, expander. The
+   expanded panel is an eighth child spanning every column. The minimums total
+   754px, which clears the usable width at the window's 900px minimum with the
+   view padding, the list borders and a vertical scrollbar all taken off. */
 .device-strip {
-  grid-template-columns: 58px minmax(240px, 1fr) auto auto;
+  grid-template-columns: 72px 58px minmax(170px, 1fr) minmax(190px, 1.05fr) 86px 120px 58px;
+}
+
+/* Unranked rows keep the column so every row lines up, without the slab. The
+   left column means "position in the order", so the control that grants a
+   position lives there and costs no width. */
+.rank.is-unranked {
+  background: transparent;
+}
+
+/* ---------- reordering ---------- */
+
+.strip.is-draggable {
+  cursor: grab;
+}
+
+.strip.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* The row being carried: faded, and outlined so the gap it opens elsewhere in
+   the list reads as the place it will land. */
+.strip.is-dragging {
+  opacity: 0.35;
+  box-shadow: inset 0 0 0 3px var(--marker);
+}
+
+/* While reordering, the hover nudge would fight the stepping-aside offset. */
+.strip-list.is-reordering .strip.is-clickable:hover {
+  transform: none;
 }
 
 /* ---------- badges ---------- */
@@ -548,6 +598,11 @@ select {
 
 .badge-headset-off {
   border-style: dashed;
+}
+
+/* Empty until something is in flight; no gap in the name row while it waits. */
+.saving-slot:empty {
+  display: none;
 }
 
 .badge-saving {
@@ -596,13 +651,6 @@ select {
   cursor: default;
 }
 
-.btn-icon {
-  width: 46px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-}
-
 .btn-danger {
   border-color: var(--red);
   color: var(--red);
@@ -631,14 +679,7 @@ select {
   border-color: var(--ink);
 }
 
-.move-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 16px;
-}
-
-/* ---------- add a device ---------- */
+/* ---------- revealing the rest of the hardware ---------- */
 
 .btn-add-device {
   display: block;
@@ -660,61 +701,13 @@ select {
   color: var(--paper);
 }
 
-.add-device {
-  margin: 0 0 10px;
-  padding: 14px 16px;
-  border: 5px solid var(--ink);
-  background: var(--sheet);
-}
-
-.add-device-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.add-device-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 17rem;
-  overflow-y: auto;
-}
-
-.btn-add-row {
-  width: 100%;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 12px 14px;
-  text-align: left;
-  background: transparent;
-  color: var(--ink);
-  border: 3px solid var(--ink);
-  cursor: pointer;
-}
-
-.btn-add-row:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
 .empty-note {
   padding: 16px 0;
   font-weight: 700;
   color: var(--dead-ink);
 }
 
-/* ---------- mixer ---------- */
-
-.mixer-strip {
-  grid-template-columns: 88px 58px minmax(200px, 1fr) minmax(240px, 1.1fr) 92px 116px;
-}
+/* ---------- volume ---------- */
 
 /* Segmented meter: 20 blocks, filled up to the level. The range input sits
    invisibly on top so dragging behaves exactly like a normal slider. */
@@ -790,14 +783,13 @@ select {
    clickable, it explains why the fader is gone. The reason shows on hover and
    on keyboard focus. */
 
-/* Same footprint as the Mute button it stands in for, so the control column
+/* Fills the action slot the Mute button would occupy, so the control column
    stays a straight line down the list. */
 .vol-lock-slot {
   position: relative;
   display: grid;
   place-items: center;
-  width: 80px;
-  margin: 0 18px 0 12px;
+  width: 100%;
 }
 
 .vol-lock {
@@ -850,14 +842,76 @@ select {
   }
 }
 
+/* The one action a row offers at rest: Mute for a device whose level we can
+   set, Enable for a disabled endpoint, the lock stamp for hardware that owns
+   its own volume, nothing for anything else. */
+.row-action {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+}
+
 .mute {
-  width: 80px;
-  margin: 0 18px 0 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.row-action .btn {
+  width: 100%;
+  padding: 0 8px;
 }
 
 .mute.is-on {
   background: var(--fg);
   color: var(--bg);
+}
+
+/* ---------- device settings panel ---------- */
+
+/* Solid, and inverted while open: this is a control, so it must not read as
+   dashed (which means inert everywhere else in the app). */
+.btn-expand {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  cursor: pointer;
+  transition:
+    background 100ms linear,
+    color 100ms linear;
+}
+
+.btn-expand:hover,
+.btn-expand.is-open {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Same slot, same footprint: an unranked row offers joining the order where a
+   ranked one offers its settings. */
+.btn-rank {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  padding-bottom: 4px;
+}
+
+.device-panel {
+  grid-column: 1 / -1;
+  padding: 16px 20px 18px;
+  border-top: 3px solid var(--fg);
+  background: var(--bg);
+}
+
+.device-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ---------- devices page ---------- */
@@ -889,6 +943,12 @@ select {
   align-items: center;
   gap: 10px;
   margin-top: 10px;
+}
+
+/* Its own line under the type and action buttons, never squeezed beside them. */
+.device-controls .rename-form {
+  flex-basis: 100%;
+  margin-top: 2px;
 }
 
 .rename-input {
