@@ -9,3 +9,4 @@ playwright-report/
 *.log
 .superpowers/
 design/shots/
+vendor/equalizerapo-setup.exe
