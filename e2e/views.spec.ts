@@ -326,6 +326,27 @@ test("Settings tab exposes the working controls and hides the old footer", async
   await expect(page.getByRole("list", { name: "Output priority" })).toBeVisible();
 });
 
+test("the themed cursors are wired up", async () => {
+  const { page } = ctx;
+
+  // A guard on the asset paths and the build, not on how the cursor looks:
+  // if an SVG is renamed or fails to bundle, these fall back to keywords.
+  // `design/cursor-check.mjs` is the deeper check, confirming through
+  // Electron that Chromium actually accepted each image.
+  const cursorOf = (selector: string) =>
+    page.locator(selector).first().evaluate((el) => getComputedStyle(el).cursor);
+
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).cursor)).toContain(
+    "url(",
+  );
+  expect(await cursorOf(".btn")).toContain("url(");
+  expect(await cursorOf(".device-strip.is-draggable")).toContain("url(");
+  expect(await cursorOf(".tab")).toContain("url(");
+
+  // Each keeps its keyword, so a refused image degrades to the system cursor.
+  expect(await cursorOf(".btn")).toContain("pointer");
+});
+
 test("frameless caption carries working window controls", async () => {
   const { page } = ctx;
 

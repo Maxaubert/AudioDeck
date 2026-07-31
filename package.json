@@ -13,7 +13,8 @@
     "test": "vitest run",
     "e2e": "electron-vite build && playwright test",
     "dist": "node scripts/check-bundle-inputs.mjs && electron-vite build && electron-builder --win",
-    "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs"
+    "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs",
+    "cursors": "electron-vite build && node design/cursor-check.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",

@@ -19,6 +19,23 @@
   --ui: "Archivo", "Segoe UI", Helvetica, Arial, sans-serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: light;
+
+  /* The theme extends to the pointer itself. SVG rather than PNG because
+     Chromium rasterises an SVG cursor at the display scale, while a PNG is
+     taken at 1x and looks small and soft on a scaled display. Chromium
+     silently refuses anything over 128px, so these are 32px. Each keeps its
+     keyword as a fallback, so a refused image degrades to the system cursor
+     rather than to nothing. The numbers are the hotspot. */
+  --cur-arrow: url("./assets/cursors/arrow.svg") 3 2, default;
+  --cur-hand: url("./assets/cursors/hand.svg") 12 3, pointer;
+  --cur-beam: url("./assets/cursors/beam.svg") 16 16, text;
+  --cur-grab: url("./assets/cursors/grab.svg") 16 16, grab;
+  --cur-grabbing: url("./assets/cursors/grabbing.svg") 16 16, grabbing;
+  --cur-help: url("./assets/cursors/help.svg") 3 2, help;
+}
+
+html {
+  cursor: var(--cur-arrow);
 }
 
 * {
@@ -174,7 +191,7 @@ select {
   font-size: 21px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-hand);
   clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
   transition:
     background 120ms var(--ease-out),
@@ -243,7 +260,7 @@ select {
   border: 0;
   background: transparent;
   color: #d8d5cb;
-  cursor: pointer;
+  cursor: var(--cur-hand);
   transition:
     background 90ms linear,
     color 90ms linear;
@@ -442,7 +459,7 @@ select {
 }
 
 .strip.is-clickable {
-  cursor: pointer;
+  cursor: var(--cur-hand);
 }
 
 .strip.is-clickable:hover {
@@ -558,11 +575,11 @@ select {
 /* ---------- reordering ---------- */
 
 .strip.is-draggable {
-  cursor: grab;
+  cursor: var(--cur-grab);
 }
 
 .strip.is-draggable:active {
-  cursor: grabbing;
+  cursor: var(--cur-grabbing);
 }
 
 /* The row being carried: faded, and outlined so the gap it opens elsewhere in
@@ -631,7 +648,7 @@ select {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-hand);
   transition:
     background 100ms linear,
     color 100ms linear;
@@ -648,7 +665,7 @@ select {
 
 .btn:disabled {
   opacity: 0.35;
-  cursor: default;
+  cursor: var(--cur-arrow);
 }
 
 .btn-danger {
@@ -693,7 +710,7 @@ select {
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-hand);
 }
 
 .btn-add-device:hover {
@@ -740,7 +757,7 @@ select {
   height: 100%;
   margin: 0;
   opacity: 0;
-  cursor: pointer;
+  cursor: var(--cur-hand);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -799,7 +816,7 @@ select {
   min-height: 44px;
   border: 3px dashed var(--fg);
   color: var(--fg);
-  cursor: help;
+  cursor: var(--cur-help);
 }
 
 .vol-lock-mark {
@@ -879,7 +896,7 @@ select {
   background: transparent;
   color: var(--fg);
   border: 3px solid var(--fg);
-  cursor: pointer;
+  cursor: var(--cur-hand);
   transition:
     background 100ms linear,
     color 100ms linear;
@@ -927,7 +944,7 @@ select {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: var(--cur-hand);
 }
 
 .type-select option,
@@ -949,6 +966,13 @@ select {
 .device-controls .rename-form {
   flex-basis: 100%;
   margin-top: 2px;
+}
+
+/* Text entry gets the beam; the browser would otherwise use the system one. */
+.rename-input,
+input[type="text"],
+input[type="number"] {
+  cursor: var(--cur-beam);
 }
 
 .rename-input {
@@ -992,7 +1016,7 @@ select {
 }
 
 label.setrow {
-  cursor: pointer;
+  cursor: var(--cur-hand);
 }
 
 .setrow:hover {
@@ -1042,7 +1066,7 @@ label.setrow {
   padding: 0;
   background: transparent;
   border: 3px solid var(--fg);
-  cursor: pointer;
+  cursor: var(--cur-hand);
 }
 
 .switch::after {
