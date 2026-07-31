@@ -202,6 +202,40 @@ test("a volume change survives leaving the Mixer tab immediately", async () => {
   ).toHaveValue("70", { timeout: 5000 });
 });
 
+test("a device that ignores volume writes gets the on-device stamp", async () => {
+  const { page } = ctx;
+  await page.getByRole("button", { name: "Mixer", exact: true }).click();
+  const arctis = page
+    .locator(".mixer-strip")
+    .filter({ hasText: "Arctis Nova Pro Wireless" })
+    .first();
+  await expect(arctis.locator(".vol-lock")).toHaveCount(0);
+
+  // The mocked headset accepts the write and reverts, like its real hardware.
+  await arctis.getByRole("slider").fill("70");
+
+  const stamp = arctis.locator(".vol-lock");
+  await expect(stamp).toBeVisible({ timeout: 5000 });
+  await expect(stamp).toContainText("On device");
+  // The fader is gone and the meter reads as a readout, not a control.
+  await expect(arctis.getByRole("slider")).toHaveCount(0);
+  await expect(arctis.locator(".segs.is-locked")).toBeVisible();
+
+  // The reason names the hardware, is wired to the stamp for screen readers,
+  // and stays hidden until the stamp is hovered or focused. Focus is the route
+  // asserted here: a synthetic cursor loses its hover target whenever the poll
+  // re-renders the row, so hover cannot be measured reliably from a test.
+  const tip = arctis.locator(".vol-lock-tip");
+  await expect(tip).toContainText("Arctis Nova Pro Wireless sets its own volume");
+  await expect(stamp).toHaveAttribute("aria-describedby", (await tip.getAttribute("id")) ?? "");
+  await expect(tip).toHaveCSS("opacity", "0");
+
+  await stamp.focus();
+  await expect(tip).toHaveCSS("opacity", "1");
+  await stamp.blur();
+  await expect(tip).toHaveCSS("opacity", "0");
+});
+
 test("clicking a mixer row switches to it, but the fader does not", async () => {
   const { page } = ctx;
   await page.getByRole("button", { name: "Mixer", exact: true }).click();

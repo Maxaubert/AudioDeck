@@ -96,6 +96,13 @@ function fixtureEndpoints(): Endpoint[] {
 }
 
 export class MockAudioctl implements AudioControl {
+  /**
+   * Hardware that owns its own level: the write is accepted and then quietly
+   * reverted, exactly like a headset base station. The daemon reads the level
+   * back, sees it did not move, and marks the endpoint volume-locked.
+   */
+  private static readonly IGNORES_VOLUME: ReadonlySet<string> = new Set(["mock-out-arctis"]);
+
   private endpoints: Endpoint[] = fixtureEndpoints();
 
   async list(): Promise<Endpoint[]> {
@@ -112,7 +119,9 @@ export class MockAudioctl implements AudioControl {
   }
 
   async setVolume(id: string, level: number): Promise<void> {
-    this.get(id).volume = level;
+    const endpoint = this.get(id);
+    if (MockAudioctl.IGNORES_VOLUME.has(id)) return;
+    endpoint.volume = level;
   }
 
   async mute(id: string): Promise<void> {

@@ -740,6 +740,16 @@ select {
   background: var(--fg);
 }
 
+/* A level the app cannot set: hatched fill, so the row reads as a readout
+   rather than a fader even before the stamp beside it registers. */
+.segs.is-locked span.f {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--bg) 0 2px,
+    transparent 2px 6px
+  );
+}
+
 .vol input {
   position: absolute;
   inset: 0;
@@ -784,12 +794,76 @@ select {
   text-transform: uppercase;
 }
 
-.na-locked {
-  width: 116px;
-  padding-left: 0;
-  margin: 0 18px 0 12px;
+/* Volume lock: hardware that owns its own level (headset base stations, TVs
+   over HDMI) and ignores what Windows writes. The stamp sits in the Mute
+   button's slot and is deliberately dashed and unfilled: nothing here is
+   clickable, it explains why the fader is gone. The reason shows on hover and
+   on keyboard focus. */
+
+.vol-lock-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  margin: 0 12px;
+}
+
+.vol-lock {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 2px 5px;
+  border: 3px dashed var(--fg);
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
   text-align: center;
-  opacity: 0.75;
+  text-transform: uppercase;
+  cursor: help;
+}
+
+.vol-lock-mark {
+  display: block;
+}
+
+.vol-lock-tip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  z-index: 30;
+  width: 290px;
+  padding: 12px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 3px solid var(--marker);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0;
+  transform: translateY(-50%) translateX(8px);
+  transition:
+    opacity 140ms var(--ease-out),
+    transform 140ms var(--ease-out);
+  pointer-events: none;
+}
+
+.vol-lock-tip.is-open {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vol-lock-tip {
+    transition: opacity 100ms linear;
+    transform: translateY(-50%);
+  }
 }
 
 .mute {

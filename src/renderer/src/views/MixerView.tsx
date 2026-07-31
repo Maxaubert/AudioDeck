@@ -8,14 +8,16 @@ import { displayDetail, displayName } from "../useAppState.js";
 import { StateBadge } from "../components/StatusBadge.js";
 import { DeviceGlyph } from "../components/DeviceGlyph.js";
 import { SectionLabel } from "../components/SectionLabel.js";
+import { VolumeLock } from "../components/VolumeLock.js";
 import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
 const SEGMENTS = 20;
 
-function Meter({ value }: { value: number }) {
+/** Locked meters are hatched, not solid: a reading, not something to drag. */
+function Meter({ value, locked = false }: { value: number; locked?: boolean }) {
   const lit = Math.round((value / 100) * SEGMENTS);
   return (
-    <div className="segs" aria-hidden="true">
+    <div className={locked ? "segs is-locked" : "segs"} aria-hidden="true">
       {Array.from({ length: SEGMENTS }, (_, i) => (
         <span key={i} className={i < lit ? "f" : undefined} />
       ))}
@@ -121,12 +123,10 @@ function MixerStrip({
       {device.volumeLocked && !offline ? (
         <>
           <div className="vol">
-            <Meter value={local} />
+            <Meter value={local} locked />
           </div>
           <span className="volume-value">{local}%</span>
-          <span className="na na-locked" title="This device sets its own volume, so Windows cannot change it">
-            On device
-          </span>
+          <VolumeLock hardware={displayDetail(device) ?? displayName(device)} />
         </>
       ) : offline ? (
         <>
