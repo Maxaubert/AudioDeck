@@ -163,27 +163,18 @@ export function DeviceRow({
         }
       }}
     >
-      {rank === null ? (
-        <span className="rank is-unranked">
-          {onRank !== undefined ? (
-            <button
-              type="button"
-              className="rank-add"
-              aria-label={`Add ${name} to priority`}
-              title="Add to the priority list"
-              onClick={onRank}
-            >
-              +
-            </button>
-          ) : null}
-        </span>
-      ) : (
-        <span className="rank">{rank}</span>
-      )}
+      {/* Empty on unranked rows: the column is the position in the order, and
+          they have none. It stays so every row's columns line up. */}
+      <span className={rank === null ? "rank is-unranked" : "rank"}>{rank ?? ""}</span>
       <DeviceGlyph formFactor={formFactor} />
       <div className="strip-body">
         <div className="device-name">
-          {name}
+          {/* Truncates rather than wraps: a row that grows to three lines
+              breaks the rhythm of the whole list, and the full name is on the
+              sub line and in the title attribute anyway. */}
+          <span className="device-title" title={name}>
+            {name}
+          </span>
           <StateBadge device={device} manualOverride={manualOverride} />
           {/* A live region that is present before it has anything to say, so a
               rename landing while the panel is closed is still announced. */}
@@ -236,16 +227,31 @@ export function DeviceRow({
         )}
       </div>
 
-      <button
-        type="button"
-        className={expanded ? "btn-expand is-open" : "btn-expand"}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        aria-label={`Settings for ${name}`}
-        onClick={onToggleExpand}
-      >
-        <ExpandMark />
-      </button>
+      {onRank !== undefined ? (
+        // A device outside the order has one thing to offer: joining it. The
+        // settings panel belongs to devices you actually use, so the slot
+        // carries the + instead of the expander.
+        <button
+          type="button"
+          className="btn-expand btn-rank"
+          aria-label={`Add ${name} to priority`}
+          title="Add to the priority list"
+          onClick={onRank}
+        >
+          +
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={expanded ? "btn-expand is-open" : "btn-expand"}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          aria-label={`Settings for ${name}`}
+          onClick={onToggleExpand}
+        >
+          <ExpandMark />
+        </button>
+      )}
 
       {expanded ? (
         <div className="device-panel" id={panelId} aria-label={`${name} settings`} role="group">

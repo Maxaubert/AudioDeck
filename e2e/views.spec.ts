@@ -85,6 +85,36 @@ test("More devices reveals the rest below the same button", async () => {
   await expect(others).toHaveCount(0);
 });
 
+test("every row is the same height, however long the name", async () => {
+  const { page } = ctx;
+
+  // A name far too long for its column, plus a badge next to it: the case that
+  // used to wrap the title above the badge and push the row to three lines.
+  const tv = page.locator(".device-strip", { hasText: "LG TV" });
+  await tv.getByRole("button", { name: /^Settings for/ }).click();
+  await tv.getByRole("button", { name: "Rename", exact: true }).click();
+  await tv.getByLabel(/New name for/).fill("Living room television over HDMI, second input");
+  await tv.getByRole("button", { name: "Save name", exact: true }).click();
+  await expect(page.locator(".device-strip", { hasText: "Living room television" })).toBeVisible();
+
+  // Show everything, including the offline rows that carry the most badges.
+  await page.getByRole("button", { name: /More outputs/ }).click();
+
+  const heights = await page
+    .locator(".device-strip:not(.is-expanded)")
+    .evaluateAll((rows) => rows.map((r) => Math.round(r.getBoundingClientRect().height)));
+  expect(heights.length).toBeGreaterThan(4);
+  expect([...new Set(heights)]).toHaveLength(1);
+
+  // The long name is truncated rather than wrapped, and kept in full on hover.
+  const renamed = page.locator(".device-strip", { hasText: "Living room television" });
+  await expect(renamed.locator(".device-title")).toHaveCSS("text-overflow", "ellipsis");
+  await expect(renamed.locator(".device-title")).toHaveAttribute(
+    "title",
+    "Living room television over HDMI, second input",
+  );
+});
+
 test("a ranked device Windows no longer reports gets no row", async () => {
   // Per-session virtual endpoints (VR streaming, Sonar) mint a fresh id every
   // session and delete the old one, leaving ranked ids that resolve to nothing.

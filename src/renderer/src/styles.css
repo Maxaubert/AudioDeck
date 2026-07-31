@@ -495,15 +495,31 @@ select {
   min-width: 0;
 }
 
+/* Never wraps. Every row is a title line plus at most one sub line, so the
+   list keeps one height throughout and long names truncate instead of pushing
+   a row to three lines. */
 .device-name {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
   font-size: 21px;
   font-weight: 800;
   letter-spacing: 0.01em;
-  overflow-wrap: anywhere;
+}
+
+.device-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Badges keep their size; the name gives way instead. */
+.device-name .badge,
+.device-name .saving-slot {
+  flex: 0 0 auto;
 }
 
 .device-sub {
@@ -513,6 +529,9 @@ select {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.82;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* One row per device: rank, glyph, name, volume, level, action, expander. The
@@ -528,26 +547,6 @@ select {
    position lives there and costs no width. */
 .rank.is-unranked {
   background: transparent;
-}
-
-.rank-add {
-  width: 46px;
-  min-height: 44px;
-  background: transparent;
-  color: var(--fg);
-  border: 3px solid var(--fg);
-  font-family: var(--display);
-  font-size: 30px;
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    background 100ms linear,
-    color 100ms linear;
-}
-
-.rank-add:hover {
-  background: var(--fg);
-  color: var(--bg);
 }
 
 /* ---------- reordering ---------- */
@@ -887,6 +886,15 @@ select {
 .btn-expand.is-open {
   background: var(--fg);
   color: var(--bg);
+}
+
+/* Same slot, same footprint: an unranked row offers joining the order where a
+   ranked one offers its settings. */
+.btn-rank {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  padding-bottom: 4px;
 }
 
 .device-panel {
