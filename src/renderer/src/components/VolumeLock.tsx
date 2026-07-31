@@ -6,7 +6,7 @@
 
 import { useId, useState } from "react";
 
-const MARK = 22;
+const MARK = 24;
 
 export function VolumeLock({ hardware }: { hardware: string }) {
   const tipId = useId();
@@ -14,7 +14,7 @@ export function VolumeLock({ hardware }: { hardware: string }) {
   // poll, and a browser does not re-evaluate :hover under a cursor that has
   // not moved, so the reason could vanish while it is being read.
   const [open, setOpen] = useState(false);
-  const reason = `${hardware} sets its own volume. Change it on the device or its base station; AudioDeck cannot.`;
+  const reason = `${hardware} sets its own volume. Change it on the device or its base station; AudioDeck cannot read or set the level.`;
   return (
     <span
       className="vol-lock-slot"
@@ -23,7 +23,13 @@ export function VolumeLock({ hardware }: { hardware: string }) {
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
     >
-      <span className="vol-lock" tabIndex={0} aria-describedby={tipId}>
+      <span
+        className="vol-lock"
+        tabIndex={0}
+        role="img"
+        aria-label="Volume set on the device"
+        aria-describedby={tipId}
+      >
         <svg
           className="vol-lock-mark"
           width={MARK}
@@ -38,7 +44,6 @@ export function VolumeLock({ hardware }: { hardware: string }) {
           <circle cx="12" cy="12" r="9" />
           <path d="M5.6 18.4 18.4 5.6" />
         </svg>
-        On device
       </span>
       {/* Left of the stamp, inside the row's own height: above or below it
           would be clipped by the scrolling view on the first and last rows. */}

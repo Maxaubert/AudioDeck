@@ -216,10 +216,12 @@ test("a device that ignores volume writes gets the on-device stamp", async () =>
 
   const stamp = arctis.locator(".vol-lock");
   await expect(stamp).toBeVisible({ timeout: 5000 });
-  await expect(stamp).toContainText("On device");
-  // The fader is gone and the meter reads as a readout, not a control.
+  // No fader, no meter, and no percentage: the level lives on the hardware and
+  // the number Windows reports for these endpoints is not it.
   await expect(arctis.getByRole("slider")).toHaveCount(0);
-  await expect(arctis.locator(".segs.is-locked")).toBeVisible();
+  await expect(arctis.locator(".segs")).toHaveCount(0);
+  await expect(arctis.locator(".volume-value")).toHaveText("--");
+  await expect(arctis.locator(".na")).toHaveText("Volume set on the device");
 
   // The reason names the hardware, is wired to the stamp for screen readers,
   // and stays hidden until the stamp is hovered or focused. Focus is the route

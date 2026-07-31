@@ -740,16 +740,6 @@ select {
   background: var(--fg);
 }
 
-/* A level the app cannot set: hatched fill, so the row reads as a readout
-   rather than a fader even before the stamp beside it registers. */
-.segs.is-locked span.f {
-  background-image: repeating-linear-gradient(
-    45deg,
-    var(--bg) 0 2px,
-    transparent 2px 6px
-  );
-}
-
 .vol input {
   position: absolute;
   inset: 0;
@@ -800,29 +790,23 @@ select {
    clickable, it explains why the fader is gone. The reason shows on hover and
    on keyboard focus. */
 
+/* Same footprint as the Mute button it stands in for, so the control column
+   stays a straight line down the list. */
 .vol-lock-slot {
   position: relative;
   display: grid;
   place-items: center;
-  width: 92px;
-  margin: 0 12px;
+  width: 80px;
+  margin: 0 18px 0 12px;
 }
 
 .vol-lock {
   display: grid;
-  justify-items: center;
-  gap: 1px;
+  place-items: center;
   width: 100%;
   min-height: 44px;
-  padding: 4px 2px 5px;
   border: 3px dashed var(--fg);
   color: var(--fg);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  line-height: 1.1;
-  text-align: center;
-  text-transform: uppercase;
   cursor: help;
 }
 

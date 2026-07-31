@@ -13,11 +13,10 @@ import type { AppState, AudioDeckApi, DeviceView } from "../../../../shared/ipc.
 
 const SEGMENTS = 20;
 
-/** Locked meters are hatched, not solid: a reading, not something to drag. */
-function Meter({ value, locked = false }: { value: number; locked?: boolean }) {
+function Meter({ value }: { value: number }) {
   const lit = Math.round((value / 100) * SEGMENTS);
   return (
-    <div className={locked ? "segs is-locked" : "segs"} aria-hidden="true">
+    <div className="segs" aria-hidden="true">
       {Array.from({ length: SEGMENTS }, (_, i) => (
         <span key={i} className={i < lit ? "f" : undefined} />
       ))}
@@ -121,11 +120,12 @@ function MixerStrip({
         ) : null}
       </div>
       {device.volumeLocked && !offline ? (
+        // No meter and no percentage: Windows reports its own level for these
+        // endpoints (usually a flat 100%) while the real one lives on the
+        // hardware, so any number here would be a guess presented as fact.
         <>
-          <div className="vol">
-            <Meter value={local} locked />
-          </div>
-          <span className="volume-value">{local}%</span>
+          <div className="na">Volume set on the device</div>
+          <span className="volume-value">--</span>
           <VolumeLock hardware={displayDetail(device) ?? displayName(device)} />
         </>
       ) : offline ? (
