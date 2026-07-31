@@ -44,6 +44,9 @@ export async function launchApp(
       ...process.env,
       AUDIODECK_TEST_MODE: "1",
       AUDIODECK_MOCK_DEVICES: "1",
+      // Off screen: the suite launches the app once per test, and windows
+      // flashing up and away that many times make the machine unusable.
+      AUDIODECK_HIDDEN_WINDOW: "1",
       APPDATA: appData,
     },
   });

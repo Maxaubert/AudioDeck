@@ -14,7 +14,9 @@ await mkdir(outDir, { recursive: true });
 const app = await electron.launch({
   args: ["."],
   cwd: repoRoot,
-  env: { ...process.env, AUDIODECK_TEST_MODE: "1" },
+  // Hidden: a window that flashes up and away is distracting, and
+  // page.screenshot captures an unshown window just the same.
+  env: { ...process.env, AUDIODECK_TEST_MODE: "1", AUDIODECK_HIDDEN_WINDOW: "1" },
 });
 
 const page = await app.firstWindow();

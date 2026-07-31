@@ -90,9 +90,7 @@ test("Alt+ArrowUp at the top of the list does nothing", async () => {
 
 test("removing from priority excludes a device until the + adds it back", async () => {
   const { page, configFile } = ctx;
-  const outputs = page.getByRole("list", { name: "Output priority" });
-  // Revealed rows share the list, so "ranked" means "has a rank number".
-  const ranked = outputs.locator(".device-strip:not(:has(.rank.is-unranked))");
+  const ranked = page.getByRole("list", { name: "Output priority" }).getByRole("listitem");
   await expect(ranked).toHaveCount(2);
 
   // Remove lives in the row's own panel.

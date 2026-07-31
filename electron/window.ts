@@ -8,6 +8,14 @@ import { fileURLToPath } from "node:url";
 
 const thisDir = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Never put the window on screen. The e2e suite launches the app once per
+ * test, and a window flashing up and away that many times is unusable on a
+ * machine someone is working at. Playwright drives an unshown window exactly
+ * the same: it lays out, paints and answers input off screen.
+ */
+const HIDDEN = process.env.AUDIODECK_HIDDEN_WINDOW === "1";
+
 export class WindowManager {
   private win: BrowserWindow | null = null;
 
@@ -38,10 +46,13 @@ export class WindowManager {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: false,
+        // An unshown window would otherwise have its timers throttled, which
+        // would stall the renderer's own poll under test.
+        backgroundThrottling: !HIDDEN,
       },
     });
 
-    win.once("ready-to-show", () => win.show());
+    if (!HIDDEN) win.once("ready-to-show", () => win.show());
     win.on("closed", () => {
       this.win = null;
     });

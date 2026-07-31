@@ -50,32 +50,39 @@ test("launches into the one device page, ranked devices only", async () => {
   await expect(page.getByRole("button", { name: /More microphones/ })).toHaveCount(0);
 });
 
-test("More devices reveals the rest, and ghosts hide one level deeper", async () => {
+test("More devices reveals the rest below the same button", async () => {
   const { page } = ctx;
   const outputs = page.getByRole("list", { name: "Output priority" });
+  const others = page.getByRole("list", { name: "Other outputs" });
 
   const reveal = page.getByRole("button", { name: "+ More outputs (2)" });
   await expect(reveal).toHaveAttribute("aria-expanded", "false");
+  await expect(others).toHaveCount(0);
+  const buttonBefore = await reveal.boundingBox();
   await reveal.click();
 
-  // The unranked devices join the same list, under the break, as normal rows
-  // with no rank number and a + to rank them.
-  await expect(page.locator(".section-break")).toHaveText("Not in priority");
-  const airpods = outputs.locator(".device-strip", { hasText: "AirPods Pro" });
-  await expect(airpods).toBeVisible();
+  // The revealed rows open below the button, which stays where it was, so the
+  // control you just pressed is still under the cursor to close again.
+  const collapse = page.getByRole("button", { name: "Fewer devices" });
+  const buttonAfter = await collapse.boundingBox();
+  expect(buttonAfter?.y).toBeCloseTo(buttonBefore?.y ?? -1, 0);
+  const listTop = (await others.boundingBox())?.y ?? 0;
+  expect(listTop).toBeGreaterThan(buttonAfter?.y ?? 0);
+
+  // They are ordinary rows with no rank number and a + to rank them.
+  const airpods = others.locator(".device-strip", { hasText: "AirPods Pro" });
   await expect(airpods.locator(".rank.is-unranked")).toBeVisible();
   await expect(airpods.getByRole("button", { name: "Add Headphones to priority" })).toBeVisible();
   // Ranked rows offer no +; they already have a place.
   await expect(outputs.getByRole("button", { name: /Add LG TV to priority/ })).toHaveCount(0);
 
-  // Remembered endpoints are one press further in, never in the default view.
+  // Endpoints Windows merely remembers are not hardware you have, so they
+  // never appear and there is no toggle for them.
   await expect(page.locator(".device-name", { hasText: "Digital Output" })).toHaveCount(0);
-  await page.getByRole("button", { name: /Show remembered devices \(1\)/ }).click();
-  await expect(page.locator(".device-name", { hasText: "Digital Output" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /remembered devices/i })).toHaveCount(0);
 
-  // And it collapses again.
-  await page.getByRole("button", { name: "Fewer devices" }).first().click();
-  await expect(outputs.getByRole("listitem")).toHaveCount(2);
+  await collapse.click();
+  await expect(others).toHaveCount(0);
 });
 
 test("a ranked device Windows no longer reports gets no row", async () => {

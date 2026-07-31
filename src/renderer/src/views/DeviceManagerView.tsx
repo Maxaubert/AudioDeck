@@ -32,38 +32,32 @@ function DeviceSection({
   actions: AudioDeckApi;
 }) {
   const [revealed, setRevealed] = useState(false);
-  const [showGhosts, setShowGhosts] = useState(false);
-  const { ranked, unranked, ghosts } = partitionDevices(devices, priority, flow);
-
-  const shown = revealed ? [...unranked, ...(showGhosts ? ghosts : [])] : [];
+  // `ghosts` is deliberately dropped: endpoints Windows only remembers are not
+  // hardware you have, and nothing here can act on them.
+  const { ranked, unranked } = partitionDevices(devices, priority, flow);
   const noun = flow === "capture" ? "microphone" : "output";
 
   return (
     <>
       <SectionLabel title={title} note={`${ranked.length} ranked`} />
-      {ranked.length === 0 && !revealed ? (
+      {ranked.length === 0 ? (
         <p className="empty-note">Nothing ranked yet. Add a device below.</p>
       ) : (
         <DeviceList
           label={label}
-          ranked={ranked}
-          unranked={shown}
+          devices={ranked}
           manualOverride={manualOverride}
           expandedId={expandedId}
           onToggleExpand={onToggleExpand}
           onReorder={(ids) => void actions.setPriority(flow, ids)}
-          onRank={(id) => void actions.addToPriority(flow, id)}
           onUnrank={(id) => void actions.removeFromPriority(flow, id)}
           actions={actions}
-          divider={
-            <li className="section-break" role="presentation">
-              Not in priority
-            </li>
-          }
         />
       )}
 
-      {unranked.length > 0 || revealed ? (
+      {/* Stays put when pressed: the revealed rows open below it, so the
+          control you just used is still under the cursor to close again. */}
+      {unranked.length > 0 ? (
         <button
           type="button"
           className="btn btn-add-device"
@@ -74,14 +68,16 @@ function DeviceSection({
         </button>
       ) : null}
 
-      {revealed && ghosts.length > 0 ? (
-        <button
-          type="button"
-          className="btn btn-ghost-toggle"
-          onClick={() => setShowGhosts((v) => !v)}
-        >
-          {showGhosts ? "Hide remembered devices" : `Show remembered devices (${ghosts.length})`}
-        </button>
+      {revealed && unranked.length > 0 ? (
+        <DeviceList
+          label={`Other ${noun}s`}
+          devices={unranked}
+          manualOverride={manualOverride}
+          expandedId={expandedId}
+          onToggleExpand={onToggleExpand}
+          onRank={(id) => void actions.addToPriority(flow, id)}
+          actions={actions}
+        />
       ) : null}
     </>
   );

@@ -1,7 +1,7 @@
-// One section's rows, and the drag bookkeeping that reorders them. Only ranked
-// rows drag: a drop onto an unranked row would have to mean "rank it here",
-// and ranking has exactly one way in, the + button. Reordering therefore only
-// ever permutes the ranked prefix.
+// One list of device rows. Given `onReorder` it is the ranked list: rows are
+// numbered and drag to reorder. Without it, it is the list of devices outside
+// the ranking: no numbers, no dragging, and a + on each row instead, so there
+// is exactly one way into the order.
 
 import { useRef, useState } from "react";
 import { moveItem } from "../reorder.js";
@@ -10,32 +10,28 @@ import type { AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
 export interface DeviceListProps {
   label: string;
-  /** Ranked devices in priority order, then any revealed unranked ones. */
-  ranked: DeviceView[];
-  unranked: DeviceView[];
+  devices: DeviceView[];
   manualOverride: boolean;
   expandedId: string | null;
   onToggleExpand: (id: string) => void;
-  onReorder: (ids: string[]) => void;
-  onRank: (id: string) => void;
-  onUnrank: (id: string) => void;
+  /** Present only for the ranked list. */
+  onReorder?: (ids: string[]) => void;
+  onUnrank?: (id: string) => void;
+  /** Present only for the unranked list. */
+  onRank?: (id: string) => void;
   actions: AudioDeckApi;
-  /** Rendered between the ranked rows and the unranked ones. */
-  divider?: React.ReactNode;
 }
 
 export function DeviceList({
   label,
-  ranked,
-  unranked,
+  devices,
   manualOverride,
   expandedId,
   onToggleExpand,
   onReorder,
-  onRank,
   onUnrank,
+  onRank,
   actions,
-  divider,
 }: DeviceListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -43,11 +39,11 @@ export function DeviceList({
   // so dragging to reorder never doubles as "switch to this device".
   const dragHappened = useRef(false);
 
-  const rankedIds = ranked.map((d) => d.id);
+  const ranked = onReorder !== undefined;
 
   const move = (from: number, to: number): void => {
-    if (from === to || to < 0 || to >= ranked.length) return;
-    onReorder(moveItem(rankedIds, from, to));
+    if (onReorder === undefined || from === to || to < 0 || to >= devices.length) return;
+    onReorder(moveItem(devices.map((d) => d.id), from, to));
   };
 
   const drop = (target: number): void => {
@@ -58,56 +54,44 @@ export function DeviceList({
 
   return (
     <ol className="strip-list" aria-label={label}>
-      {ranked.map((device, index) => (
+      {devices.map((device, index) => (
         <DeviceRow
           key={device.id}
           device={device}
-          rank={index + 1}
+          rank={ranked ? index + 1 : null}
           manualOverride={manualOverride}
           expanded={expandedId === device.id}
           onToggleExpand={() => onToggleExpand(device.id)}
-          onUnrank={() => onUnrank(device.id)}
-          onMove={(delta) => move(index, index + delta)}
+          onRank={onRank === undefined ? undefined : () => onRank(device.id)}
+          onUnrank={onUnrank === undefined ? undefined : () => onUnrank(device.id)}
+          onMove={ranked ? (delta) => move(index, index + delta) : undefined}
           actions={actions}
-          drag={{
-            dragging: dragIndex === index,
-            dropTarget: overIndex === index && dragIndex !== null && dragIndex !== index,
-            suppressedClick: dragHappened,
-            onDragStart: () => {
-              dragHappened.current = true;
-              setDragIndex(index);
-            },
-            onDragOver: () => setOverIndex(index),
-            onDragLeave: () => setOverIndex((v) => (v === index ? null : v)),
-            onDrop: () => drop(index),
-            onDragEnd: () => {
-              setDragIndex(null);
-              setOverIndex(null);
-              // Cleared next tick so the post-drop click (if any) is ignored.
-              setTimeout(() => {
-                dragHappened.current = false;
-              }, 0);
-            },
-          }}
+          drag={
+            ranked
+              ? {
+                  dragging: dragIndex === index,
+                  dropTarget: overIndex === index && dragIndex !== null && dragIndex !== index,
+                  suppressedClick: dragHappened,
+                  onDragStart: () => {
+                    dragHappened.current = true;
+                    setDragIndex(index);
+                  },
+                  onDragOver: () => setOverIndex(index),
+                  onDragLeave: () => setOverIndex((v) => (v === index ? null : v)),
+                  onDrop: () => drop(index),
+                  onDragEnd: () => {
+                    setDragIndex(null);
+                    setOverIndex(null);
+                    // Cleared next tick so the post-drop click is ignored.
+                    setTimeout(() => {
+                      dragHappened.current = false;
+                    }, 0);
+                  },
+                }
+              : undefined
+          }
         />
       ))}
-      {unranked.length > 0 ? (
-        <>
-          {divider}
-          {unranked.map((device) => (
-            <DeviceRow
-              key={device.id}
-              device={device}
-              rank={null}
-              manualOverride={manualOverride}
-              expanded={expandedId === device.id}
-              onToggleExpand={() => onToggleExpand(device.id)}
-              onRank={() => onRank(device.id)}
-              actions={actions}
-            />
-          ))}
-        </>
-      ) : null}
     </ol>
   );
 }
