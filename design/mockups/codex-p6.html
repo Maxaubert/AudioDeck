@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioDeck - Codex punk 6</title>
+  <style>
+    :root {
+      --ink: #11100e;
+      --bone: #eee8d8;
+      --paper: #f8f2e3;
+      --paste: #d7cfbd;
+      --ash: #b9b2a3;
+      --muted: #5d5a53;
+      --oxblood: #8d1721;
+      --white: #fffaf0;
+      --display: "Old English Text MT", "Engravers Old English", "UnifrakturCook", Georgia, serif;
+      --condensed: "Arial Narrow", "Roboto Condensed", "Bahnschrift Condensed", "Aptos Narrow", Arial, sans-serif;
+      --utility: "Bahnschrift", "Aptos", "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: #25221e;
+      color-scheme: light;
+    }
+
+    body {
+      min-width: 880px;
+      margin: 0;
+      color: var(--ink);
+      background: #25221e;
+      font: 16px/1.35 var(--utility);
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+      color: inherit;
+    }
+
+    button,
+    select {
+      cursor: pointer;
+    }
+
+    button:disabled,
+    input:disabled {
+      cursor: not-allowed;
+    }
+
+    :focus-visible {
+      outline: 4px solid var(--oxblood);
+      outline-offset: 3px;
+    }
+
+    .wall {
+      width: min(1240px, calc(100% - 48px));
+      margin: 22px auto;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .wall::before,
+    .wall::after {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .wall::before {
+      inset: -11px 17px 15px -13px;
+      background: var(--oxblood);
+      transform: rotate(-.65deg);
+      clip-path: polygon(0 .5%, 31% 0, 32% 1.1%, 57% .1%, 82% .8%, 100% .2%, 99.4% 27%, 100% 61%, 99.2% 100%, 71% 99.4%, 48% 100%, 22% 99.2%, .5% 100%);
+    }
+
+    .wall::after {
+      width: 56%;
+      height: 124px;
+      left: -28px;
+      bottom: 62px;
+      background: var(--paste);
+      transform: rotate(2.1deg);
+      clip-path: polygon(0 9%, 9% 3%, 19% 8%, 29% 0, 38% 7%, 48% 1%, 59% 10%, 70% 2%, 81% 8%, 91% 1%, 100% 6%, 98% 92%, 88% 97%, 77% 91%, 66% 100%, 54% 92%, 42% 98%, 31% 90%, 19% 99%, 8% 91%, 0 96%);
+    }
+
+    .app {
+      position: relative;
+      overflow: hidden;
+      background: var(--bone);
+      border: 4px solid var(--ink);
+      clip-path: polygon(0 .3%, 24% 0, 49% .25%, 73% 0, 100% .45%, 99.7% 27%, 100% 52%, 99.6% 77%, 100% 99.4%, 76% 100%, 52% 99.7%, 27% 100%, .2% 99.6%);
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      width: 346px;
+      height: 142px;
+      right: 4px;
+      top: 77px;
+      z-index: 0;
+      background: var(--oxblood);
+      transform: rotate(-2.4deg);
+      clip-path: polygon(0 6%, 14% 1%, 28% 7%, 42% 0, 57% 5%, 72% 1%, 86% 8%, 100% 2%, 97% 94%, 82% 100%, 66% 92%, 49% 98%, 33% 91%, 17% 99%, 0 93%);
+      opacity: .12;
+      pointer-events: none;
+    }
+
+    .app-bar {
+      position: relative;
+      z-index: 3;
+      min-height: 92px;
+      display: grid;
+      grid-template-columns: 305px minmax(440px, 1fr) 185px;
+      align-items: stretch;
+      background: var(--ink);
+      color: var(--paper);
+      border-bottom: 5px solid var(--oxblood);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 22px 11px 24px;
+    }
+
+    .mark {
+      width: 61px;
+      height: 61px;
+      flex: 0 0 auto;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background: var(--paper);
+      color: var(--ink);
+      border: 3px solid var(--paper);
+      clip-path: polygon(8% 0, 100% 6%, 91% 100%, 0 91%);
+      transform: rotate(-2deg);
+      font: 900 42px/.8 var(--display);
+    }
+
+    .mark::after {
+      content: "";
+      position: absolute;
+      width: 9px;
+      height: 82px;
+      background: var(--oxblood);
+      transform: rotate(39deg);
+    }
+
+    .mark span {
+      position: relative;
+      z-index: 1;
+      transform: translateY(-2px);
+    }
+
+    .wordmark {
+      min-width: 0;
+    }
+
+    .wordmark strong {
+      display: block;
+      font: 900 31px/1.08 var(--display);
+      letter-spacing: -.8px;
+      white-space: nowrap;
+    }
+
+    .wordmark small {
+      display: block;
+      margin-top: 7px;
+      color: var(--ash);
+      font: 700 10px/1 var(--utility);
+      letter-spacing: 2.1px;
+      text-transform: uppercase;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      gap: 6px;
+      padding: 15px 16px 0;
+    }
+
+    .tab {
+      min-width: 122px;
+      height: 54px;
+      border: 0;
+      border-left: 2px solid var(--paper);
+      border-right: 2px solid var(--paper);
+      padding: 0 20px 4px;
+      color: var(--paper);
+      background: transparent;
+      font: 800 16px/1 var(--condensed);
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      transition: background-color 100ms linear, color 100ms linear, transform 100ms linear;
+      clip-path: polygon(3% 4%, 96% 0, 100% 94%, 5% 100%);
+    }
+
+    .tab:nth-child(2) {
+      transform: rotate(.35deg);
+    }
+
+    .tab:nth-child(3) {
+      transform: rotate(-.3deg);
+    }
+
+    .tab:hover {
+      background: var(--paper);
+      color: var(--ink);
+      transform: translateY(-4px) rotate(-.4deg);
+    }
+
+    .tab.active {
+      background: var(--oxblood);
+      color: var(--white);
+      border-color: var(--oxblood);
+      transform: translateY(0) rotate(-.35deg);
+    }
+
+    .app-status {
+      align-self: center;
+      justify-self: end;
+      margin-right: 22px;
+      min-width: 150px;
+      border: 2px solid var(--paper);
+      padding: 9px 12px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      color: var(--paper);
+      font: 800 11px/1 var(--utility);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transform: rotate(.5deg);
+    }
+
+    .status-light {
+      width: 10px;
+      height: 10px;
+      background: var(--oxblood);
+      border: 1px solid var(--paper);
+      flex: 0 0 auto;
+    }
+
+    .workspace {
+      position: relative;
+      z-index: 1;
+      padding: 25px 30px 9px;
+    }
+
+    .page {
+      display: none;
+      animation: paste-in 150ms steps(2, end);
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes paste-in {
+      from { opacity: .7; transform: translateX(-5px) rotate(-.08deg); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .page-bar {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 16px;
+      border-bottom: 5px solid var(--ink);
+    }
+
+    .page-title {
+      margin: 0;
+      padding: 2px 2px 7px;
+      font: 900 24px/1 var(--display);
+      letter-spacing: -.2px;
+    }
+
+    .page-note {
+      margin: 0;
+      padding-bottom: 7px;
+      color: #403e39;
+      font: 700 13px/1.2 var(--utility);
+      text-align: right;
+    }
+
+    .section {
+      margin: 0 0 27px;
+      position: relative;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin: 0 0 10px;
+    }
+
+    .section-heading h2 {
+      min-width: 184px;
+      margin: 0;
+      padding: 9px 17px 8px;
+      background: var(--ink);
+      color: var(--paper);
+      font: 900 17px/1 var(--condensed);
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      clip-path: polygon(0 7%, 99% 0, 96% 100%, 2% 93%);
+    }
+
+    .section-heading::after {
+      content: "";
+      height: 3px;
+      background: var(--ink);
+      flex: 1;
+    }
+
+    .section-heading span {
+      order: 3;
+      color: #45423c;
+      font: 800 12px/1 var(--utility);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .rows {
+      display: grid;
+      gap: 7px;
+    }
+
+    .device-row {
+      position: relative;
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 62px 50px minmax(310px, 1fr) 210px;
+      align-items: center;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      clip-path: polygon(.25% 1%, 36% 0, 68% .8%, 99.8% 0, 100% 96%, 73% 100%, 43% 99.1%, 0 100%);
+      transition: transform 90ms linear, background-color 90ms linear, color 90ms linear;
+    }
+
+    .device-row:nth-child(even) {
+      clip-path: polygon(0 2%, 27% .4%, 55% 1.5%, 100% 0, 99.7% 98%, 71% 99.4%, 46% 98.5%, .4% 100%);
+    }
+
+    .device-row:hover {
+      background: var(--white);
+      transform: translateX(5px) rotate(-.08deg);
+    }
+
+    .device-row.in-use {
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
+
+    .device-row.in-use::before,
+    .device-row.override::before {
+      content: "";
+      position: absolute;
+      inset: -3px auto -3px -2px;
+      width: 11px;
+      background: var(--oxblood);
+    }
+
+    .device-row.override {
+      background: var(--oxblood);
+      color: var(--white);
+      border-color: var(--oxblood);
+    }
+
+    .device-row.offline,
+    .device-row.disabled {
+      color: #45433d;
+      background: #c9c3b6;
+      border-color: #69655d;
+    }
+
+    .rank {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      border-right: 2px solid currentColor;
+      font: 900 30px/1 var(--condensed);
+    }
+
+    .glyph {
+      display: grid;
+      place-items: center;
+    }
+
+    .glyph svg {
+      width: 29px;
+      height: 29px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .device-copy {
+      min-width: 0;
+      padding: 10px 16px 10px 3px;
+    }
+
+    .device-copy strong {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font: 850 20px/1.08 var(--condensed);
+      letter-spacing: .15px;
+    }
+
+    .device-copy small {
+      display: block;
+      margin-top: 6px;
+      color: inherit;
+      font: 650 12px/1.1 var(--utility);
+      letter-spacing: .45px;
+      opacity: .82;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      display: inline-block;
+      background: var(--oxblood);
+      color: var(--white);
+      border: 1px solid currentColor;
+      padding: 5px 7px 4px;
+      font: 850 10px/1 var(--utility);
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      transform: rotate(1deg);
+    }
+
+    .offline .badge {
+      color: var(--ink);
+      background: transparent;
+      border-color: var(--ink);
+    }
+
+    .override .badge {
+      background: var(--white);
+      color: var(--oxblood);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      padding: 0 13px;
+    }
+
+    .icon-button,
+    .text-button,
+    .mute-button,
+    .enable-button {
+      height: 40px;
+      border: 2px solid currentColor;
+      background: transparent;
+      font-weight: 850;
+      transition: background-color 80ms linear, color 80ms linear, transform 80ms linear;
+    }
+
+    .icon-button {
+      width: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: square;
+    }
+
+    .icon-button:hover,
+    .text-button:hover,
+    .mute-button:hover,
+    .enable-button:hover {
+      background: var(--oxblood);
+      color: var(--white);
+      border-color: var(--oxblood);
+      transform: rotate(-1.4deg);
+    }
+
+    .in-use .icon-button:hover,
+    .override .icon-button:hover {
+      background: var(--paper);
+      color: var(--ink);
+      border-color: var(--paper);
+    }
+
+    .icon-button:disabled {
+      opacity: .45;
+    }
+
+    .add-device {
+      width: calc(100% - 12px);
+      height: 50px;
+      margin: 9px 6px 0;
+      border: 3px dashed var(--ink);
+      background: transparent;
+      font: 850 15px/1 var(--condensed);
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      transition: background-color 80ms linear, color 80ms linear, transform 80ms linear;
+    }
+
+    .add-device:hover {
+      background: var(--ink);
+      color: var(--paper);
+      transform: rotate(.18deg);
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: -4px 0 8px auto;
+      width: max-content;
+      max-width: 100%;
+      color: #35332f;
+      font: 750 11px/1 var(--utility);
+      letter-spacing: .4px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .swatch {
+      width: 13px;
+      height: 13px;
+      border: 2px solid var(--ink);
+      background: var(--ink);
+    }
+
+    .swatch.override-swatch {
+      background: var(--oxblood);
+      border-color: var(--oxblood);
+    }
+
+    .mixer-row {
+      grid-template-columns: 62px 50px minmax(270px, 1fr) minmax(210px, .9fr) 70px 88px;
+    }
+
+    .volume-control {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      padding: 0 18px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 28px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border: 2px solid currentColor;
+      background: var(--paste);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 18px;
+      height: 26px;
+      margin-top: -11px;
+      appearance: none;
+      border: 2px solid currentColor;
+      border-radius: 0;
+      background: var(--oxblood);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border: 2px solid currentColor;
+      background: var(--paste);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 24px;
+      border: 2px solid currentColor;
+      border-radius: 0;
+      background: var(--oxblood);
+    }
+
+    .in-use input[type="range"]::-webkit-slider-runnable-track,
+    .override input[type="range"]::-webkit-slider-runnable-track {
+      background: #716d63;
+    }
+
+    .volume-readout {
+      text-align: right;
+      font: 900 20px/1.15 var(--condensed);
+    }
+
+    .mute-button {
+      width: 72px;
+      margin: 0 12px 0 4px;
+      font: 850 13px/1 var(--condensed);
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+
+    .mute-button.active {
+      background: var(--oxblood);
+      color: var(--white);
+      border-color: var(--oxblood);
+    }
+
+    .unavailable {
+      padding: 0 18px;
+      color: #4b4943;
+      font: 800 12px/1 var(--utility);
+      letter-spacing: .9px;
+      text-transform: uppercase;
+    }
+
+    .devices-toolbar {
+      margin-bottom: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .remembered {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 13px;
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      padding: 7px 10px 7px 14px;
+      font: 800 13px/1 var(--utility);
+      transform: rotate(.15deg);
+    }
+
+    .switch {
+      width: 52px;
+      height: 29px;
+      position: relative;
+      border: 2px solid currentColor;
+      background: var(--ash);
+      padding: 3px;
+    }
+
+    .switch::after {
+      content: "";
+      display: block;
+      width: 19px;
+      height: 19px;
+      background: var(--ink);
+      transition: transform 100ms linear;
+    }
+
+    .switch[aria-checked="true"] {
+      background: var(--oxblood);
+    }
+
+    .switch[aria-checked="true"]::after {
+      background: var(--white);
+      transform: translateX(23px);
+    }
+
+    .manage-row {
+      grid-template-columns: 55px minmax(315px, 1fr) 178px 92px 96px;
+      padding: 0 13px 0 6px;
+    }
+
+    .manage-row .glyph {
+      height: 46px;
+      border-right: 2px solid currentColor;
+    }
+
+    .type-select,
+    .interval-select {
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: var(--paper);
+      padding: 8px 30px 8px 10px;
+      font: 750 13px/1 var(--utility);
+    }
+
+    .type-select {
+      width: 160px;
+      justify-self: start;
+    }
+
+    .in-use .type-select,
+    .override .type-select {
+      color: var(--ink);
+    }
+
+    .text-button,
+    .enable-button {
+      width: 82px;
+      font: 850 13px/1 var(--condensed);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .enable-button {
+      width: 88px;
+    }
+
+    .disabled .enable-button {
+      background: var(--oxblood);
+      color: var(--white);
+      border-color: var(--oxblood);
+    }
+
+    .settings-strip {
+      position: relative;
+      z-index: 2;
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.3fr;
+      gap: 0;
+      background: var(--ink);
+      color: var(--paper);
+      border-top: 5px solid var(--oxblood);
+    }
+
+    .setting {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 13px;
+      padding: 15px 25px;
+      border-right: 2px solid #625e55;
+      font: 750 14px/1.15 var(--utility);
+    }
+
+    .setting:last-child {
+      border-right: 0;
+    }
+
+    .setting-text {
+      white-space: nowrap;
+    }
+
+    .settings-strip .switch {
+      flex: 0 0 auto;
+      color: var(--paper);
+      background: #777168;
+    }
+
+    .settings-strip .switch::after {
+      background: var(--paper);
+    }
+
+    .settings-strip .switch[aria-checked="true"] {
+      background: var(--oxblood);
+    }
+
+    .interval-setting {
+      justify-content: center;
+    }
+
+    .interval-select {
+      min-width: 122px;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 20;
+      right: 28px;
+      bottom: 25px;
+      max-width: 340px;
+      padding: 14px 18px;
+      background: var(--oxblood);
+      color: var(--white);
+      border: 3px solid var(--ink);
+      font: 800 14px/1.2 var(--utility);
+      transform: translateY(120px) rotate(-1deg);
+      transition: transform 120ms steps(2, end);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateY(0) rotate(-1deg);
+    }
+
+    @media (max-width: 1060px) {
+      .wall {
+        width: calc(100% - 24px);
+        margin: 12px auto;
+      }
+
+      .app-bar {
+        grid-template-columns: 260px minmax(410px, 1fr) 148px;
+      }
+
+      .brand {
+        padding-left: 16px;
+      }
+
+      .wordmark strong {
+        font-size: 27px;
+      }
+
+      .tab {
+        min-width: 112px;
+        padding-inline: 14px;
+      }
+
+      .app-status {
+        min-width: 128px;
+        margin-right: 14px;
+        letter-spacing: 1px;
+      }
+
+      .workspace {
+        padding-inline: 21px;
+      }
+
+      .device-row {
+        grid-template-columns: 58px 47px minmax(260px, 1fr) 202px;
+      }
+
+      .mixer-row {
+        grid-template-columns: 58px 47px minmax(235px, 1fr) minmax(170px, .8fr) 60px 78px;
+      }
+
+      .volume-control {
+        padding-inline: 11px;
+      }
+
+      .mute-button {
+        width: 66px;
+        margin-right: 8px;
+      }
+
+      .manage-row {
+        grid-template-columns: 50px minmax(270px, 1fr) 157px 82px 86px;
+      }
+
+      .type-select {
+        width: 145px;
+      }
+
+      .text-button {
+        width: 74px;
+      }
+
+      .enable-button {
+        width: 80px;
+      }
+
+      .setting {
+        padding-inline: 17px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wall">
+    <div class="app">
+      <header class="app-bar">
+        <div class="brand" aria-label="AudioDeck">
+          <span class="mark" aria-hidden="true"><span>A</span></span>
+          <span class="wordmark">
+            <strong>AudioDeck</strong>
+            <small>Windows audio order</small>
+          </span>
+        </div>
+
+        <nav class="tabs" aria-label="AudioDeck pages">
+          <button class="tab active" type="button" data-page="priority" aria-selected="true">Priority</button>
+          <button class="tab" type="button" data-page="mixer" aria-selected="false">Mixer</button>
+          <button class="tab" type="button" data-page="devices" aria-selected="false">Devices</button>
+        </nav>
+
+        <div class="app-status" aria-label="Automation status">
+          <span class="status-light" aria-hidden="true"></span>
+          <span>AUTO ON / 2S</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="page active" id="priority" aria-labelledby="priority-title">
+          <div class="page-bar">
+            <h1 class="page-title" id="priority-title">Priority order</h1>
+            <p class="page-note">First available device becomes the Windows default.</p>
+          </div>
+
+          <section class="section" aria-labelledby="priority-outputs">
+            <div class="section-heading">
+              <h2 id="priority-outputs">Outputs</h2>
+              <span>4 ranked</span>
+            </div>
+            <div class="rows" data-ranked-list>
+              <article class="device-row offline" data-device="AirPods Pro">
+                <span class="rank">1</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>AirPods Pro <span class="badge">Offline</span></strong>
+                  <small>Apple / Headphones</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move AirPods Pro up" disabled>
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move AirPods Pro down">
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove AirPods Pro from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+
+              <article class="device-row in-use" data-device="Arctis Nova Pro">
+                <span class="rank">2</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/><path d="M22 25h-4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro <span class="badge">In use</span></strong>
+                  <small>Steelseries / Headset</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move Arctis Nova Pro up">
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move Arctis Nova Pro down">
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove Arctis Nova Pro from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+
+              <article class="device-row" data-device="Quest">
+                <span class="rank">3</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M4 13h24l-2 11H6L4 13Z"/><path d="M10 18h4m-2-2v4m7-2h.1m4 0h.1M9 13l3-4h8l3 4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Quest</strong>
+                  <small>Meta / Headphones</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move Quest up">
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move Quest down">
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove Quest from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+
+              <article class="device-row" data-device="NVIDIA High Definition Audio">
+                <span class="rank">4</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="17"/><path d="M12 28h8m-4-5v5"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>NVIDIA High Definition Audio</strong>
+                  <small>LG / TV</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move NVIDIA High Definition Audio up">
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move NVIDIA High Definition Audio down" disabled>
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove NVIDIA High Definition Audio from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+            </div>
+            <button class="add-device" type="button" data-add="output">+ Add a device (2 more)</button>
+          </section>
+
+          <section class="section" aria-labelledby="priority-microphones">
+            <div class="section-heading">
+              <h2 id="priority-microphones">Microphones</h2>
+              <span>2 ranked</span>
+            </div>
+            <div class="rows" data-ranked-list>
+              <article class="device-row" data-device="Arctis Nova Pro Mic">
+                <span class="rank">1</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro Mic</strong>
+                  <small>Steelseries / Microphone</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move Arctis Nova Pro Mic up" disabled>
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move Arctis Nova Pro Mic down">
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove Arctis Nova Pro Mic from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+
+              <article class="device-row override" data-device="DJI MIC MINI">
+                <span class="rank">2</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>DJI MIC MINI <span class="badge">Manual override</span></strong>
+                  <small>DJI / Wireless microphone</small>
+                </div>
+                <div class="row-actions">
+                  <button class="icon-button move-up" type="button" aria-label="Move DJI MIC MINI up">
+                    <svg viewBox="0 0 20 20"><path d="m4 12 6-6 6 6"/></svg>
+                  </button>
+                  <button class="icon-button move-down" type="button" aria-label="Move DJI MIC MINI down" disabled>
+                    <svg viewBox="0 0 20 20"><path d="m4 8 6 6 6-6"/></svg>
+                  </button>
+                  <button class="icon-button remove-device" type="button" aria-label="Remove DJI MIC MINI from ranking">
+                    <svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg>
+                  </button>
+                </div>
+              </article>
+            </div>
+            <button class="add-device" type="button" data-add="microphone">+ Add a device (2 more)</button>
+          </section>
+
+          <div class="legend" aria-label="Status legend">
+            <span><i class="swatch" aria-hidden="true"></i> In use</span>
+            <span><i class="swatch override-swatch" aria-hidden="true"></i> Manual override</span>
+          </div>
+        </section>
+
+        <section class="page" id="mixer" aria-labelledby="mixer-title">
+          <div class="page-bar">
+            <h1 class="page-title" id="mixer-title">Device mixer</h1>
+            <p class="page-note">Levels are remembered per device.</p>
+          </div>
+
+          <section class="section" aria-labelledby="mixer-outputs">
+            <div class="section-heading">
+              <h2 id="mixer-outputs">Outputs</h2>
+              <span>4 ranked</span>
+            </div>
+            <div class="rows">
+              <article class="device-row mixer-row offline">
+                <span class="rank">1</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>AirPods Pro <span class="badge">Offline</span></strong>
+                  <small>Apple / Headphones</small>
+                </div>
+                <span class="unavailable">No controls</span>
+                <span class="volume-readout">--</span>
+                <button class="mute-button" type="button" disabled>Mute</button>
+              </article>
+
+              <article class="device-row mixer-row in-use">
+                <span class="rank">2</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/><path d="M22 25h-4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro <span class="badge">In use</span></strong>
+                  <small>Steelseries / Headset</small>
+                </div>
+                <label class="volume-control">
+                  <span class="sr-only" hidden>Arctis Nova Pro volume</span>
+                  <input type="range" min="0" max="100" value="100" aria-label="Arctis Nova Pro volume">
+                </label>
+                <output class="volume-readout">100%</output>
+                <button class="mute-button" type="button">Mute</button>
+              </article>
+
+              <article class="device-row mixer-row">
+                <span class="rank">3</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M4 13h24l-2 11H6L4 13Z"/><path d="M10 18h4m-2-2v4m7-2h.1m4 0h.1M9 13l3-4h8l3 4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Quest</strong>
+                  <small>Meta / Headphones</small>
+                </div>
+                <label class="volume-control">
+                  <span class="sr-only" hidden>Quest volume</span>
+                  <input type="range" min="0" max="100" value="62" aria-label="Quest volume">
+                </label>
+                <output class="volume-readout">62%</output>
+                <button class="mute-button" type="button">Mute</button>
+              </article>
+
+              <article class="device-row mixer-row">
+                <span class="rank">4</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="17"/><path d="M12 28h8m-4-5v5"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>NVIDIA High Definition Audio</strong>
+                  <small>LG / TV</small>
+                </div>
+                <label class="volume-control">
+                  <span class="sr-only" hidden>NVIDIA High Definition Audio volume</span>
+                  <input type="range" min="0" max="100" value="45" aria-label="NVIDIA High Definition Audio volume">
+                </label>
+                <output class="volume-readout">45%</output>
+                <button class="mute-button" type="button">Mute</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" aria-labelledby="mixer-microphones">
+            <div class="section-heading">
+              <h2 id="mixer-microphones">Microphones</h2>
+              <span>2 ranked</span>
+            </div>
+            <div class="rows">
+              <article class="device-row mixer-row">
+                <span class="rank">1</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro Mic</strong>
+                  <small>Steelseries / Microphone</small>
+                </div>
+                <label class="volume-control">
+                  <span class="sr-only" hidden>Arctis Nova Pro Mic volume</span>
+                  <input type="range" min="0" max="100" value="100" aria-label="Arctis Nova Pro Mic volume">
+                </label>
+                <output class="volume-readout">100%</output>
+                <button class="mute-button" type="button">Mute</button>
+              </article>
+
+              <article class="device-row mixer-row override">
+                <span class="rank">2</span>
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>DJI MIC MINI <span class="badge">Manual override</span></strong>
+                  <small>DJI / Wireless microphone</small>
+                </div>
+                <label class="volume-control">
+                  <span class="sr-only" hidden>DJI MIC MINI volume</span>
+                  <input type="range" min="0" max="100" value="62" aria-label="DJI MIC MINI volume">
+                </label>
+                <output class="volume-readout">62%</output>
+                <button class="mute-button" type="button">Mute</button>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="page" id="devices" aria-labelledby="devices-title">
+          <div class="page-bar">
+            <h1 class="page-title" id="devices-title">All endpoints</h1>
+            <p class="page-note">Names and types apply across Windows.</p>
+          </div>
+
+          <div class="devices-toolbar">
+            <label class="remembered">
+              <span>Show remembered devices (31)</span>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Show remembered devices"></button>
+            </label>
+          </div>
+
+          <section class="section" aria-labelledby="device-list-title">
+            <div class="section-heading">
+              <h2 id="device-list-title">Devices</h2>
+              <span>7 endpoints</span>
+            </div>
+            <div class="rows">
+              <article class="device-row manage-row" data-device="AirPods Pro">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>AirPods Pro</strong>
+                  <small>Apple / Bluetooth audio</small>
+                </div>
+                <select class="type-select" aria-label="AirPods Pro type">
+                  <option>Speakers</option>
+                  <option selected>Headphones</option>
+                  <option>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row in-use" data-device="Arctis Nova Pro">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2v-8ZM27 17h-5v10h3a2 2 0 0 0 2-2v-8Z"/><path d="M22 25h-4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro <span class="badge">In use</span></strong>
+                  <small>Steelseries / USB audio</small>
+                </div>
+                <select class="type-select" aria-label="Arctis Nova Pro type">
+                  <option>Speakers</option>
+                  <option>Headphones</option>
+                  <option selected>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row" data-device="Quest">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M4 13h24l-2 11H6L4 13Z"/><path d="M10 18h4m-2-2v4m7-2h.1m4 0h.1M9 13l3-4h8l3 4"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Quest</strong>
+                  <small>Meta / Virtual audio</small>
+                </div>
+                <select class="type-select" aria-label="Quest type">
+                  <option>Speakers</option>
+                  <option selected>Headphones</option>
+                  <option>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row" data-device="NVIDIA High Definition Audio">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="17"/><path d="M12 28h8m-4-5v5"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>NVIDIA High Definition Audio</strong>
+                  <small>LG / HDMI audio</small>
+                </div>
+                <select class="type-select" aria-label="NVIDIA High Definition Audio type">
+                  <option>Speakers</option>
+                  <option>Headphones</option>
+                  <option>Headset</option>
+                  <option selected>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row" data-device="Arctis Nova Pro Mic">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Arctis Nova Pro Mic</strong>
+                  <small>Steelseries / USB microphone</small>
+                </div>
+                <select class="type-select" aria-label="Arctis Nova Pro Mic type">
+                  <option>Speakers</option>
+                  <option>Headphones</option>
+                  <option selected>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row override" data-device="DJI MIC MINI">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v1a9 9 0 0 0 18 0v-1M16 25v4m-5 0h10"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>DJI MIC MINI <span class="badge">Manual override</span></strong>
+                  <small>DJI / Wireless microphone</small>
+                </div>
+                <select class="type-select" aria-label="DJI MIC MINI type">
+                  <option>Speakers</option>
+                  <option>Headphones</option>
+                  <option selected>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button">Rename</button>
+                <button class="enable-button toggle-device" type="button">Disable</button>
+              </article>
+
+              <article class="device-row manage-row disabled" data-device="Realtek Digital Output">
+                <span class="glyph" aria-hidden="true">
+                  <svg viewBox="0 0 32 32"><path d="M7 10h18v12H7zM4 14h3m18 0h3M4 19h3m18 0h3"/><path d="m12 13 8 6m0-6-8 6"/></svg>
+                </span>
+                <div class="device-copy">
+                  <strong>Realtek Digital Output <span class="badge">Disabled</span></strong>
+                  <small>Realtek / Digital endpoint</small>
+                </div>
+                <select class="type-select" aria-label="Realtek Digital Output type" disabled>
+                  <option selected>Speakers</option>
+                  <option>Headphones</option>
+                  <option>Headset</option>
+                  <option>TV</option>
+                </select>
+                <button class="text-button rename-device" type="button" disabled>Rename</button>
+                <button class="enable-button toggle-device" type="button">Enable</button>
+              </article>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="settings-strip" aria-label="Automation settings">
+        <div class="setting">
+          <span class="setting-text">Start with Windows</span>
+          <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Start with Windows"></button>
+        </div>
+        <div class="setting">
+          <span class="setting-text">Pause automation</span>
+          <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Pause automation"></button>
+        </div>
+        <label class="setting interval-setting">
+          <span class="setting-text">Check devices every</span>
+          <select class="interval-select" aria-label="Device check interval">
+            <option selected>2 seconds</option>
+            <option>5 seconds</option>
+            <option>10 seconds</option>
+          </select>
+        </label>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const tabs = [...document.querySelectorAll(".tab")];
+      const pages = [...document.querySelectorAll(".page")];
+      const toast = document.querySelector(".toast");
+      let toastTimer;
+
+      const showToast = (message) => {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+      };
+
+      const showPage = (pageId) => {
+        tabs.forEach((tab) => {
+          const selected = tab.dataset.page === pageId;
+          tab.classList.toggle("active", selected);
+          tab.setAttribute("aria-selected", String(selected));
+        });
+        pages.forEach((page) => page.classList.toggle("active", page.id === pageId));
+      };
+
+      const refreshRanking = (list) => {
+        const rows = [...list.querySelectorAll(".device-row")];
+        rows.forEach((row, index) => {
+          row.querySelector(".rank").textContent = index + 1;
+          const up = row.querySelector(".move-up");
+          const down = row.querySelector(".move-down");
+          if (up) up.disabled = index === 0;
+          if (down) down.disabled = index === rows.length - 1;
+        });
+      };
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => showPage(tab.dataset.page));
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.matches('input[type="range"]')) {
+          event.target.closest(".device-row").querySelector(".volume-readout").textContent = `${event.target.value}%`;
+        }
+      });
+
+      document.addEventListener("change", (event) => {
+        if (event.target.matches(".type-select")) {
+          showToast(`Type set to ${event.target.value}`);
+        }
+        if (event.target.matches(".interval-select")) {
+          document.querySelector(".app-status span:last-child").textContent = `AUTO ON / ${event.target.value.split(" ")[0]}S`;
+          showToast(`Device check set to ${event.target.value}`);
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button || button.classList.contains("tab")) return;
+
+        if (button.classList.contains("switch")) {
+          const next = button.getAttribute("aria-checked") !== "true";
+          button.setAttribute("aria-checked", String(next));
+          const label = button.getAttribute("aria-label");
+          showToast(`${label} ${next ? "on" : "off"}`);
+          return;
+        }
+
+        if (button.classList.contains("mute-button") && !button.disabled) {
+          const active = button.classList.toggle("active");
+          button.textContent = active ? "Muted" : "Mute";
+          showToast(active ? "Device muted" : "Device unmuted");
+          return;
+        }
+
+        if (button.classList.contains("add-device")) {
+          showToast(`Choose an ${button.dataset.add} to rank`);
+          return;
+        }
+
+        if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
+          const row = button.closest(".device-row");
+          const list = row.parentElement;
+          const sibling = button.classList.contains("move-up") ? row.previousElementSibling : row.nextElementSibling;
+          if (!sibling) return;
+          if (button.classList.contains("move-up")) {
+            list.insertBefore(row, sibling);
+          } else {
+            list.insertBefore(sibling, row);
+          }
+          refreshRanking(list);
+          showToast(`${row.dataset.device} moved`);
+          return;
+        }
+
+        if (button.classList.contains("remove-device")) {
+          showToast(`${button.closest(".device-row").dataset.device} removed from ranking`);
+          return;
+        }
+
+        if (button.classList.contains("rename-device")) {
+          const row = button.closest(".device-row");
+          const nameElement = row.querySelector(".device-copy strong");
+          const currentName = row.dataset.device;
+          const nextName = window.prompt("Rename this Windows device", currentName);
+          if (nextName && nextName.trim()) {
+            row.dataset.device = nextName.trim();
+            const badge = nameElement.querySelector(".badge");
+            nameElement.textContent = `${nextName.trim()} `;
+            if (badge) nameElement.appendChild(badge);
+            showToast("Device renamed in Windows");
+          }
+          return;
+        }
+
+        if (button.classList.contains("toggle-device")) {
+          const row = button.closest(".device-row");
+          const enabling = button.textContent.trim() === "Enable";
+          button.textContent = enabling ? "Disable" : "Enable";
+          row.classList.toggle("disabled", !enabling);
+          const select = row.querySelector(".type-select");
+          const rename = row.querySelector(".rename-device");
+          if (select) select.disabled = !enabling;
+          if (rename) rename.disabled = !enabling;
+          showToast(`${row.dataset.device} ${enabling ? "enabled" : "disabled"}`);
+        }
+      });
+
+      showPage("priority");
+    })();
+  </script>
+</body>
+</html>

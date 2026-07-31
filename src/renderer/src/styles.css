@@ -1,0 +1,1038 @@
+/* AudioDeck visual system: punk print on paper stock.
+   Black ink, off-white sheet, one amber accent used as INK (type, outlines,
+   the active nav plate, rules) and never as a large fill behind body content.
+   Hard requirements: large type and strong contrast (low-vision user).
+   Body text >= 17px; every interactive target >= 44px. */
+
+@import "./assets/fonts.css";
+
+:root {
+  --ink: #000000;
+  --paper: #f2f0ea;
+  --sheet: #ffffff;
+  --dead: #e3e0d8;
+  --dead-ink: #46463f;
+  --marker: #ffb454;
+  --red: #b3000c;
+  --rule: 6px;
+  --display: "Anton", "Arial Narrow", Impact, sans-serif;
+  --ui: "Archivo", "Segoe UI", Helvetica, Arial, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 940px;
+  background: #000;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.05) 0 2px,
+    transparent 2px 9px
+  );
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 4px solid var(--fg, var(--ink));
+  outline-offset: 3px;
+}
+
+/* ---------- shell ---------- */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--paper);
+  border: var(--rule) solid var(--ink);
+}
+
+/* ---------- title bar with folder tabs ---------- */
+
+.topbar {
+  --fg: var(--paper);
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex: none;
+  padding: 0 20px 0 0;
+  background: var(--ink);
+  border-bottom: 7px solid var(--marker);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 26px 12px 20px;
+  align-self: stretch;
+  border-right: var(--rule) solid var(--marker);
+}
+
+.brand-mark {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 4px solid var(--paper);
+  transform: rotate(-3deg);
+}
+
+.brand-mark::before,
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 6px;
+  background: var(--marker);
+  transform: skew(-11deg);
+}
+
+.brand-mark::before {
+  left: 7px;
+}
+
+.brand-mark::after {
+  right: 7px;
+  top: 19px;
+  height: 17px;
+}
+
+.brand-mark i {
+  position: absolute;
+  left: 18px;
+  top: 10px;
+  width: 6px;
+  height: 24px;
+  background: var(--paper);
+  transform: skew(-11deg);
+}
+
+.brand-word {
+  font-family: var(--display);
+  font-size: 27px;
+  line-height: 0.88;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--paper);
+  font-weight: 400;
+}
+
+.brand-word .brand-deck {
+  display: block;
+  color: var(--marker);
+}
+
+/* AUDIO keeps the paper ink; only its bridges are cut out of it. */
+.brand-word .stencil {
+  display: block;
+  color: var(--paper);
+}
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex: 1;
+  padding-left: 18px;
+}
+
+/* Folder tabs: the active one runs into the sheet, inactive ones sit lower. */
+.tab {
+  position: relative;
+  border: 0;
+  height: 46px;
+  padding: 0 26px;
+  margin-right: -11px;
+  background: #2b2b22;
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: 21px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+  transition:
+    background 120ms var(--ease-out),
+    height 120ms var(--ease-out);
+}
+
+.tab:hover {
+  background: #3d3d31;
+}
+
+.tab[aria-current="true"] {
+  height: 62px;
+  z-index: 4;
+  background: var(--marker);
+  color: var(--ink);
+}
+
+.tab-settings {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+
+/* ---------- frameless window caption ---------- */
+
+.caption {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 32px;
+  background: #000;
+  border-bottom: 2px solid #2b2b22;
+  /* the strip is the window drag handle; Windows gives us double-click
+     to maximise and edge resizing for free while the window stays resizable */
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.cap-title {
+  padding-left: 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9d9a8f;
+}
+
+.cap-title b {
+  font-weight: 800;
+  color: var(--marker);
+}
+
+.wc {
+  display: flex;
+  margin-left: auto;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.wcbtn {
+  width: 46px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d8d5cb;
+  cursor: pointer;
+  transition:
+    background 90ms linear,
+    color 90ms linear;
+}
+
+.wcbtn svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.wcbtn:hover {
+  background: #2b2b22;
+  color: var(--marker);
+}
+
+.wcbtn-close:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+.wcbtn:focus-visible {
+  outline: 3px solid var(--marker);
+  outline-offset: -3px;
+}
+
+/* Stencil bridges: flat bars cut across AUDIO only, never DECK. */
+.stencil {
+  position: relative;
+}
+
+.stencil::before,
+.stencil::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  background: currentColor;
+  color: #000;
+  pointer-events: none;
+}
+
+.brand-word .stencil::before {
+  top: 8px;
+  height: 3px;
+}
+
+.brand-word .stencil::after {
+  top: 18px;
+  height: 3px;
+}
+
+.cap-title .stencil::before {
+  top: 3px;
+  height: 1.5px;
+}
+
+.cap-title .stencil::after {
+  top: 8px;
+  height: 1.5px;
+}
+
+/* the bars are the bar colour showing through, so they paint in the
+   surrounding background rather than the text colour */
+.brand-word .stencil::before,
+.brand-word .stencil::after,
+.cap-title .stencil::before,
+.cap-title .stencil::after {
+  background: #000;
+}
+
+/* ---------- banners ---------- */
+
+.error-banner,
+.paused-banner {
+  flex: none;
+  padding: 14px 22px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: var(--rule) solid var(--ink);
+}
+
+.error-banner {
+  background: var(--red);
+  color: #fff;
+}
+
+.paused-banner {
+  background: var(--ink);
+  color: var(--marker);
+}
+
+.loading {
+  padding: 60px 30px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ---------- views ---------- */
+
+.view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 30px 30px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+.view-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.view-hint {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #26261f;
+}
+
+/* Section header: black plate, rule, count */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0 14px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.section-label:first-of-type {
+  margin-top: 0;
+}
+
+.section-label > span:first-child {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  padding: 9px 18px 11px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.section-label .rule {
+  flex: 1;
+  height: var(--rule);
+  background: var(--ink);
+}
+
+/* ---------- device rows ---------- */
+
+.strip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--rule) solid var(--ink);
+  border-left: var(--rule) solid var(--ink);
+  border-right: var(--rule) solid var(--ink);
+}
+
+.strip {
+  --bg: var(--sheet);
+  --fg: var(--ink);
+  display: grid;
+  grid-template-columns: 88px 58px minmax(220px, 1fr) auto;
+  align-items: center;
+  min-height: 84px;
+  background: var(--bg);
+  color: var(--fg);
+  border-bottom: var(--rule) solid var(--ink);
+  transition: transform 90ms linear;
+}
+
+.strip.is-clickable {
+  cursor: pointer;
+}
+
+.strip.is-clickable:hover {
+  transform: translateX(7px);
+}
+
+.strip.is-default {
+  --bg: #000;
+  --fg: var(--marker);
+}
+
+.strip.is-manual {
+  --bg: #000;
+  --fg: var(--marker);
+}
+
+.strip.is-offline {
+  --bg: var(--dead);
+  --fg: var(--dead-ink);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.1) 0 3px,
+    transparent 3px 11px
+  );
+}
+
+.strip.is-offline.is-clickable:hover {
+  transform: none;
+}
+
+.rank {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--display);
+  font-size: 40px;
+  line-height: 1;
+  padding-bottom: 3px;
+}
+
+.strip.is-default .rank,
+.strip.is-manual .rank {
+  background: transparent;
+  color: var(--marker);
+}
+
+.device-glyph {
+  justify-self: center;
+  color: var(--fg);
+}
+
+.strip-body {
+  padding: 12px 8px 12px 0;
+  min-width: 0;
+}
+
+.device-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
+
+.device-sub {
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.strip-tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 14px;
+}
+
+/* Devices rows carry no rank slab. */
+.device-strip {
+  grid-template-columns: 58px minmax(240px, 1fr) auto auto;
+}
+
+/* ---------- badges ---------- */
+
+.badge {
+  display: inline-block;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--fg);
+  border: 2px solid var(--fg);
+}
+
+.badge-offline {
+  border-style: solid;
+}
+
+.badge-headset-off {
+  border-style: dashed;
+}
+
+.badge-saving {
+  border-style: dashed;
+  animation: saving-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes saving-pulse {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  min-height: 44px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 100ms linear,
+    color 100ms linear;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn-icon {
+  width: 46px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.btn-danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.strip.is-default .btn-danger,
+.strip.is-manual .btn-danger {
+  border-color: var(--marker);
+  color: var(--marker);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn-accent {
+  border-color: var(--marker);
+  color: #6b3c00;
+  background: var(--marker);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--marker);
+  border-color: var(--ink);
+}
+
+.move-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+}
+
+/* ---------- add a device ---------- */
+
+.btn-add-device {
+  display: block;
+  width: 100%;
+  min-height: 62px;
+  margin: 0 0 8px;
+  background: transparent;
+  color: var(--ink);
+  border: 5px solid var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.btn-add-device:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.add-device {
+  margin: 0 0 10px;
+  padding: 14px 16px;
+  border: 5px solid var(--ink);
+  background: var(--sheet);
+}
+
+.add-device-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.add-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 17rem;
+  overflow-y: auto;
+}
+
+.btn-add-row {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  background: transparent;
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  cursor: pointer;
+}
+
+.btn-add-row:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.empty-note {
+  padding: 16px 0;
+  font-weight: 700;
+  color: var(--dead-ink);
+}
+
+/* ---------- mixer ---------- */
+
+.mixer-strip {
+  grid-template-columns: 88px 58px minmax(200px, 1fr) minmax(240px, 1.1fr) 92px 116px;
+}
+
+/* Segmented meter: 20 blocks, filled up to the level. The range input sits
+   invisibly on top so dragging behaves exactly like a normal slider. */
+.vol {
+  position: relative;
+  height: 40px;
+  margin: 0 18px;
+}
+
+.segs {
+  display: flex;
+  gap: 3px;
+  height: 100%;
+}
+
+.segs span {
+  flex: 1;
+  border: 3px solid var(--fg);
+  background: transparent;
+}
+
+.segs span.f {
+  background: var(--fg);
+}
+
+.vol input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* No focus box while dragging; keyboard focus still shows one. */
+.vol:focus-within {
+  outline: none;
+}
+
+.vol:has(:focus-visible) {
+  outline: 3px solid var(--fg);
+  outline-offset: 4px;
+}
+
+.volume-value {
+  font-family: var(--display);
+  font-size: 28px;
+  text-align: right;
+  padding-right: 6px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.volume-value.is-muted {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.na {
+  padding-left: 20px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Volume lock: hardware that owns its own level (headset base stations, TVs
+   over HDMI) and ignores what Windows writes. The stamp sits in the Mute
+   button's slot and is deliberately dashed and unfilled: nothing here is
+   clickable, it explains why the fader is gone. The reason shows on hover and
+   on keyboard focus. */
+
+/* Same footprint as the Mute button it stands in for, so the control column
+   stays a straight line down the list. */
+.vol-lock-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 80px;
+  margin: 0 18px 0 12px;
+}
+
+.vol-lock {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 44px;
+  border: 3px dashed var(--fg);
+  color: var(--fg);
+  cursor: help;
+}
+
+.vol-lock-mark {
+  display: block;
+}
+
+.vol-lock-tip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  z-index: 30;
+  width: 290px;
+  padding: 12px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 3px solid var(--marker);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0;
+  transform: translateY(-50%) translateX(8px);
+  transition:
+    opacity 140ms var(--ease-out),
+    transform 140ms var(--ease-out);
+  pointer-events: none;
+}
+
+.vol-lock-tip.is-open {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vol-lock-tip {
+    transition: opacity 100ms linear;
+    transform: translateY(-50%);
+  }
+}
+
+.mute {
+  width: 80px;
+  margin: 0 18px 0 12px;
+}
+
+.mute.is-on {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* ---------- devices page ---------- */
+
+.type-select,
+.select {
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.type-select option,
+.select option {
+  background: #fff;
+  color: #000;
+  text-transform: none;
+}
+
+.rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 190px;
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.rename-suffix {
+  flex: 0 1 220px;
+}
+
+/* ---------- settings page ---------- */
+
+.setlist {
+  border: var(--rule) solid var(--ink);
+  margin-bottom: 8px;
+}
+
+.setrow {
+  --bg: var(--sheet);
+  --fg: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  min-height: 84px;
+  padding: 18px 22px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.setrow + .setrow {
+  border-top: var(--rule) solid var(--ink);
+}
+
+label.setrow {
+  cursor: pointer;
+}
+
+.setrow:hover {
+  background: #fff;
+}
+
+.setlabel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 68ch;
+}
+
+.setlabel b {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.setlabel span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3a3a38;
+}
+
+.swwrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.swwrap .state {
+  width: 30px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.switch {
+  position: relative;
+  width: 66px;
+  height: 34px;
+  flex: none;
+  padding: 0;
+  background: transparent;
+  border: 3px solid var(--fg);
+  cursor: pointer;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: var(--fg);
+  transition: transform 100ms linear;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--marker);
+  border-color: var(--marker);
+}
+
+.switch[aria-checked="true"]::after {
+  background: var(--ink);
+  transform: translateX(32px);
+}
+
+.about {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  padding: 16px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.about-d {
+  width: 3px;
+  height: 15px;
+  background: var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+  .strip.is-clickable:hover {
+    transform: none;
+  }
+}

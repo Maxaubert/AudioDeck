@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AudioDeck palette round</title>
+<style>
+  :root {
+    --chrome: #16181d;
+    --chrome-2: #1e2128;
+    --line: #333844;
+    --ink: #f2f4f8;
+    --ink-dim: #a6aebd;
+    --accent: #4ecdc4;
+    --pink: #ef7bab;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--chrome);
+    color: var(--ink);
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.4rem;
+    background: var(--chrome-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .brand span { color: var(--accent); }
+
+  .picker { display: flex; align-items: center; gap: 0.55rem; flex: 1; min-width: 340px; }
+
+  select {
+    flex: 1;
+    min-width: 250px;
+    font: inherit;
+    font-size: 1.05rem;
+    padding: 0.6rem 0.9rem;
+    color: var(--ink);
+    background: var(--chrome);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  select:hover { border-color: #4b5364; }
+  optgroup { color: var(--ink-dim); font-style: normal; }
+
+  button, .linkbtn {
+    font: inherit;
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0.65rem 0.95rem;
+    min-height: 44px;
+    color: var(--ink);
+    background: var(--chrome);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: border-color 140ms var(--ease), background 140ms var(--ease);
+  }
+  button:hover, .linkbtn:hover { border-color: #4b5364; background: #262a33; }
+  button:active { transform: scale(0.98); }
+
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .counter { font-variant-numeric: tabular-nums; color: var(--ink-dim); white-space: nowrap; }
+
+  .meta {
+    padding: 0.5rem 1.4rem;
+    background: var(--chrome-2);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-size: 0.97rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .tag.codex { color: var(--pink); border-color: #5c2f45; }
+  .tag.claude { color: var(--accent); border-color: #245c58; }
+  .tag.kind { color: var(--ink-dim); }
+
+  .stage { flex: 1; min-height: 0; background: #0b0c0f; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+
+  kbd {
+    font: inherit;
+    font-size: 0.84rem;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: var(--ink-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">Punk<span>Deck</span> palettes</div>
+    <div class="picker">
+      <button id="prev" type="button" aria-label="Previous variation">&#9664;</button>
+      <select id="pick" aria-label="Choose a variation"></select>
+      <button id="next" type="button" aria-label="Next variation">&#9654;</button>
+    </div>
+    <span class="counter" id="counter"></span>
+    <a class="linkbtn" id="open" href="#" target="_blank" rel="noopener">Open full page</a>
+  </header>
+  <div class="meta">
+    <span class="tag" id="source">&nbsp;</span>
+    <span class="tag kind" id="kind">&nbsp;</span>
+    <span id="desc"></span>
+    <span style="margin-left:auto"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> to browse</span>
+  </div>
+  <div class="stage">
+    <iframe id="frame" title="Variation preview"></iframe>
+  </div>
+
+<script>
+const MOCKUPS = [
+  { file: "cap-title.html", name: "Caption: strip with wordmark", by: "claude", kind: "caption",
+    desc: "Thin 32px black strip above the untouched nav: small AudioDeck wordmark left, standard controls right." },
+  { file: "cap-bare.html", name: "Caption: bare strip", by: "claude", kind: "caption",
+    desc: "Same strip with no text at all, so the chrome reads as one black block with the nav." },
+  { file: "cap-status.html", name: "Caption: with live status", by: "claude", kind: "caption",
+    desc: "The strip also carries an amber dot, AUTO ON, and the current output device." },
+  { file: "cap-hairline.html", name: "Caption: dark hairline", by: "claude", kind: "caption",
+    desc: "A 2px dark rule separates caption from nav, so the two bars read as distinct." },
+  { file: "cap-amberline.html", name: "Caption: amber hairline", by: "claude", kind: "caption",
+    desc: "Same but the separating rule is amber, tying the caption into the accent system." },
+  { file: "cap-tall.html", name: "Caption: taller, bigger targets", by: "claude", kind: "caption",
+    desc: "40px strip with 54px controls for easier hitting, at the cost of a little height." },
+  { file: "wc-merged.html", name: "Bolder: controls inside the nav bar", by: "claude", kind: "window",
+    desc: "No extra row at all: the controls tuck into the right of the tab bar behind an amber rule." },
+  { file: "wc-slimtop.html", name: "Slim caption above", by: "claude", kind: "window",
+    desc: "A 34px caption strip over the tabs: small wordmark left, controls right, hairline amber between." },
+  { file: "wc-statusbar.html", name: "Caption with live status", by: "claude", kind: "window",
+    desc: "The strip earns its height: AUTO ON plus the current output device beside the controls." },
+  { file: "wc-bigkeys.html", name: "Oversized keys", by: "claude", kind: "window",
+    desc: "Blunt 56px square keys flush to the window edge, with a knurled grip marking the drag zone." },
+  { file: "wc-plate.html", name: "Engraved nameplate", by: "claude", kind: "window",
+    desc: "Centred riveted plate with the wordmark; controls sunk into a machined pocket at the right." },
+  { file: "wc-leftlights.html", name: "Left cluster", by: "claude", kind: "window",
+    desc: "Controls move to the left as three punk squares, colour coded on hover only." },
+  { file: "wc-stencil.html", name: "Stencil controls", by: "claude", kind: "window",
+    desc: "Stencil-cut glyphs with bridges and overspray; hover fills solid, close fills red." },
+  { file: "wc-ticket.html", name: "Perforated caption", by: "claude", kind: "window",
+    desc: "Ticket edge with a dashed tear line and the controls boxed in their own stub." },
+  { file: "wc-tape.html", name: "Label tape caption", by: "claude", kind: "window",
+    desc: "Embossed tape with the name punched in; controls as punched cells in the same language." },
+  { file: "wc-marquee.html", name: "Marquee caption", by: "claude", kind: "window",
+    desc: "Bulb-edged strip with the controls in their own small bulb-framed plate." },
+  { file: "tb-faceplate.html", name: "Hardware faceplate", by: "claude", kind: "titlebar",
+    desc: "Rack panel: corner screws, engraved brand plate, amber status LED, machined tab buttons." },
+  { file: "tb-vu.html", name: "Live VU strip", by: "claude", kind: "titlebar",
+    desc: "Segmented L/R meters animate in the spare space with a scale and a peak readout." },
+  { file: "tb-masthead.html", name: "Newspaper masthead", by: "claude", kind: "titlebar",
+    desc: "Broadsheet nameplate with edition dateline and double rules; tabs ride the lower rule." },
+  { file: "tb-barcode.html", name: "Product barcode", by: "claude", kind: "titlebar",
+    desc: "Printed label with barcode and serial, boxed model code, stamped label-plate tabs." },
+  { file: "tb-marquee.html", name: "Cinema marquee", by: "claude", kind: "titlebar",
+    desc: "Bulb-ringed marquee frame with a slow chase; tabs are smaller marquee plates." },
+  { file: "tb-twotier.html", name: "Two tier bar", by: "claude", kind: "titlebar",
+    desc: "Brand and status on top, tab strip in its own band below, split by an amber rule." },
+  { file: "tb-ticket.html", name: "Ticket stub", by: "claude", kind: "titlebar",
+    desc: "Perforated bottom edge, dashed tear lines between sections, rotated AUDIO ONE stub." },
+  { file: "tb-stencil.html", name: "Spray stencil", by: "claude", kind: "titlebar",
+    desc: "Stencil-cut wordmark with letter bridges and overspray; crate-label tabs." },
+  { file: "tb-slap.html", name: "Sticker slap", by: "claude", kind: "titlebar",
+    desc: "Brand and tabs are individually rotated stickers with keylines and peeled corners." },
+  { file: "tb-console.html", name: "Console strip", by: "claude", kind: "titlebar",
+    desc: "Channel-strip controls: level bar, switch graphic and interval readout with micro labels." },
+  { file: "tw-slanted.html", name: "Slanted sticker rows", by: "claude", kind: "shape",
+    desc: "Rows and nav plates skew alternately so the stack reads as slapped-on stickers; type is counter-skewed to stay square." },
+  { file: "tw-hardshadow.html", name: "Hard offset shadows", by: "claude", kind: "shape",
+    desc: "Flat unblurred shadow blocks under the row stack, section plates and add button; the in-use row casts amber." },
+  { file: "tw-notched.html", name: "Notched corners", by: "claude", kind: "shape",
+    desc: "Every box has chamfered corners, so shapes read as cut card rather than plain rectangles." },
+  { file: "tw-outline.html", name: "Detached rows", by: "claude", kind: "shape",
+    desc: "The continuous stack breaks into separate fully outlined boxes with gaps between them." },
+  { file: "tw-bigrank.html", name: "Oversized rank numerals", by: "claude", kind: "shape",
+    desc: "Rank digits scale up until they optically bleed past the slab edges, becoming the loudest element." },
+  { file: "tw-tagbadge.html", name: "Angled tag badges", by: "claude", kind: "detail",
+    desc: "State badges become small rotated price tags with a notched edge; counters match." },
+  { file: "tw-tallbar.html", name: "Tall title bar", by: "claude", kind: "nav",
+    desc: "Bar height roughly doubles, logomark and wordmark scale up, tabs sit on the baseline, amber build tag added." },
+  { file: "tw-invbar.html", name: "Inverted title bar", by: "claude", kind: "nav",
+    desc: "Light plate with dark lettering, amber active tab, amber rule kept. Body untouched." },
+  { file: "tw-compact.html", name: "Compact density", by: "claude", kind: "density",
+    desc: "Everything tightened about a fifth: rows, rank slab, nav, type scale. Denser pro-tool feel." },
+  { file: "tw-addbutton.html", name: "Add affordance restyle", by: "claude", kind: "detail",
+    desc: "The add control becomes a compact left-aligned amber plate with a boxed plus, instead of a full-width bar." },
+  { file: "tw-settings-cards.html", name: "Settings as cards", by: "claude", kind: "settings",
+    desc: "Settings page only: each setting becomes a bordered card in a two-column grid." },
+  { file: "tw-settings-table.html", name: "Settings as a table", by: "claude", kind: "settings",
+    desc: "Settings page only: dense two-column table with hairline rules and right-aligned controls." },
+  { file: "tw-settings-nav.html", name: "Settings with side nav", by: "claude", kind: "settings",
+    desc: "Settings page only: narrow left sub-nav switching between Automation, Startup, Names and About." },
+  { file: "cx-stacked-brand.html", name: "Stacked brand bar", by: "codex", kind: "nav",
+    desc: "Logomark and wordmark stack at the left of a taller bar; the tab strip starts further right." },
+  { file: "cx-icon-tabs.html", name: "Icons in the nav", by: "codex", kind: "nav",
+    desc: "Each nav label gains a small flat geometric glyph in the same language as the device icons." },
+  { file: "cx-ticket-rows.html", name: "Ticket edge rows", by: "codex", kind: "shape",
+    desc: "A perforated line of notches separates the rank slab from the row body, like a torn ticket stub." },
+  { file: "cx-rule-heavy.html", name: "Heavier rules", by: "codex", kind: "shape",
+    desc: "Double rules under section headers, thicker shell border and dividers. Same layout, more weight." },
+  { file: "cx-soft-edges.html", name: "Softened edges", by: "codex", kind: "shape",
+    desc: "The gentler variant: small corner radius, lighter rules, punk type and amber accent kept." },
+  { file: "cx-devices-rich.html", name: "Richer devices page", by: "codex", kind: "content",
+    desc: "Devices page only: ten plus endpoints grouped into Playback and Recording, several disabled or remembered." },
+];
+
+const pick = document.getElementById("pick");
+const frame = document.getElementById("frame");
+const counter = document.getElementById("counter");
+const sourceTag = document.getElementById("source");
+const kindTag = document.getElementById("kind");
+const desc = document.getElementById("desc");
+const openLink = document.getElementById("open");
+
+const groups = { claude: "Claude", codex: "Codex" };
+for (const [key, label] of Object.entries(groups)) {
+  const og = document.createElement("optgroup");
+  og.label = label;
+  MOCKUPS.forEach((m, i) => {
+    if (m.by !== key) return;
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = m.name + (m.kind ? "  (" + m.kind + ")" : "");
+    og.appendChild(opt);
+  });
+  pick.appendChild(og);
+}
+
+let index = 0;
+
+function show(i) {
+  index = (i + MOCKUPS.length) % MOCKUPS.length;
+  const m = MOCKUPS[index];
+  frame.src = m.file;
+  pick.value = String(index);
+  counter.textContent = (index + 1) + " / " + MOCKUPS.length;
+  sourceTag.textContent = m.by === "codex" ? "Codex" : "Claude";
+  sourceTag.className = "tag " + m.by;
+  kindTag.textContent = m.kind || "variation";
+  desc.textContent = m.desc;
+  openLink.href = m.file;
+  location.hash = m.file.replace(".html", "");
+}
+
+pick.addEventListener("change", () => show(Number(pick.value)));
+document.getElementById("prev").addEventListener("click", () => show(index - 1));
+document.getElementById("next").addEventListener("click", () => show(index + 1));
+document.addEventListener("keydown", (e) => {
+  if (e.target === pick) return;
+  if (e.key === "ArrowLeft") show(index - 1);
+  if (e.key === "ArrowRight") show(index + 1);
+});
+
+const fromHash = MOCKUPS.findIndex((m) => m.file.replace(".html", "") === location.hash.slice(1));
+show(fromHash >= 0 ? fromHash : 0);
+</script>
+</body>
+</html>

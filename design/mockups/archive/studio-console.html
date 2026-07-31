@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AudioDeck - studio-console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e12;
+    --panel: #12151c;
+    --panel-2: #171b24;
+    --well: #0e1117;
+    --line: #232a36;
+    --line-strong: #313a4a;
+    --ink: #eae7de;
+    --muted: #9aa3b2;
+    --dim: #5c6577;
+    --amber: #ffb230;
+    --amber-deep: #c9871c;
+    --amber-glow: rgba(255, 178, 48, 0.14);
+    --teal: #3fd8c2;
+    --teal-glow: rgba(63, 216, 194, 0.13);
+    --red: #ff6259;
+    --green: #3ecf7a;
+    --seg-off: #1c222e;
+    --cond: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Barlow", "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", "Consolas", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { background: #090a0e; }
+
+  body {
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+    background:
+      linear-gradient(180deg, #0a0c10 0%, #090a0e 100%);
+    min-height: 100vh;
+    padding: 40px 24px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ CONSOLE FRAME ============ */
+  .console {
+    width: 1180px;
+    max-width: 100%;
+    margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  }
+  /* flat corner screws */
+  .console::before, .console::after,
+  .masthead::before, .masthead::after {
+    content: "";
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #262d3b;
+    box-shadow: inset 0 0 0 1.5px #1a1f29;
+  }
+  .console::before { left: 10px; bottom: 10px; }
+  .console::after  { right: 10px; bottom: 10px; }
+  .masthead::before { left: 10px; top: 10px; }
+  .masthead::after  { right: 10px; top: 10px; }
+
+  /* ============ MASTHEAD ============ */
+  .masthead {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--panel);
+    border-radius: 8px 8px 0 0;
+    padding: 0 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 0;
+  }
+  .wordmark {
+    font-family: var(--cond);
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .wordmark .wm-deck { color: var(--amber); }
+  .brand-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--dim);
+    letter-spacing: 0.14em;
+    border-left: 1px solid var(--line);
+    padding-left: 18px;
+    line-height: 1.7;
+    text-transform: uppercase;
+  }
+  .brand-meta strong { color: var(--muted); font-weight: 600; }
+
+  .tabs {
+    display: flex;
+    align-items: stretch;
+  }
+  .tab {
+    appearance: none;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--line);
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 19px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .tab:last-child { border-right: 1px solid var(--line); }
+  .tab .led {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2a3140;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tab:hover { color: var(--ink); background: var(--panel-2); }
+  .tab[aria-selected="true"] {
+    color: var(--ink);
+    background: var(--bg);
+  }
+  .tab[aria-selected="true"] .led {
+    background: var(--amber);
+    box-shadow: 0 0 8px 1px var(--amber-glow), 0 0 2px var(--amber);
+  }
+  .tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px;
+    background: var(--amber);
+  }
+  .tab:focus-visible,
+  button:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  /* ============ PAGES ============ */
+  .page { display: none; padding: 34px 36px 40px; }
+  .page.is-active { display: block; }
+
+  .page-head {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: var(--cond);
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .page-title::after {
+    content: "";
+    display: inline-block;
+    width: 34px;
+    height: 2px;
+    background: var(--amber);
+    margin-left: 16px;
+    vertical-align: middle;
+  }
+  .page-sub {
+    color: var(--muted);
+    font-size: 17px;
+    max-width: 70ch;
+    margin-bottom: 28px;
+  }
+
+  .rack-label {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .rack-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+  .rack-label .count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ============ PRIORITY PAGE ============ */
+  .prio-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .prio-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .prio-row {
+    display: grid;
+    grid-template-columns: 52px 46px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .prio-row:hover { border-color: var(--line-strong); background: var(--panel-2); }
+  .prio-row:active { transform: scale(0.995); }
+
+  .prio-row.is-live {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 1px var(--amber), 0 0 22px var(--amber-glow);
+  }
+  .prio-row.is-live:hover { border-color: var(--amber); }
+  .prio-row.is-manual {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 1px var(--teal), 0 0 22px var(--teal-glow);
+  }
+  .prio-row.is-manual:hover { border-color: var(--teal); }
+  .prio-row.is-offline { opacity: 0.45; }
+  .prio-row.is-offline:hover { opacity: 0.6; }
+
+  .rank {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 27px;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1;
+  }
+  .is-live .rank { color: var(--amber); }
+  .is-manual .rank { color: var(--teal); }
+
+  .glyph {
+    width: 44px; height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--well);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+  .glyph svg { width: 24px; height: 24px; }
+  .is-live .glyph { color: var(--amber); border-color: rgba(255, 178, 48, 0.4); }
+  .is-manual .glyph { color: var(--teal); border-color: rgba(63, 216, 194, 0.4); }
+
+  .dev-text { min-width: 0; }
+  .dev-name {
+    font-weight: 600;
+    font-size: 19px;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .dev-sub {
+    font-size: 14.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .chip {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 9px 1px;
+    border-radius: 3px;
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
+    flex: none;
+  }
+  .chip-live { color: var(--amber); border-color: rgba(255, 178, 48, 0.55); background: var(--amber-glow); }
+  .chip-manual { color: var(--teal); border-color: rgba(63, 216, 194, 0.55); background: var(--teal-glow); }
+  .chip-offline { color: var(--muted); border-color: var(--line-strong); background: var(--well); }
+  .chip-disabled { color: var(--dim); border-color: var(--line); background: var(--well); }
+
+  .row-ctl { display: flex; gap: 6px; }
+  .icon-btn {
+    appearance: none;
+    width: 34px; height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--well);
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn.remove:hover { color: var(--red); border-color: rgba(255, 98, 89, 0.5); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  .add-device {
+    appearance: none;
+    width: 100%;
+    background: none;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 15px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .add-device:hover { color: var(--amber); border-color: var(--amber-deep); }
+  .add-device:active { transform: scale(0.995); }
+
+  /* legend */
+  .legend {
+    margin-top: 30px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    padding: 18px 22px;
+    display: flex;
+    gap: 36px;
+    align-items: center;
+  }
+  .legend-title {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+    flex: none;
+  }
+  .legend-item { display: flex; align-items: center; gap: 12px; }
+  .swatch {
+    width: 30px; height: 20px;
+    border-radius: 4px;
+    background: var(--well);
+    border: 1px solid var(--line-strong);
+    flex: none;
+  }
+  .swatch-live { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 0 10px var(--amber-glow); }
+  .swatch-manual { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal), 0 0 10px var(--teal-glow); }
+  .swatch-offline { opacity: 0.45; }
+  .legend-item span { font-size: 15px; color: var(--muted); }
+  .legend-item b { color: var(--ink); font-weight: 600; }
+
+  /* ============ MIXER PAGE ============ */
+  .mixer-deck {
+    display: flex;
+    gap: 14px;
+    align-items: stretch;
+  }
+  .mix-divider {
+    width: 1px;
+    background: var(--line);
+    margin: 6px 10px;
+    position: relative;
+  }
+  .mix-divider span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(180deg);
+    writing-mode: vertical-rl;
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--dim);
+    background: var(--bg);
+    padding: 12px 0;
+  }
+
+  .strip {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    transition: border-color 0.15s ease;
+  }
+  .strip:hover { border-color: var(--line-strong); }
+  .strip.is-live { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 0 24px var(--amber-glow); }
+  .strip.is-live:hover { border-color: var(--amber); }
+  .strip.is-manual { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal), 0 0 24px var(--teal-glow); }
+  .strip.is-manual:hover { border-color: var(--teal); }
+  .strip.is-offline { opacity: 0.42; }
+
+  .strip-head {
+    text-align: center;
+    width: 100%;
+  }
+  .strip-ch {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .is-live .strip-ch { color: var(--amber); }
+  .is-manual .strip-ch { color: var(--teal); }
+  .strip-name {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 19px;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+  .strip-sub {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .strip .glyph { width: 38px; height: 38px; }
+  .strip .glyph svg { width: 21px; height: 21px; }
+
+  /* fader assembly */
+  .fader-bay {
+    display: flex;
+    gap: 10px;
+    height: 252px;
+    align-items: stretch;
+    margin-top: 2px;
+  }
+  .ruler {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--dim);
+    line-height: 1;
+    padding: 2px 0;
+  }
+  .ruler i {
+    font-style: normal;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ruler i::after {
+    content: "";
+    width: 7px;
+    height: 1px;
+    background: var(--line-strong);
+  }
+
+  .fader-col {
+    position: relative;
+    width: 40px;
+    display: flex;
+    justify-content: center;
+  }
+  .fader-track {
+    width: 4px;
+    height: 100%;
+    background: var(--well);
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px #1a2029;
+  }
+  .fader-cap {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--lvl) * 1% - 11px);
+    width: 36px;
+    height: 22px;
+    background: #232a37;
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    cursor: grab;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .fader-cap::after {
+    content: "";
+    position: absolute;
+    left: 3px; right: 3px;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: var(--amber);
+  }
+  .is-manual .fader-cap::after { background: var(--teal); }
+  .fader-cap:hover {
+    border-color: var(--amber-deep);
+    box-shadow: 0 0 12px var(--amber-glow);
+  }
+  .is-manual .fader-cap:hover {
+    border-color: var(--teal);
+    box-shadow: 0 0 12px var(--teal-glow);
+  }
+  .is-muted-strip .fader-cap::after { background: var(--dim); }
+
+  /* LED segment meter */
+  .meter {
+    position: relative;
+    width: 12px;
+    height: 100%;
+    background: var(--seg-off);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .meter .lit {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top,
+      var(--green) 0%, var(--green) 60%,
+      var(--amber) 60%, var(--amber) 84%,
+      var(--red) 84%, var(--red) 100%);
+    clip-path: inset(calc((100 - var(--sig)) * 1%) 0 0 0);
+  }
+  /* segment gaps painted over both layers */
+  .meter::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to top,
+      transparent 0 6px,
+      var(--panel) 6px 9px);
+    pointer-events: none;
+  }
+  .is-muted-strip .meter .lit { opacity: 0.18; }
+
+  .offline-bay {
+    height: 252px;
+    width: 100%;
+    border: 1.5px dashed var(--line);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--dim);
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .readout {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 31px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout small {
+    font-size: 15px;
+    color: var(--dim);
+    font-weight: 500;
+    margin-left: 2px;
+  }
+  .is-muted-strip .readout { color: var(--dim); }
+
+  .mute-btn {
+    appearance: none;
+    width: 100%;
+    padding: 9px 0 8px;
+    background: var(--well);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--muted);
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .mute-btn .led {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #2a3140;
+  }
+  .mute-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .mute-btn:active { transform: scale(0.97); }
+  .mute-btn.is-muted {
+    color: var(--red);
+    border-color: rgba(255, 98, 89, 0.55);
+    background: rgba(255, 98, 89, 0.08);
+  }
+  .mute-btn.is-muted .led {
+    background: var(--red);
+    box-shadow: 0 0 8px rgba(255, 98, 89, 0.6);
+  }
+
+  /* ============ DEVICES PAGE ============ */
+  .dev-table { display: flex; flex-direction: column; gap: 8px; }
+  .dev-row {
+    display: grid;
+    grid-template-columns: 46px 1fr 190px 110px 118px;
+    align-items: center;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 16px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .dev-row:hover { border-color: var(--line-strong); background: var(--panel-2); }
+  .dev-row.is-disabled { opacity: 0.45; }
+  .dev-row.is-disabled:hover { opacity: 0.62; }
+
+  .type-select {
+    appearance: none;
+    width: 100%;
+    background: var(--well) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239aa3b2' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15.5px;
+    padding: 8px 34px 8px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .type-select:hover { border-color: var(--line-strong); }
+
+  .text-btn {
+    appearance: none;
+    width: 100%;
+    background: var(--well);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--muted);
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 14.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 8px 0;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .text-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .text-btn:active { transform: scale(0.97); }
+  .text-btn.warn:hover { color: var(--red); border-color: rgba(255, 98, 89, 0.5); }
+  .text-btn.good:hover { color: var(--green); border-color: rgba(62, 207, 122, 0.5); }
+
+  .dev-note {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+  .dev-note p {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 62ch;
+  }
+  .dev-note p b { color: var(--ink); font-weight: 600; }
+
+  .remember-toggle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: none;
+  }
+  .remember-toggle span {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 15.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .remember-toggle .count {
+    font-family: var(--mono);
+    color: var(--dim);
+    letter-spacing: 0.02em;
+  }
+
+  /* ============ SWITCHES ============ */
+  .switch {
+    appearance: none;
+    border: 1px solid var(--line-strong);
+    background: var(--well);
+    width: 58px;
+    height: 28px;
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+    flex: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.15s ease;
+  }
+  .switch:hover { border-color: var(--muted); }
+  .switch[aria-checked="true"] {
+    background: var(--amber-glow);
+    border-color: var(--amber);
+  }
+  .switch[aria-checked="true"]::after {
+    transform: translateX(30px);
+    background: var(--amber);
+    box-shadow: 0 0 10px var(--amber-glow);
+  }
+
+  /* ============ SETTINGS STRIP ============ */
+  .settings-strip {
+    border-top: 1px solid var(--line-strong);
+    background: var(--panel);
+    border-radius: 0 0 8px 8px;
+    padding: 18px 36px;
+    display: flex;
+    align-items: center;
+    gap: 44px;
+    position: relative;
+  }
+  .setting {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .setting > label, .setting > .setting-label {
+    font-family: var(--cond);
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .interval-select {
+    appearance: none;
+    background: var(--well) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239aa3b2' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 7px 36px 7px 12px;
+    cursor: pointer;
+  }
+  .interval-select:hover { border-color: var(--line-strong); }
+  .settings-ver {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="console">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <div class="brand">
+      <div class="wordmark">Audio<span class="wm-deck">Deck</span></div>
+      <div class="brand-meta">
+        Master Control · AD-01<br>
+        <strong>Out 4</strong> · <strong>Mic 2</strong> · Poll 2s
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Pages">
+      <button class="tab" role="tab" aria-selected="true" data-page="priority"><span class="led"></span>Priority</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="mixer"><span class="led"></span>Mixer</button>
+      <button class="tab" role="tab" aria-selected="false" data-page="devices"><span class="led"></span>Devices</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============ PRIORITY ============ -->
+    <section class="page is-active" id="page-priority" role="tabpanel" aria-label="Priority">
+      <div class="page-head"><h1 class="page-title">Priority</h1></div>
+      <p class="page-sub">Highest available wins. The top online device is written as the Windows default. Click any row to switch to it now; a clicked device holds as a manual override until it goes offline.</p>
+
+      <div class="prio-grid">
+
+        <!-- OUTPUTS -->
+        <div>
+          <div class="rack-label">Outputs <span class="count">4 / 6</span></div>
+          <div class="prio-list">
+
+            <div class="prio-row is-offline" tabindex="0">
+              <div class="rank">1</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">AirPods Pro <span class="chip chip-offline">Offline</span></div>
+                <div class="dev-sub">Apple · Bluetooth · last seen 2 h ago</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move AirPods Pro up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move AirPods Pro down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove AirPods Pro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <div class="prio-row is-live" tabindex="0">
+              <div class="rank">2</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">Arctis Nova Pro <span class="chip chip-live">In use</span></div>
+                <div class="dev-sub">Steelseries · Game channel · wireless base</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move Arctis Nova Pro up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move Arctis Nova Pro down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove Arctis Nova Pro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <div class="prio-row" tabindex="0">
+              <div class="rank">3</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="7.5" width="19" height="9" rx="4.5"/><path d="M9.5 16.5c.7-1.2 1.6-1.9 2.5-1.9s1.8.7 2.5 1.9"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">Quest 3</div>
+                <div class="dev-sub">Meta · Virtual Desktop audio bridge</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move Quest 3 up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move Quest 3 down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove Quest 3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <div class="prio-row" tabindex="0">
+              <div class="rank">4</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">LG TV</div>
+                <div class="dev-sub">NVIDIA High Definition Audio · HDMI</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move LG TV up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move LG TV down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove LG TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <button class="add-device">+ Add a device (2 more)</button>
+          </div>
+        </div>
+
+        <!-- MICROPHONES -->
+        <div>
+          <div class="rack-label">Microphones <span class="count">2 / 2</span></div>
+          <div class="prio-list">
+
+            <div class="prio-row" tabindex="0">
+              <div class="rank">1</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">Arctis Nova Pro Mic</div>
+                <div class="dev-sub">Steelseries · retractable boom</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move Arctis mic up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move Arctis mic down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove Arctis mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <div class="prio-row is-manual" tabindex="0">
+              <div class="rank">2</div>
+              <div class="glyph">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+              </div>
+              <div class="dev-text">
+                <div class="dev-name">DJI MIC MINI <span class="chip chip-manual">Manual</span></div>
+                <div class="dev-sub">DJI · USB receiver · held over rank 1</div>
+              </div>
+              <div class="row-ctl">
+                <button class="icon-btn" aria-label="Move DJI MIC MINI up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></button>
+                <button class="icon-btn" aria-label="Move DJI MIC MINI down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></button>
+                <button class="icon-btn remove" aria-label="Remove DJI MIC MINI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </div>
+            </div>
+
+            <button class="add-device">+ Add a device</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="legend">
+        <div class="legend-title">Signal key</div>
+        <div class="legend-item"><span class="swatch swatch-live"></span><span><b>Amber</b> · auto-selected, in use</span></div>
+        <div class="legend-item"><span class="swatch swatch-manual"></span><span><b>Teal</b> · manual override, holds until offline</span></div>
+        <div class="legend-item"><span class="swatch swatch-offline"></span><span><b>Dimmed</b> · offline, skipped in the chain</span></div>
+      </div>
+    </section>
+
+    <!-- ============ MIXER ============ -->
+    <section class="page" id="page-mixer" role="tabpanel" aria-label="Mixer">
+      <div class="page-head"><h1 class="page-title">Mixer</h1></div>
+      <p class="page-sub">Per-device levels, written straight to Windows. Offline channels park until the device returns.</p>
+
+      <div class="mixer-deck">
+
+        <!-- CH1 AirPods offline -->
+        <div class="strip is-offline">
+          <div class="strip-head">
+            <div class="strip-ch">CH 1</div>
+            <div class="strip-name">AirPods Pro</div>
+            <div class="strip-sub">Apple · Bluetooth</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></div>
+          <div class="offline-bay">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l16 16"/><path d="M9 9a4.5 4.5 0 0 0 6 6"/><path d="M5.5 12.5a7.5 7.5 0 0 0 13-.1"/></svg>
+            Offline
+          </div>
+          <div class="readout">&ndash;&ndash;<small>%</small></div>
+          <span class="chip chip-offline">No signal</span>
+        </div>
+
+        <!-- CH2 Arctis live -->
+        <div class="strip is-live">
+          <div class="strip-head">
+            <div class="strip-ch">CH 2 · Live</div>
+            <div class="strip-name">Arctis Nova Pro</div>
+            <div class="strip-sub">Steelseries · Game</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></div>
+          <div class="fader-bay">
+            <div class="ruler"><i>100</i><i>80</i><i>60</i><i>40</i><i>20</i><i>0</i></div>
+            <div class="fader-col" style="--lvl: 72;">
+              <div class="fader-track"></div>
+              <div class="fader-cap" role="slider" aria-label="Arctis Nova Pro volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="72" tabindex="0"></div>
+            </div>
+            <div class="meter" style="--sig: 68;" aria-hidden="true"><div class="lit"></div></div>
+          </div>
+          <div class="readout">72<small>%</small></div>
+          <button class="mute-btn"><span class="led"></span>Mute</button>
+        </div>
+
+        <!-- CH3 Quest -->
+        <div class="strip">
+          <div class="strip-head">
+            <div class="strip-ch">CH 3</div>
+            <div class="strip-name">Quest 3</div>
+            <div class="strip-sub">Meta · Virtual Desktop</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="7.5" width="19" height="9" rx="4.5"/><path d="M9.5 16.5c.7-1.2 1.6-1.9 2.5-1.9s1.8.7 2.5 1.9"/></svg></div>
+          <div class="fader-bay">
+            <div class="ruler"><i>100</i><i>80</i><i>60</i><i>40</i><i>20</i><i>0</i></div>
+            <div class="fader-col" style="--lvl: 45;">
+              <div class="fader-track"></div>
+              <div class="fader-cap" role="slider" aria-label="Quest 3 volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" tabindex="0"></div>
+            </div>
+            <div class="meter" style="--sig: 34;" aria-hidden="true"><div class="lit"></div></div>
+          </div>
+          <div class="readout">45<small>%</small></div>
+          <button class="mute-btn"><span class="led"></span>Mute</button>
+        </div>
+
+        <!-- CH4 LG muted -->
+        <div class="strip is-muted-strip">
+          <div class="strip-head">
+            <div class="strip-ch">CH 4</div>
+            <div class="strip-name">LG TV</div>
+            <div class="strip-sub">NVIDIA HD Audio</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg></div>
+          <div class="fader-bay">
+            <div class="ruler"><i>100</i><i>80</i><i>60</i><i>40</i><i>20</i><i>0</i></div>
+            <div class="fader-col" style="--lvl: 30;">
+              <div class="fader-track"></div>
+              <div class="fader-cap" role="slider" aria-label="LG TV volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" tabindex="0"></div>
+            </div>
+            <div class="meter" style="--sig: 26;" aria-hidden="true"><div class="lit"></div></div>
+          </div>
+          <div class="readout">30<small>%</small></div>
+          <button class="mute-btn is-muted"><span class="led"></span>Muted</button>
+        </div>
+
+        <div class="mix-divider" aria-hidden="true"><span>Microphones</span></div>
+
+        <!-- MIC 1 Steelseries -->
+        <div class="strip">
+          <div class="strip-head">
+            <div class="strip-ch">MIC 1</div>
+            <div class="strip-name">Arctis Nova Pro</div>
+            <div class="strip-sub">Steelseries · boom</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></div>
+          <div class="fader-bay">
+            <div class="ruler"><i>100</i><i>80</i><i>60</i><i>40</i><i>20</i><i>0</i></div>
+            <div class="fader-col" style="--lvl: 85;">
+              <div class="fader-track"></div>
+              <div class="fader-cap" role="slider" aria-label="Arctis mic level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="85" tabindex="0"></div>
+            </div>
+            <div class="meter" style="--sig: 52;" aria-hidden="true"><div class="lit"></div></div>
+          </div>
+          <div class="readout">85<small>%</small></div>
+          <button class="mute-btn"><span class="led"></span>Mute</button>
+        </div>
+
+        <!-- MIC 2 DJI manual -->
+        <div class="strip is-manual">
+          <div class="strip-head">
+            <div class="strip-ch">MIC 2 · Manual</div>
+            <div class="strip-name">DJI MIC MINI</div>
+            <div class="strip-sub">DJI · USB receiver</div>
+          </div>
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></div>
+          <div class="fader-bay">
+            <div class="ruler"><i>100</i><i>80</i><i>60</i><i>40</i><i>20</i><i>0</i></div>
+            <div class="fader-col" style="--lvl: 60;">
+              <div class="fader-track"></div>
+              <div class="fader-cap" role="slider" aria-label="DJI MIC MINI level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60" tabindex="0"></div>
+            </div>
+            <div class="meter" style="--sig: 74;" aria-hidden="true"><div class="lit"></div></div>
+          </div>
+          <div class="readout">60<small>%</small></div>
+          <button class="mute-btn"><span class="led"></span>Mute</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ DEVICES ============ -->
+    <section class="page" id="page-devices" role="tabpanel" aria-label="Devices">
+      <div class="page-head"><h1 class="page-title">Devices</h1></div>
+      <p class="page-sub">Every endpoint Windows can see, including disabled ones. Type sets the glyph and grouping; renames are written to Windows itself.</p>
+
+      <div class="rack-label">Endpoints <span class="count">8 shown</span></div>
+      <div class="dev-table">
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">Arctis Nova Pro</div>
+            <div class="dev-sub">Steelseries GameDAC Gen 2 · was &ldquo;Speakers (Arctis Nova Pro Chat)&rdquo;</div>
+          </div>
+          <select class="type-select" aria-label="Device type for Arctis Nova Pro">
+            <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">AirPods Pro</div>
+            <div class="dev-sub">Apple · Bluetooth LE · offline, remembered</div>
+          </div>
+          <select class="type-select" aria-label="Device type for AirPods Pro">
+            <option>Speakers</option><option selected>Headphones</option><option>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="7.5" width="19" height="9" rx="4.5"/><path d="M9.5 16.5c.7-1.2 1.6-1.9 2.5-1.9s1.8.7 2.5 1.9"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">Quest 3</div>
+            <div class="dev-sub">Meta · Virtual Desktop audio bridge · was &ldquo;Speakers (VDVAD)&rdquo;</div>
+          </div>
+          <select class="type-select" aria-label="Device type for Quest 3">
+            <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">LG TV</div>
+            <div class="dev-sub">NVIDIA High Definition Audio · HDMI port 1</div>
+          </div>
+          <select class="type-select" aria-label="Device type for LG TV">
+            <option>Speakers</option><option>Headphones</option><option>Headset</option><option selected>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">Arctis Nova Pro Mic</div>
+            <div class="dev-sub">Steelseries · capture · retractable boom</div>
+          </div>
+          <select class="type-select" aria-label="Device type for Arctis Nova Pro Mic">
+            <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">DJI MIC MINI</div>
+            <div class="dev-sub">DJI · USB-C receiver · 48 kHz</div>
+          </div>
+          <select class="type-select" aria-label="Device type for DJI MIC MINI">
+            <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn warn">Disable</button>
+        </div>
+
+        <div class="dev-row is-disabled">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="15" r="3.2"/><circle cx="12" cy="8" r="1.3"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">Realtek Digital Output <span class="chip chip-disabled">Disabled</span></div>
+            <div class="dev-sub">Realtek ALC1220 · optical, unused</div>
+          </div>
+          <select class="type-select" aria-label="Device type for Realtek Digital Output" disabled>
+            <option selected>Speakers</option><option>Headphones</option><option>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn good">Enable</button>
+        </div>
+
+        <div class="dev-row is-disabled">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></div>
+          <div class="dev-text">
+            <div class="dev-name">C920 Microphone <span class="chip chip-disabled">Disabled</span></div>
+            <div class="dev-sub">Logitech · webcam capture, echo-prone</div>
+          </div>
+          <select class="type-select" aria-label="Device type for C920 Microphone" disabled>
+            <option>Speakers</option><option>Headphones</option><option selected>Headset</option><option>TV</option>
+          </select>
+          <button class="text-btn">Rename</button>
+          <button class="text-btn good">Enable</button>
+        </div>
+
+      </div>
+
+      <div class="dev-note">
+        <p><b>Renames apply to Windows itself.</b> The new name shows up in the system tray, in every app's device picker, and survives reconnects. AudioDeck keeps the original hardware id underneath.</p>
+        <div class="remember-toggle">
+          <span>Show remembered devices <span class="count">(31)</span></span>
+          <button class="switch" role="switch" aria-checked="false" aria-label="Show remembered devices"></button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ SETTINGS STRIP ============ -->
+  <footer class="settings-strip">
+    <div class="setting">
+      <span class="setting-label" id="lbl-startup">Start with Windows</span>
+      <button class="switch" role="switch" aria-checked="true" aria-labelledby="lbl-startup"></button>
+    </div>
+    <div class="setting">
+      <span class="setting-label" id="lbl-pause">Pause automation</span>
+      <button class="switch" role="switch" aria-checked="false" aria-labelledby="lbl-pause"></button>
+    </div>
+    <div class="setting">
+      <label class="setting-label" for="poll-interval">Check devices every</label>
+      <select class="interval-select" id="poll-interval">
+        <option>1 second</option>
+        <option selected>2 seconds</option>
+        <option>5 seconds</option>
+        <option>10 seconds</option>
+      </select>
+    </div>
+    <div class="settings-ver">AudioDeck 1.4.2 · audioctl 0.9</div>
+  </footer>
+
+</div>
+
+<script>
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  const pages = document.querySelectorAll('.page');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.setAttribute('aria-selected', t === tab ? 'true' : 'false'));
+      pages.forEach(p => p.classList.toggle('is-active', p.id === 'page-' + tab.dataset.page));
+    });
+  });
+
+  // Switches (mockup toggle)
+  document.querySelectorAll('.switch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      sw.setAttribute('aria-checked', sw.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+    });
+  });
+
+  // Mute buttons (mockup toggle)
+  document.querySelectorAll('.mute-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const muted = btn.classList.toggle('is-muted');
+      btn.closest('.strip').classList.toggle('is-muted-strip', muted);
+      btn.lastChild.textContent = muted ? 'Muted' : 'Mute';
+    });
+  });
+</script>
+
+</body>
+</html>

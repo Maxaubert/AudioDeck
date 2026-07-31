@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioDeck - Codex punk 7</title>
+  <style>
+    :root {
+      --ink: #171612;
+      --paper: #f3ecd3;
+      --paper-bright: #fff9e8;
+      --red: #c83227;
+      --muted: #5b584e;
+      --line: 3px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--ink); }
+
+    body {
+      margin: 0;
+      min-width: 1040px;
+      color: var(--ink);
+      background:
+        linear-gradient(92deg, transparent 0 24%, rgba(243,236,211,.055) 24% 25%, transparent 25% 71%, rgba(243,236,211,.04) 71% 72%, transparent 72%),
+        repeating-linear-gradient(173deg, #171612 0 9px, #1d1b16 9px 11px, #171612 11px 21px);
+      font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    button, select, input { font: inherit; color: inherit; }
+    button, select { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    button { border-radius: 0; }
+
+    :focus-visible {
+      outline: 4px solid var(--paper-bright);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 7px var(--red);
+    }
+
+    .window {
+      width: min(1200px, calc(100vw - 48px));
+      margin: 24px auto;
+      background: var(--paper);
+      border: 5px solid var(--ink);
+      clip-path: polygon(
+        0 .35%, .5% 0, 11% .25%, 20% 0, 33% .28%, 47% .08%, 63% .3%, 75% 0, 89% .26%, 100% .05%,
+        99.7% 16%, 100% 29%, 99.6% 41%, 100% 57%, 99.7% 70%, 100% 84%, 99.55% 100%,
+        86% 99.75%, 72% 100%, 58% 99.7%, 43% 100%, 29% 99.72%, 14% 100%, .25% 99.75%,
+        0 84%, .3% 69%, 0 53%, .25% 38%, 0 21%
+      );
+    }
+
+    .appbar {
+      min-height: 84px;
+      padding: 12px 22px 10px;
+      display: grid;
+      grid-template-columns: 268px 1fr auto;
+      align-items: center;
+      gap: 24px;
+      background: var(--ink);
+      color: var(--paper);
+      border-bottom: 5px solid var(--red);
+      position: relative;
+    }
+
+    .appbar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -5px;
+      height: 5px;
+      background: repeating-linear-gradient(96deg, var(--red) 0 18px, var(--ink) 18px 21px, var(--red) 21px 47px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 58px;
+      height: 54px;
+      flex: 0 0 auto;
+      position: relative;
+      background: var(--red);
+      clip-path: polygon(4% 7%, 89% 0, 100% 13%, 93% 32%, 100% 48%, 91% 65%, 98% 91%, 82% 100%, 56% 94%, 31% 100%, 0 88%, 7% 68%, 0 49%, 8% 29%, 0 13%);
+    }
+
+    .brand-mark::before {
+      content: "";
+      position: absolute;
+      inset: 8px 9px 7px 8px;
+      background: var(--ink);
+      clip-path: polygon(0 9%, 72% 0, 100% 20%, 76% 38%, 100% 53%, 75% 69%, 100% 91%, 68% 100%, 48% 74%, 28% 100%, 0 88%, 19% 51%);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      left: 21px;
+      top: 12px;
+      width: 17px;
+      height: 30px;
+      background: var(--paper);
+      clip-path: polygon(40% 0, 100% 13%, 72% 45%, 100% 91%, 50% 100%, 0 73%, 26% 48%, 0 15%);
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 34px;
+      line-height: .84;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transform: scaleX(.91);
+      transform-origin: left center;
+    }
+
+    .wordmark span {
+      margin-left: 4px;
+      padding: 4px 5px 3px;
+      color: var(--ink);
+      background: var(--paper);
+      clip-path: polygon(2% 5%, 96% 0, 100% 82%, 92% 100%, 4% 93%, 0 18%);
+    }
+
+    .tabs {
+      align-self: stretch;
+      display: flex;
+      justify-content: center;
+      align-items: end;
+      gap: 5px;
+    }
+
+    .tab {
+      min-width: 128px;
+      height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-left: 2px solid var(--paper);
+      border-right: 2px solid var(--paper);
+      background: transparent;
+      color: var(--paper);
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 19px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      clip-path: polygon(4% 6%, 96% 0, 100% 14%, 97% 89%, 88% 100%, 7% 95%, 0 83%, 3% 17%);
+      transition: color 100ms linear, background 100ms linear, transform 100ms linear;
+    }
+
+    .tab:hover {
+      background: var(--paper);
+      color: var(--ink);
+      transform: translateY(-3px) rotate(-.4deg);
+    }
+
+    .tab[aria-selected="true"] {
+      color: var(--paper-bright);
+      background: var(--red);
+      border-color: var(--red);
+      transform: translateY(1px) rotate(.25deg);
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: 10px auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--paper);
+      font-family: "Arial Narrow", Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--red);
+      clip-path: polygon(12% 0, 100% 18%, 84% 100%, 0 77%);
+    }
+
+    main {
+      padding: 22px 28px 14px;
+      background:
+        linear-gradient(90deg, transparent 0 76%, rgba(23,22,18,.035) 76% 76.4%, transparent 76.4%),
+        var(--paper);
+    }
+
+    .page[hidden] { display: none; }
+    .page { animation: stamp-in 120ms steps(2, end); }
+
+    @keyframes stamp-in {
+      from { opacity: .4; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section { margin: 0 0 25px; }
+
+    .section-head {
+      min-height: 35px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      padding: 5px 17px 4px 14px;
+      color: var(--paper-bright);
+      background: var(--ink);
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 22px;
+      line-height: 1;
+      letter-spacing: 2.3px;
+      font-weight: 900;
+      clip-path: polygon(0 9%, 6% 0, 28% 5%, 41% 0, 65% 7%, 94% 0, 100% 19%, 97% 83%, 91% 100%, 70% 94%, 51% 100%, 30% 93%, 5% 100%, 0 82%);
+    }
+
+    .section-meta {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .section-cut {
+      height: 5px;
+      flex: 1;
+      background: repeating-linear-gradient(100deg, var(--ink) 0 21px, transparent 21px 24px, var(--ink) 24px 49px);
+      clip-path: polygon(0 18%, 18% 0, 36% 31%, 56% 4%, 73% 35%, 100% 0, 99% 82%, 77% 100%, 57% 72%, 35% 100%, 16% 74%, 0 100%);
+    }
+
+    .rows { display: grid; gap: 6px; }
+
+    .device-row {
+      min-height: 80px;
+      display: grid;
+      grid-template-columns: 65px 58px minmax(300px, 1fr) auto;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--paper-bright);
+      border: var(--line) solid var(--ink);
+      clip-path: polygon(
+        0 8%, .7% 0, 12% 2%, 22% 0, 33% 3%, 47% 0, 61% 2%, 74% 0, 87% 3%, 99.4% 0, 100% 12%,
+        99.5% 49%, 100% 88%, 99.1% 100%, 86% 98%, 72% 100%, 57% 97%, 43% 100%, 29% 98%, 15% 100%, .5% 97%, 0 86%, .4% 51%
+      );
+      transition: transform 90ms steps(2, end), background 90ms linear;
+    }
+
+    .device-row:nth-child(even) {
+      clip-path: polygon(
+        .5% 0, 14% 3%, 27% 0, 40% 2%, 54% 0, 68% 3%, 82% 0, 99.3% 2%, 100% 13%,
+        99.5% 50%, 100% 90%, 98.9% 100%, 83% 97%, 69% 100%, 55% 98%, 41% 100%, 26% 97%, 13% 100%, 0 96%, .4% 54%, 0 9%
+      );
+    }
+
+    .device-row:hover {
+      transform: translateX(5px);
+      background: #fffdf5;
+    }
+
+    .device-row.in-use {
+      color: var(--paper-bright);
+      background: var(--red);
+      border-color: var(--ink);
+    }
+
+    .device-row.override {
+      color: var(--paper-bright);
+      background:
+        repeating-linear-gradient(132deg, var(--ink) 0 13px, #302d26 13px 15px, var(--ink) 15px 27px);
+      border-color: var(--red);
+    }
+
+    .device-row.offline {
+      color: var(--muted);
+      background:
+        repeating-linear-gradient(135deg, var(--paper) 0 8px, #d1cab4 8px 10px, var(--paper) 10px 18px);
+      border-color: var(--muted);
+    }
+
+    .device-row.disabled-device {
+      color: var(--muted);
+      background:
+        repeating-linear-gradient(45deg, var(--paper) 0 7px, #c8c0a8 7px 9px, var(--paper) 9px 16px);
+      border-color: var(--muted);
+    }
+
+    .rank {
+      height: 48px;
+      display: grid;
+      place-items: center;
+      align-self: center;
+      margin-left: 10px;
+      color: var(--paper);
+      background: var(--ink);
+      font-family: Impact, Haettenschweiler, sans-serif;
+      font-size: 32px;
+      line-height: 1;
+      clip-path: polygon(7% 5%, 82% 0, 100% 18%, 88% 43%, 100% 68%, 86% 100%, 17% 91%, 0 74%, 8% 46%, 0 19%);
+      transform: rotate(-1deg);
+    }
+
+    .in-use .rank { color: var(--ink); background: var(--paper-bright); }
+    .override .rank { color: var(--paper-bright); background: var(--red); }
+    .offline .rank { color: var(--paper); background: var(--muted); }
+
+    .glyph {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      justify-self: center;
+      color: currentColor;
+      background: transparent;
+    }
+
+    .glyph svg {
+      width: 34px;
+      height: 34px;
+      overflow: visible;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.7;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .device-copy {
+      min-width: 0;
+      padding: 11px 12px 10px 4px;
+    }
+
+    .name-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 10px;
+    }
+
+    .device-name {
+      min-width: 0;
+      font-size: 20px;
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: -.2px;
+    }
+
+    .device-sub {
+      display: block;
+      margin-top: 6px;
+      color: inherit;
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: .2px;
+      opacity: .82;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 7px 3px;
+      color: var(--paper-bright);
+      background: var(--ink);
+      border: 2px solid var(--ink);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: .8px;
+      white-space: nowrap;
+      transform: rotate(.5deg);
+      clip-path: polygon(2% 8%, 93% 0, 100% 22%, 96% 87%, 88% 100%, 5% 92%, 0 75%, 3% 19%);
+    }
+
+    .in-use .badge {
+      color: var(--ink);
+      background: var(--paper-bright);
+      border-color: var(--paper-bright);
+    }
+
+    .override .badge {
+      color: var(--paper-bright);
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .offline .badge {
+      color: var(--paper-bright);
+      background: var(--muted);
+      border-color: var(--muted);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 14px 0 8px;
+    }
+
+    .tool-btn, .text-btn, .mute-btn {
+      min-width: 42px;
+      height: 40px;
+      padding: 0 11px;
+      border: 2px solid currentColor;
+      color: inherit;
+      background: transparent;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 900;
+      text-transform: uppercase;
+      clip-path: polygon(3% 8%, 89% 0, 100% 15%, 94% 85%, 85% 100%, 7% 93%, 0 79%, 5% 17%);
+    }
+
+    .tool-btn { padding: 0; }
+
+    .tool-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.8;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      pointer-events: none;
+    }
+
+    .tool-btn:hover, .tool-btn:active,
+    .text-btn:hover, .text-btn:active,
+    .mute-btn:hover, .mute-btn:active {
+      color: var(--paper-bright);
+      background: var(--ink);
+      border-color: var(--ink);
+      transform: rotate(-2deg);
+    }
+
+    .in-use .tool-btn:hover, .in-use .text-btn:hover, .in-use .mute-btn:hover {
+      color: var(--red);
+      background: var(--paper-bright);
+      border-color: var(--paper-bright);
+    }
+
+    .override .tool-btn:hover, .override .text-btn:hover, .override .mute-btn:hover {
+      color: var(--paper-bright);
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .offline .tool-btn { opacity: .5; }
+
+    .add-device {
+      width: 100%;
+      min-height: 49px;
+      margin-top: 7px;
+      border: 3px dashed var(--ink);
+      color: var(--ink);
+      background:
+        repeating-linear-gradient(100deg, transparent 0 34px, rgba(23,22,18,.04) 34px 36px, transparent 36px 68px);
+      font-weight: 900;
+      letter-spacing: .4px;
+      text-align: left;
+      padding: 0 21px;
+      clip-path: polygon(0 5%, 12% 0, 25% 4%, 38% 0, 51% 5%, 64% 0, 78% 4%, 90% 0, 100% 7%, 99.7% 92%, 89% 100%, 75% 95%, 62% 100%, 48% 96%, 35% 100%, 21% 95%, 9% 100%, 0 94%);
+    }
+
+    .add-device:hover {
+      color: var(--paper-bright);
+      background: var(--red);
+      border-color: var(--ink);
+    }
+
+    .legend {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      margin: -7px 2px 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+    .swatch {
+      width: 18px;
+      height: 14px;
+      border: 2px solid var(--ink);
+      background: var(--red);
+      clip-path: polygon(4% 0, 94% 6%, 100% 86%, 85% 100%, 0 87%);
+    }
+
+    .swatch.manual {
+      background: repeating-linear-gradient(135deg, var(--ink) 0 4px, var(--paper) 4px 6px, var(--ink) 6px 10px);
+    }
+
+    .mixer-row {
+      grid-template-columns: 65px 58px minmax(270px, 1fr) minmax(220px, 310px) 72px 82px;
+    }
+
+    .volume-wrap {
+      min-width: 0;
+      padding: 0 15px 0 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 23px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 12px;
+      border: 2px solid currentColor;
+      background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 13px);
+      clip-path: polygon(0 13%, 14% 0, 29% 19%, 43% 0, 58% 17%, 73% 0, 88% 16%, 100% 0, 99% 89%, 84% 100%, 69% 83%, 54% 100%, 38% 84%, 22% 100%, 8% 82%, 0 100%);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 28px;
+      margin-top: -10px;
+      border: 3px solid var(--ink);
+      background: var(--red);
+      clip-path: polygon(14% 0, 86% 5%, 100% 23%, 88% 84%, 69% 100%, 5% 91%, 0 20%);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 9px;
+      border: 2px solid currentColor;
+      background: currentColor;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 17px;
+      height: 25px;
+      border: 3px solid var(--ink);
+      border-radius: 0;
+      background: var(--red);
+    }
+
+    .percent {
+      text-align: right;
+      padding-right: 9px;
+      font-family: Impact, Haettenschweiler, sans-serif;
+      font-size: 23px;
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+
+    .mute-btn {
+      margin-right: 12px;
+      padding: 0 8px;
+    }
+
+    .mute-btn.is-muted {
+      color: var(--paper-bright);
+      background: var(--ink);
+    }
+
+    .unavailable {
+      padding-left: 8px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+    }
+
+    .devices-toolbar {
+      min-height: 51px;
+      margin-bottom: 17px;
+      padding: 6px 12px 6px 17px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: var(--paper-bright);
+      background: var(--ink);
+      border-left: 8px solid var(--red);
+      font-weight: 900;
+      clip-path: polygon(0 4%, 12% 0, 26% 5%, 41% 0, 56% 4%, 72% 0, 87% 5%, 100% 0, 99.7% 91%, 90% 100%, 74% 95%, 59% 100%, 43% 95%, 27% 100%, 13% 95%, 0 100%);
+    }
+
+    .devices-toolbar small {
+      font-size: 13px;
+      font-weight: 800;
+      opacity: .84;
+    }
+
+    .remembered-copy {
+      display: flex;
+      align-items: baseline;
+      gap: 11px;
+      flex-wrap: wrap;
+    }
+
+    .manage-row {
+      grid-template-columns: 74px minmax(285px, 1fr) 178px 92px 92px;
+      padding: 0 13px 0 3px;
+    }
+
+    .manage-row .glyph { width: 48px; }
+
+    select {
+      min-width: 0;
+      height: 40px;
+      padding: 0 28px 0 10px;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      background: var(--paper-bright);
+      font-size: 15px;
+      font-weight: 900;
+      border-radius: 0;
+    }
+
+    .manage-row > .text-btn { margin-left: 6px; }
+
+    .settings-strip {
+      min-height: 70px;
+      padding: 10px 27px 13px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.35fr;
+      align-items: stretch;
+      gap: 10px;
+      color: var(--paper-bright);
+      background:
+        repeating-linear-gradient(132deg, var(--ink) 0 17px, #2b2922 17px 19px, var(--ink) 19px 35px);
+      border-top: 5px solid var(--red);
+    }
+
+    .setting {
+      min-width: 0;
+      padding: 7px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 2px solid var(--paper);
+      color: var(--paper-bright);
+      background: var(--ink);
+      font-size: 15px;
+      font-weight: 900;
+      clip-path: polygon(1% 5%, 18% 0, 37% 4%, 55% 0, 74% 5%, 98% 0, 100% 18%, 97% 86%, 90% 100%, 69% 95%, 49% 100%, 27% 95%, 5% 100%, 0 81%);
+    }
+
+    .setting select {
+      width: 121px;
+      flex: 0 0 auto;
+    }
+
+    .switch {
+      width: 59px;
+      height: 32px;
+      padding: 3px;
+      flex: 0 0 auto;
+      border: 2px solid var(--paper);
+      color: var(--paper);
+      background: transparent;
+      position: relative;
+      clip-path: polygon(3% 8%, 94% 0, 100% 16%, 95% 88%, 84% 100%, 4% 92%, 0 76%, 5% 17%);
+    }
+
+    .switch::after {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 22px;
+      background: var(--paper);
+      clip-path: polygon(9% 0, 88% 8%, 100% 23%, 91% 88%, 74% 100%, 0 89%, 7% 18%);
+      transition: transform 100ms steps(2, end), background 100ms linear;
+    }
+
+    .switch[aria-checked="true"] {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .switch[aria-checked="true"]::after {
+      background: var(--paper-bright);
+      transform: translateX(29px);
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 5;
+      right: 29px;
+      bottom: 24px;
+      max-width: 340px;
+      padding: 13px 18px;
+      color: var(--paper-bright);
+      background: var(--red);
+      border: 3px solid var(--ink);
+      font-weight: 900;
+      clip-path: polygon(1% 6%, 93% 0, 100% 17%, 95% 89%, 85% 100%, 7% 94%, 0 78%, 4% 19%);
+      transform: translateY(120px) rotate(-1deg);
+      transition: transform 130ms steps(2, end);
+    }
+
+    .toast.show { transform: translateY(0) rotate(-1deg); }
+
+    @media (max-width: 1120px) {
+      .window { width: calc(100vw - 20px); margin: 10px auto; }
+      .appbar { grid-template-columns: 238px 1fr auto; gap: 12px; padding-inline: 16px; }
+      .tab { min-width: 112px; }
+      main { padding-inline: 18px; }
+      .mixer-row { grid-template-columns: 60px 52px minmax(245px, 1fr) 220px 66px 78px; }
+      .manage-row { grid-template-columns: 67px minmax(260px, 1fr) 165px 88px 88px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window" role="application" aria-label="AudioDeck">
+    <header class="appbar">
+      <div class="brand" aria-label="AudioDeck">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div class="wordmark">Audio<span>Deck</span></div>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="AudioDeck pages">
+        <button class="tab" id="tab-priority" type="button" role="tab" aria-selected="true" aria-controls="priority">Priority</button>
+        <button class="tab" id="tab-mixer" type="button" role="tab" aria-selected="false" aria-controls="mixer" tabindex="-1">Mixer</button>
+        <button class="tab" id="tab-devices" type="button" role="tab" aria-selected="false" aria-controls="devices" tabindex="-1">Devices</button>
+      </nav>
+
+      <div class="status" aria-label="Automation on, checking every 2 seconds">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>AUTO ON / 2S</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="page" id="priority" role="tabpanel" aria-labelledby="tab-priority"></section>
+      <section class="page" id="mixer" role="tabpanel" aria-labelledby="tab-mixer" hidden></section>
+      <section class="page" id="devices" role="tabpanel" aria-labelledby="tab-devices" hidden></section>
+    </main>
+
+    <footer class="settings-strip" aria-label="Settings">
+      <div class="setting">
+        <span>Start with Windows</span>
+        <button class="switch" type="button" role="switch" aria-checked="true" aria-label="Start with Windows"></button>
+      </div>
+      <div class="setting">
+        <span>Pause automation</span>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Pause automation"></button>
+      </div>
+      <label class="setting">
+        <span>Check devices every</span>
+        <select aria-label="Device check interval">
+          <option selected>2 seconds</option>
+          <option>5 seconds</option>
+          <option>10 seconds</option>
+        </select>
+      </label>
+    </footer>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const outputs = [
+      { name: "AirPods Pro", maker: "Apple", type: "Headphones", state: "offline", badge: "OFFLINE" },
+      { name: "Arctis Nova Pro", maker: "Steelseries", type: "Headset", state: "in-use", badge: "IN USE", volume: 100 },
+      { name: "Quest", maker: "Meta", type: "Headphones", volume: 62 },
+      { name: "NVIDIA High Definition Audio", maker: "LG", type: "TV", volume: 45 }
+    ];
+
+    const microphones = [
+      { name: "Arctis Nova Pro Mic", maker: "Steelseries", type: "Microphone", volume: 100, mic: true },
+      { name: "DJI MIC MINI", maker: "DJI", type: "Wireless microphone", state: "override", badge: "MANUAL OVERRIDE", volume: 62, mic: true }
+    ];
+
+    const deviceIcon = (mic = false, tv = false) => {
+      if (mic) {
+        return `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M12 4l6-2 6 3v15l-6 3-6-3zM8 17v3l4 6 6 2 6-2 4-6v-3M18 28v6M12 34h12M12 9l4 2M20 7l4 2M12 15l4 2M20 13l4 2"/></svg></span>`;
+      }
+      if (tv) {
+        return `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M3 7l29-2 1 22-30 2zM12 34l6-6 7 6M9 11l18-1M9 15l12-1M9 19l15-1"/></svg></span>`;
+      }
+      return `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 36 36"><path d="M5 19v-7l4-7 9-3 9 4 4 8v6M4 18l7-2 1 15-7 2zM25 17l7 2-2 14-7-2zM12 25l4 3M24 25l-4 3"/></svg></span>`;
+    };
+
+    const actionButton = (kind, label, path, dir = "") =>
+      `<button class="tool-btn ${kind}" type="button" aria-label="${label}" ${dir ? `data-dir="${dir}"` : ""}><svg viewBox="0 0 20 20"><path d="${path}"/></svg></button>`;
+
+    const rankActions = () => `<div class="row-actions">
+      ${actionButton("move", "Move up", "M3 13L10 6l7 7M10 6v10", "-1")}
+      ${actionButton("move", "Move down", "M3 7l7 7 7-7M10 4v10", "1")}
+      ${actionButton("remove", "Remove", "M4 5l12 11M16 5L4 16")}
+    </div>`;
+
+    const nameBlock = d => `<div class="device-copy">
+      <div class="name-line">
+        <strong class="device-name">${d.name}</strong>
+        ${d.badge ? `<span class="badge">${d.badge}</span>` : ""}
+      </div>
+      <small class="device-sub">${d.maker} / ${d.type}</small>
+    </div>`;
+
+    const priorityRow = (d, index) => `<article class="device-row ${d.state || ""}">
+      <span class="rank" aria-label="Rank ${index + 1}">${index + 1}</span>
+      ${deviceIcon(d.mic, d.type === "TV")}
+      ${nameBlock(d)}
+      ${rankActions()}
+    </article>`;
+
+    const mixerRow = (d, index) => {
+      const offline = d.state === "offline";
+      return `<article class="device-row mixer-row ${d.state || ""}">
+        <span class="rank" aria-label="Rank ${index + 1}">${index + 1}</span>
+        ${deviceIcon(d.mic, d.type === "TV")}
+        ${nameBlock(d)}
+        ${offline
+          ? `<span class="unavailable">No control</span><span class="percent">OFF</span><button class="mute-btn" type="button" disabled aria-label="${d.name} unavailable">Mute</button>`
+          : `<label class="volume-wrap"><input type="range" min="0" max="100" value="${d.volume}" aria-label="${d.name} volume"></label><output class="percent">${d.volume}%</output><button class="mute-btn" type="button">Mute</button>`}
+      </article>`;
+    };
+
+    const rankedSection = (title, items, mode) => `<section class="section">
+      <header class="section-head">
+        <h2>${title}</h2>
+        <span class="section-meta">${items.length} ranked</span>
+        <span class="section-cut" aria-hidden="true"></span>
+      </header>
+      <div class="rows">${items.map((d, i) => mode === "mixer" ? mixerRow(d, i) : priorityRow(d, i)).join("")}</div>
+      ${mode === "priority" ? `<button class="add-device" type="button">+ Add a device (2 more)</button>` : ""}
+    </section>`;
+
+    document.querySelector("#priority").innerHTML = `
+      ${rankedSection("OUTPUTS", outputs, "priority")}
+      ${rankedSection("MICROPHONES", microphones, "priority")}
+      <div class="legend" aria-label="Device state legend">
+        <span><i class="swatch" aria-hidden="true"></i> In use</span>
+        <span><i class="swatch manual" aria-hidden="true"></i> Manual override</span>
+      </div>`;
+
+    document.querySelector("#mixer").innerHTML = `
+      ${rankedSection("OUTPUTS", outputs, "mixer")}
+      ${rankedSection("MICROPHONES", microphones, "mixer")}`;
+
+    const allDevices = [
+      ...outputs,
+      ...microphones,
+      { name: "Realtek Digital Output", maker: "Realtek", type: "Speakers", state: "disabled-device", disabled: true }
+    ];
+    const endpointTypes = ["Speakers", "Headphones", "Headset", "TV"];
+
+    const manageRow = (d, index) => {
+      const selected = d.type === "Wireless microphone" || d.type === "Microphone" ? "Headset" : d.type;
+      return `<article class="device-row manage-row ${d.state || ""}">
+        ${deviceIcon(d.mic, d.type === "TV")}
+        ${nameBlock(d)}
+        <select aria-label="${d.name} type">
+          ${endpointTypes.map(type => `<option ${type === selected ? "selected" : ""}>${type}</option>`).join("")}
+        </select>
+        <button class="text-btn rename" type="button">Rename</button>
+        <button class="text-btn disable" type="button">${d.disabled ? "Enable" : "Disable"}</button>
+      </article>`;
+    };
+
+    document.querySelector("#devices").innerHTML = `
+      <div class="devices-toolbar">
+        <div class="remembered-copy">
+          <span>Show remembered devices (31)</span>
+          <small>7 active endpoints</small>
+        </div>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Show remembered devices"></button>
+      </div>
+      <section class="section">
+        <header class="section-head">
+          <h2>ALL ENDPOINTS</h2>
+          <span class="section-meta">${allDevices.length} found</span>
+          <span class="section-cut" aria-hidden="true"></span>
+        </header>
+        <div class="rows">${allDevices.map(manageRow).join("")}</div>
+      </section>`;
+
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    const pages = [...document.querySelectorAll('[role="tabpanel"]')];
+    const toast = document.querySelector(".toast");
+    let toastTimer;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
+    }
+
+    function activateTab(tab) {
+      tabs.forEach(item => {
+        const active = item === tab;
+        item.setAttribute("aria-selected", String(active));
+        item.tabIndex = active ? 0 : -1;
+      });
+      pages.forEach(page => {
+        page.hidden = page.id !== tab.getAttribute("aria-controls");
+      });
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => activateTab(tab));
+      tab.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+        event.preventDefault();
+        const offset = event.key === "ArrowRight" ? 1 : -1;
+        const next = tabs[(index + offset + tabs.length) % tabs.length];
+        activateTab(next);
+        next.focus();
+      });
+    });
+
+    document.addEventListener("input", event => {
+      if (event.target.matches('input[type="range"]')) {
+        event.target.closest(".device-row").querySelector(".percent").textContent = `${event.target.value}%`;
+      }
+    });
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button || button.classList.contains("tab")) return;
+
+      if (button.classList.contains("switch")) {
+        const next = button.getAttribute("aria-checked") !== "true";
+        button.setAttribute("aria-checked", String(next));
+        if (button.closest(".setting")) showToast(next ? "Setting on" : "Setting off");
+      }
+
+      if (button.classList.contains("mute-btn") && !button.disabled) {
+        const muted = button.classList.toggle("is-muted");
+        button.textContent = muted ? "Muted" : "Mute";
+        button.setAttribute("aria-pressed", String(muted));
+      }
+
+      if (button.classList.contains("move")) {
+        const row = button.closest(".device-row");
+        const rows = row.parentElement;
+        const direction = Number(button.dataset.dir);
+        const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+        if (sibling) {
+          direction < 0 ? rows.insertBefore(row, sibling) : rows.insertBefore(sibling, row);
+          [...rows.children].forEach((item, i) => {
+            item.querySelector(".rank").textContent = i + 1;
+            item.querySelector(".rank").setAttribute("aria-label", `Rank ${i + 1}`);
+          });
+        }
+      }
+
+      if (button.classList.contains("remove")) showToast("Removed from this ranking");
+
+      if (button.classList.contains("rename")) {
+        const name = button.closest(".device-row").querySelector(".device-name");
+        const nextName = window.prompt("Rename this Windows device", name.textContent);
+        if (nextName && nextName.trim()) {
+          name.textContent = nextName.trim();
+          showToast("Device renamed");
+        }
+      }
+
+      if (button.classList.contains("disable")) {
+        const enabling = button.textContent.trim() === "Enable";
+        button.textContent = enabling ? "Disable" : "Enable";
+        button.closest(".device-row").classList.toggle("disabled-device", !enabling);
+        showToast(enabling ? "Device enabled" : "Device disabled");
+      }
+
+      if (button.classList.contains("add-device")) showToast("Choose from 2 more devices");
+    });
+  </script>
+</body>
+</html>

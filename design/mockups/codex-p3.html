@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioDeck - Codex punk 3</title>
+  <style>
+    :root {
+      --card: #b7aa92;
+      --card-light: #d2c7b0;
+      --card-dark: #8f846f;
+      --ink: #141412;
+      --orange: #f45116;
+      --chalk: #f4eedf;
+      --muted: #5b554a;
+      --disabled: #c5bda9;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: #5f594e; }
+    body {
+      margin: 0;
+      min-width: 760px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14px 22px, rgba(20,20,18,.07) 0 1px, transparent 1.5px) 0 0 / 37px 31px,
+        #5f594e;
+      font: 17px/1.3 "Arial Narrow", Arial, Helvetica, sans-serif;
+    }
+
+    button, select, input { font: inherit; color: inherit; }
+    button, select { cursor: pointer; }
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 4px solid var(--chalk);
+      outline-offset: 2px;
+    }
+
+    .window {
+      width: min(1200px, calc(100% - 40px));
+      margin: 20px auto;
+      border: 3px solid var(--ink);
+      background:
+        radial-gradient(circle at 8% 18%, rgba(20,20,18,.05) 0 1px, transparent 1.5px) 0 0 / 29px 27px,
+        var(--card);
+      min-height: calc(100vh - 40px);
+    }
+
+    .appbar {
+      height: 76px;
+      display: grid;
+      grid-template-columns: 286px 1fr auto;
+      align-items: stretch;
+      background: var(--ink);
+      color: var(--chalk);
+      border-bottom: 3px solid var(--ink);
+      position: relative;
+      isolation: isolate;
+    }
+
+    .appbar::after,
+    .spray::after,
+    .section-mark::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, currentColor 0 1.2px, transparent 1.6px),
+        radial-gradient(circle, currentColor 0 1px, transparent 1.4px);
+      background-size: 17px 19px, 23px 21px;
+      opacity: .28;
+    }
+
+    .appbar::after {
+      color: var(--ink);
+      inset: auto 0 -8px 0;
+      height: 13px;
+      z-index: -1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 10px 20px;
+      border-right: 2px solid var(--card-dark);
+      min-width: 0;
+    }
+
+    .mark {
+      width: 47px;
+      height: 48px;
+      border: 5px solid var(--orange);
+      position: relative;
+      transform: rotate(-2deg);
+      flex: 0 0 auto;
+    }
+
+    .mark::before,
+    .mark::after {
+      content: "";
+      position: absolute;
+      background: var(--orange);
+      transform: skewX(-10deg);
+    }
+
+    .mark::before { width: 7px; height: 34px; left: 10px; top: 2px; }
+    .mark::after { width: 7px; height: 25px; right: 9px; top: 11px; }
+    .mark i {
+      position: absolute;
+      width: 27px;
+      height: 6px;
+      background: var(--ink);
+      left: 5px;
+      top: 20px;
+      z-index: 2;
+    }
+
+    .brand-copy { min-width: 0; }
+    .wordmark {
+      display: block;
+      font: 900 29px/.9 Impact, "Arial Black", sans-serif;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .wordmark .cut { color: var(--orange); }
+    .brand-copy small {
+      display: block;
+      margin-top: 6px;
+      color: var(--card-light);
+      font: 800 10px/1 Arial, sans-serif;
+      letter-spacing: 2.1px;
+      text-transform: uppercase;
+    }
+
+    nav { display: flex; align-items: stretch; }
+    .tab {
+      min-width: 124px;
+      padding: 0 22px;
+      border: 0;
+      border-right: 2px solid #49463f;
+      color: var(--chalk);
+      background: var(--ink);
+      font: 900 16px/1 Impact, "Arial Black", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      position: relative;
+    }
+    .tab::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 14px;
+      height: 4px;
+      background: transparent;
+    }
+    .tab:hover { color: var(--orange); background: #24231f; }
+    .tab.active {
+      color: var(--ink);
+      background: var(--orange);
+    }
+    .tab.active::after { background: var(--ink); }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 19px;
+      color: var(--chalk);
+      white-space: nowrap;
+      font: 800 11px/1 Arial, sans-serif;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+    .status-dot { width: 10px; height: 10px; background: var(--orange); }
+
+    main { padding: 23px 24px 12px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .workspace-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 35px;
+      margin-bottom: 10px;
+    }
+    .workspace-head p {
+      margin: 0;
+      color: #332f28;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .legend { display: flex; gap: 15px; align-items: center; font-size: 12px; font-weight: 900; }
+    .legend span { display: inline-flex; gap: 6px; align-items: center; }
+    .swatch { width: 12px; height: 12px; background: var(--orange); border: 2px solid var(--ink); }
+    .swatch.manual { background: var(--ink); }
+
+    .list-section { margin-bottom: 22px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 38px;
+      border-bottom: 4px solid var(--ink);
+      margin-bottom: 7px;
+    }
+    .section-mark {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      height: 35px;
+      padding: 0 16px;
+      background: var(--ink);
+      color: var(--chalk);
+      transform: rotate(-.35deg);
+      font: 900 20px/1 Impact, "Arial Black", sans-serif;
+      letter-spacing: 2.3px;
+      text-transform: uppercase;
+      isolation: isolate;
+    }
+    .section-mark::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 15px;
+      height: 4px;
+      background: var(--ink);
+      border-top: 1px solid var(--card);
+      border-bottom: 1px solid var(--card);
+      z-index: 2;
+      opacity: .72;
+    }
+    .section-mark::after {
+      color: var(--ink);
+      inset: -4px -9px;
+      z-index: -1;
+    }
+    .section-count {
+      font: 900 12px/1 Arial, sans-serif;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .row {
+      min-height: 77px;
+      display: grid;
+      grid-template-columns: 56px 46px minmax(300px, 1fr) auto;
+      align-items: center;
+      border: 2px solid var(--ink);
+      border-top-width: 1px;
+      background: var(--card-light);
+      transition: transform .1s, background .1s, color .1s;
+      position: relative;
+    }
+    .row + .row { margin-top: 5px; }
+    .row:hover { transform: translateX(5px); background: var(--chalk); }
+    .row.in-use {
+      background: var(--orange);
+      border-left-width: 10px;
+      grid-template-columns: 48px 46px minmax(300px, 1fr) auto;
+    }
+    .row.override {
+      background: var(--ink);
+      color: var(--chalk);
+      border-color: var(--ink);
+      border-left: 10px solid var(--orange);
+      grid-template-columns: 48px 46px minmax(300px, 1fr) auto;
+    }
+    .row.override:hover { background: #292721; }
+    .row.offline {
+      background: var(--disabled);
+      color: #514c43;
+      border-color: #514c43;
+    }
+    .row.disabled-endpoint { background: var(--disabled); color: #514c43; }
+
+    .rank {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      border-right: 2px solid currentColor;
+      font: 900 29px/1 Impact, "Arial Black", sans-serif;
+    }
+    .glyph { display: grid; place-items: center; }
+    .glyph svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+    .device-copy { min-width: 0; padding: 9px 12px; }
+    .device-copy strong {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 19px;
+      line-height: 1.08;
+      font-weight: 900;
+    }
+    .device-copy small {
+      display: block;
+      margin-top: 5px;
+      color: inherit;
+      opacity: .82;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .15px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 7px 4px;
+      flex: 0 0 auto;
+      background: var(--ink);
+      color: var(--chalk);
+      font: 900 10px/1 Arial, sans-serif;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+    }
+    .override .badge { background: var(--orange); color: var(--ink); }
+    .offline .badge { background: #6d6659; color: var(--chalk); }
+
+    .actions { display: flex; gap: 5px; padding-right: 11px; }
+    .icon-btn, .text-btn, .mute {
+      height: 39px;
+      border: 2px solid currentColor;
+      border-radius: 0;
+      background: transparent;
+      font-weight: 900;
+    }
+    .icon-btn { width: 39px; display: grid; place-items: center; padding: 0; }
+    .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.5; }
+    .icon-btn:hover, .text-btn:hover, .mute:hover {
+      color: var(--chalk);
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+    .override .icon-btn:hover { color: var(--ink); background: var(--orange); border-color: var(--orange); }
+    .icon-btn:active, .text-btn:active, .mute:active { transform: translateY(2px); }
+
+    .add {
+      width: 100%;
+      height: 49px;
+      margin-top: 7px;
+      border: 3px dashed var(--ink);
+      border-radius: 0;
+      background: rgba(244,238,223,.22);
+      font-weight: 900;
+      text-align: left;
+      padding: 0 20px;
+    }
+    .add:hover { background: var(--orange); }
+
+    .mixer-row {
+      grid-template-columns: 56px 46px minmax(265px, 1fr) minmax(190px, .7fr) 69px 78px;
+    }
+    .mixer-row.in-use,
+    .mixer-row.override {
+      grid-template-columns: 48px 46px minmax(265px, 1fr) minmax(190px, .7fr) 69px 78px;
+    }
+    .range-wrap { padding: 0 18px; display: flex; align-items: center; }
+    input[type="range"] {
+      width: 100%;
+      height: 22px;
+      margin: 0;
+      accent-color: var(--ink);
+    }
+    .override input[type="range"] { accent-color: var(--orange); }
+    .percent { font: 900 19px/1 Impact, "Arial Black", sans-serif; text-align: right; padding-right: 10px; }
+    .mute { margin-right: 10px; }
+    .mute.is-muted { background: var(--ink); color: var(--chalk); }
+    .override .mute.is-muted { background: var(--orange); color: var(--ink); border-color: var(--orange); }
+    .unavailable { padding: 0 18px; font-size: 13px; font-weight: 900; text-transform: uppercase; }
+    .dash { font: 900 19px/1 Impact, sans-serif; text-align: right; padding-right: 10px; }
+
+    .devices-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 53px;
+      border: 2px solid var(--ink);
+      background: var(--orange);
+      margin-bottom: 13px;
+      padding: 7px 10px 7px 17px;
+      font-weight: 900;
+    }
+    .devices-toolbar small { display: block; font-weight: 800; margin-top: 2px; }
+    .toggle-row { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; }
+    .switch {
+      width: 58px;
+      height: 32px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      padding: 3px;
+      background: var(--card-light);
+      position: relative;
+    }
+    .switch::after {
+      content: "";
+      display: block;
+      width: 22px;
+      height: 22px;
+      background: var(--ink);
+      transition: transform .12s;
+    }
+    .switch.on { background: var(--orange); }
+    .switch.on::after { transform: translateX(26px); }
+
+    .row.manage-row {
+      grid-template-columns: 50px minmax(300px, 1fr) 178px 93px 97px;
+      padding: 0 10px 0 4px;
+    }
+    .manage-row select {
+      width: 164px;
+      height: 39px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: var(--chalk);
+      color: var(--ink);
+      padding: 0 8px;
+      font-weight: 800;
+    }
+    .manage-row .text-btn { margin-left: 6px; }
+
+    .settings {
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.35fr;
+      border-top: 5px solid var(--ink);
+      background: var(--ink);
+      color: var(--chalk);
+    }
+    .setting {
+      min-height: 67px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 13px;
+      padding: 11px 20px;
+      border-right: 2px solid #4c4942;
+      font-size: 15px;
+      font-weight: 900;
+    }
+    .setting:last-child { border-right: 0; }
+    .setting .switch { flex: 0 0 auto; }
+    .setting select {
+      min-width: 126px;
+      height: 39px;
+      border: 2px solid var(--chalk);
+      border-radius: 0;
+      background: var(--ink);
+      color: var(--chalk);
+      padding: 0 8px;
+      font-weight: 900;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      padding: 13px 18px;
+      border: 3px solid var(--ink);
+      background: var(--orange);
+      color: var(--ink);
+      font-weight: 900;
+      transform: translateY(110px);
+      transition: transform .14s;
+      z-index: 20;
+    }
+    .toast.show { transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      .window { width: calc(100% - 20px); margin: 10px; }
+      .appbar { grid-template-columns: 245px 1fr auto; }
+      .brand { padding-left: 13px; }
+      .tab { min-width: 106px; padding: 0 14px; }
+      .mixer-row,
+      .mixer-row.in-use,
+      .mixer-row.override { grid-template-columns: 50px 42px minmax(230px,1fr) 165px 60px 72px; }
+      .row.manage-row { grid-template-columns: 45px minmax(260px,1fr) 155px 80px 86px; }
+      .manage-row select { width: 145px; }
+      .setting { padding: 10px 13px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="appbar">
+      <div class="brand">
+        <span class="mark spray" aria-hidden="true"><i></i></span>
+        <span class="brand-copy">
+          <span class="wordmark">AUDIO<span class="cut">/</span>DECK</span>
+          <small>Windows sound order</small>
+        </span>
+      </div>
+      <nav aria-label="AudioDeck pages">
+        <button class="tab active" type="button" data-page="priority" aria-selected="true">Priority</button>
+        <button class="tab" type="button" data-page="mixer" aria-selected="false">Mixer</button>
+        <button class="tab" type="button" data-page="devices" aria-selected="false">Devices</button>
+      </nav>
+      <div class="status"><span class="status-dot"></span>AUTO ON / 2S</div>
+    </header>
+
+    <main>
+      <section class="page active" id="priority" aria-labelledby="priority-tab"></section>
+      <section class="page" id="mixer" aria-labelledby="mixer-tab"></section>
+      <section class="page" id="devices" aria-labelledby="devices-tab"></section>
+    </main>
+
+    <footer class="settings" aria-label="Settings">
+      <div class="setting">
+        <span>Start with Windows</span>
+        <button class="switch on" type="button" role="switch" aria-checked="true" aria-label="Start with Windows"></button>
+      </div>
+      <div class="setting">
+        <span>Pause automation</span>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Pause automation"></button>
+      </div>
+      <label class="setting">
+        <span>Check devices every</span>
+        <select aria-label="Device check interval">
+          <option selected>2 seconds</option>
+          <option>5 seconds</option>
+          <option>10 seconds</option>
+        </select>
+      </label>
+    </footer>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const outputs = [
+      { name: "AirPods Pro", vendor: "Apple", type: "Headphones", state: "offline", status: "OFFLINE" },
+      { name: "Arctis Nova Pro", vendor: "Steelseries", type: "Headset", state: "in-use", status: "IN USE", volume: 100 },
+      { name: "Quest", vendor: "Meta", type: "Headphones", volume: 62 },
+      { name: "NVIDIA High Definition Audio", vendor: "LG", type: "TV", volume: 45 }
+    ];
+
+    const microphones = [
+      { name: "Arctis Nova Pro Mic", vendor: "Steelseries", type: "Microphone", volume: 100, mic: true },
+      { name: "DJI MIC MINI", vendor: "DJI", type: "Wireless microphone", state: "override", status: "MANUAL OVERRIDE", volume: 62, mic: true }
+    ];
+
+    const endpointTypes = ["Speakers", "Headphones", "Headset", "TV"];
+    const $ = (selector, scope = document) => scope.querySelector(selector);
+
+    function glyph(isMic) {
+      const path = isMic
+        ? '<rect x="11" y="3" width="10" height="18"/><path d="M7 14v3a9 9 0 0 0 18 0v-3M16 26v4M11 30h10"/>'
+        : '<path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2zM27 17h-5v10h3a2 2 0 0 0 2-2z"/>';
+      return '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">' + path + '</svg></span>';
+    }
+
+    function iconButton(label, path, direction) {
+      return '<button class="icon-btn ' + (label === "Remove" ? "remove" : "move") + '" type="button" aria-label="' + label + '"' +
+        (direction ? ' data-direction="' + direction + '"' : "") +
+        '><svg viewBox="0 0 20 20" aria-hidden="true"><path d="' + path + '"/></svg></button>';
+    }
+
+    function rankActions() {
+      return '<div class="actions">' +
+        iconButton("Move up", "M4 12l6-6 6 6", "-1") +
+        iconButton("Move down", "M4 8l6 6 6-6", "1") +
+        iconButton("Remove", "M5 5l10 10M15 5L5 15") +
+        '</div>';
+    }
+
+    function deviceCopy(device) {
+      return '<div class="device-copy"><strong>' + device.name +
+        (device.status ? '<span class="badge">' + device.status + '</span>' : "") +
+        '</strong><small>' + device.vendor + " / " + device.type + '</small></div>';
+    }
+
+    function priorityRow(device, index) {
+      return '<article class="row ' + (device.state || "") + '">' +
+        '<span class="rank">' + (index + 1) + '</span>' +
+        glyph(device.mic) + deviceCopy(device) + rankActions() +
+        '</article>';
+    }
+
+    function mixerRow(device, index) {
+      const control = device.state === "offline"
+        ? '<span class="unavailable">Unavailable</span><span class="dash">--</span><button class="mute" type="button" disabled>Mute</button>'
+        : '<label class="range-wrap"><input type="range" min="0" max="100" value="' + device.volume + '" aria-label="' + device.name + ' volume"></label>' +
+          '<span class="percent">' + device.volume + '%</span><button class="mute" type="button">Mute</button>';
+      return '<article class="row mixer-row ' + (device.state || "") + '">' +
+        '<span class="rank">' + (index + 1) + '</span>' +
+        glyph(device.mic) + deviceCopy(device) + control +
+        '</article>';
+    }
+
+    function listSection(title, devices, mode) {
+      const rows = devices.map((device, index) => mode === "mixer" ? mixerRow(device, index) : priorityRow(device, index)).join("");
+      return '<section class="list-section"><div class="section-head"><span class="section-mark">' + title + '</span>' +
+        '<span class="section-count">' + devices.length + ' ranked</span></div>' +
+        '<div class="rows">' + rows + '</div>' +
+        (mode === "priority" ? '<button class="add" type="button">+ Add a device (2 more)</button>' : "") +
+        '</section>';
+    }
+
+    $("#priority").innerHTML =
+      '<div class="workspace-head"><p>Highest available device becomes the Windows default.</p>' +
+      '<div class="legend" aria-label="Status legend"><span><i class="swatch"></i>In use</span><span><i class="swatch manual"></i>Manual override</span></div></div>' +
+      listSection("OUTPUTS", outputs, "priority") +
+      listSection("MICROPHONES", microphones, "priority");
+
+    $("#mixer").innerHTML =
+      '<div class="workspace-head"><p>Levels are saved per device.</p></div>' +
+      listSection("OUTPUTS", outputs, "mixer") +
+      listSection("MICROPHONES", microphones, "mixer");
+
+    const allEndpoints = [
+      ...outputs,
+      ...microphones,
+      { name: "Realtek Digital Output", vendor: "Realtek", type: "Disabled endpoint", state: "disabled-endpoint" }
+    ];
+
+    function manageRow(device, index) {
+      const selectedType = device.mic ? "Headset" : (device.type === "TV" ? "TV" : device.type === "Headset" ? "Headset" : device.type === "Headphones" ? "Headphones" : "Speakers");
+      const options = endpointTypes.map(type => '<option' + (type === selectedType ? " selected" : "") + '>' + type + '</option>').join("");
+      const isDisabled = device.name === "Realtek Digital Output";
+      return '<article class="row manage-row ' + (device.state || "") + '">' +
+        glyph(device.mic) +
+        '<div class="device-copy"><strong>' + device.name + '</strong><small>' + device.vendor + " / " + device.type + '</small></div>' +
+        '<select aria-label="' + device.name + ' type">' + options + '</select>' +
+        '<button class="text-btn rename" type="button">Rename</button>' +
+        '<button class="text-btn disable" type="button">' + (isDisabled ? "Enable" : "Disable") + '</button>' +
+        '</article>';
+    }
+
+    $("#devices").innerHTML =
+      '<div class="devices-toolbar"><span>All Windows audio endpoints<small>Active, offline and disabled</small></span>' +
+      '<label class="toggle-row"><span>Show remembered devices (31)</span>' +
+      '<button class="switch" type="button" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></label></div>' +
+      '<section class="list-section"><div class="section-head"><span class="section-mark">DEVICES</span>' +
+      '<span class="section-count">' + allEndpoints.length + ' found</span></div>' +
+      '<div class="rows">' + allEndpoints.map(manageRow).join("") + '</div></section>';
+
+    function toast(message) {
+      const element = $(".toast");
+      element.textContent = message;
+      element.classList.add("show");
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => element.classList.remove("show"), 1300);
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(item => {
+          item.classList.remove("active");
+          item.setAttribute("aria-selected", "false");
+        });
+        document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        $("#" + tab.dataset.page).classList.add("active");
+      });
+    });
+
+    const initialTab = document.querySelector('.tab[data-page="' + window.location.hash.slice(1) + '"]');
+    if (initialTab) {
+      initialTab.click();
+      window.setTimeout(() => window.scrollTo(0, 0), 0);
+    }
+
+    document.addEventListener("input", event => {
+      if (event.target.matches('input[type="range"]')) {
+        $(".percent", event.target.closest(".row")).textContent = event.target.value + "%";
+      }
+    });
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.classList.contains("switch")) {
+        button.classList.toggle("on");
+        button.setAttribute("aria-checked", button.classList.contains("on") ? "true" : "false");
+      }
+
+      if (button.classList.contains("mute")) {
+        button.classList.toggle("is-muted");
+        button.textContent = button.classList.contains("is-muted") ? "Muted" : "Mute";
+      }
+
+      if (button.classList.contains("move")) {
+        const row = button.closest(".row");
+        const sibling = button.dataset.direction === "-1" ? row.previousElementSibling : row.nextElementSibling;
+        if (sibling) {
+          if (button.dataset.direction === "-1") row.parentNode.insertBefore(row, sibling);
+          else row.parentNode.insertBefore(sibling, row);
+        }
+      }
+
+      if (button.classList.contains("remove")) toast("Removed from this ranking");
+      if (button.classList.contains("add")) toast("Device picker opened");
+
+      if (button.classList.contains("rename")) {
+        const name = $(".device-copy strong", button.closest(".row"));
+        const nextName = window.prompt("Rename this Windows device", name.textContent);
+        if (nextName && nextName.trim()) {
+          name.textContent = nextName.trim();
+          toast("Device renamed");
+        }
+      }
+
+      if (button.classList.contains("disable")) {
+        const enabling = button.textContent === "Enable";
+        button.textContent = enabling ? "Disable" : "Enable";
+        toast(enabling ? "Device enabled" : "Device disabled");
+      }
+    });
+  </script>
+</body>
+</html>

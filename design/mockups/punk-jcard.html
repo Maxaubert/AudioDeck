@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AudioDeck - punk-jcard</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens ============ */
+:root{
+  --ink:#141210;
+  --paper:#f0ebdc;
+  --sheet:#fbf8ef;
+  --rule:#141210;
+  --teal:#12b3a3;      /* state: automatic, in use */
+  --pink:#ff4f9a;      /* state: manual override */
+  --yellow:#ffd400;    /* tape label: outputs */
+  --red:#d8371f;       /* tape label: microphones */
+  --dead:#d7d2c3;      /* offline / disabled fill */
+  --dead-ink:#45423b;
+  --sub:#57534a;
+  --cond:'Oswald','Haettenschweiler','Arial Narrow',Impact,sans-serif;
+  --mark:'Permanent Marker','Comic Sans MS',cursive;
+  --body:Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:#c9c3b1;color:var(--ink);
+  font:17px/1.45 var(--body);
+  background-image:radial-gradient(rgba(0,0,0,.10) 1px,transparent 1px);
+  background-size:4px 4px;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:22px 18px 40px;
+}
+button,select,input{font:inherit;color:inherit}
+button,select{cursor:pointer}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 7px var(--yellow)}
+.spine :focus-visible{outline-color:var(--paper);box-shadow:0 0 0 7px var(--red)}
+
+/* ============ shell: the j-card ============ */
+.card{
+  width:min(1240px,100%);
+  display:grid;grid-template-columns:64px 1fr;
+  background:var(--paper);
+  border:4px solid var(--ink);
+  box-shadow:14px 14px 0 rgba(20,18,16,.35);
+}
+
+/* --- vertical spine strip --- */
+.spine{
+  background:var(--ink);color:var(--paper);
+  border-right:4px solid var(--ink);
+  display:flex;flex-direction:column;align-items:center;
+  padding:12px 0 14px;gap:14px;
+  background-image:repeating-linear-gradient(180deg,transparent 0 22px,rgba(240,235,220,.07) 22px 23px);
+}
+.side-chip{
+  width:38px;height:38px;display:grid;place-items:center;
+  background:var(--yellow);color:var(--ink);
+  font:700 24px/1 var(--cond);
+}
+.spine-title{flex:1;display:grid;place-items:center;overflow:hidden}
+.spine-title b{
+  transform:rotate(-90deg);white-space:nowrap;font-weight:700;
+  font:700 32px/1 var(--cond);letter-spacing:13px;text-transform:uppercase;
+  text-shadow:0 2px 0 var(--red);
+}
+.spine-foot{display:flex;flex-direction:column;align-items:center;gap:9px}
+.screw{width:9px;height:9px;background:var(--paper);opacity:.55}
+.spine-no{writing-mode:vertical-rl;transform:rotate(180deg);font:11px/1 var(--body);font-weight:700;letter-spacing:3px;opacity:.75}
+
+/* --- face --- */
+.face{min-width:0;display:flex;flex-direction:column}
+
+/* ============ compact header ============ */
+header{
+  display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:22px;
+  padding:9px 20px;border-bottom:4px solid var(--rule);background:var(--sheet);
+}
+.brand{display:flex;align-items:center;gap:11px}
+.hubs{display:flex;gap:5px}
+.hub{width:21px;height:21px;border:3px solid var(--ink);position:relative}
+.hub:after{content:"";position:absolute;inset:4px;background:var(--ink)}
+.hub.b{border-color:var(--red)}
+.hub.b:after{background:var(--red)}
+.wordmark{font:700 22px/1 var(--cond);letter-spacing:2px;text-transform:uppercase}
+.wordmark b{display:block;font-weight:700;padding-bottom:4px;margin-bottom:2px}
+.wordmark b:first-child{border-bottom:5px solid var(--teal)}
+.wordmark b:last-child{border-bottom:5px solid var(--pink);margin-bottom:0}
+
+nav{display:flex;gap:0;border:3px solid var(--ink)}
+.tab{
+  border:0;border-right:3px solid var(--ink);background:var(--sheet);
+  padding:9px 20px 8px;font:600 17px/1 var(--cond);letter-spacing:2.4px;text-transform:uppercase;
+  transition:background .1s linear,color .1s linear;
+}
+.tab:last-child{border-right:0}
+.tab:hover{background:var(--yellow)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);box-shadow:inset 0 -6px 0 var(--teal)}
+
+.status{
+  justify-self:end;display:flex;align-items:center;gap:9px;
+  font:16px/1 var(--mark);white-space:nowrap;
+}
+.status .live{width:12px;height:12px;background:var(--teal);border:2px solid var(--ink)}
+.status u{text-decoration:none;box-shadow:inset 0 -7px 0 var(--yellow);padding:0 2px}
+
+/* ============ page body ============ */
+main{padding:12px 20px 18px;flex:1}
+.page{display:none}
+.page.on{display:block}
+
+/* thin rail above the first tape window */
+.rail{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 2px 9px;border-bottom:2px solid var(--ink);margin-bottom:14px;
+}
+.rail .side{font:600 14px/1 var(--cond);letter-spacing:3px;text-transform:uppercase}
+.rail .tally{letter-spacing:2px}
+.legend{display:flex;gap:16px;align-items:center;font-weight:700;font-size:13.5px;letter-spacing:.6px;text-transform:uppercase}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:16px;height:16px;border:2px solid var(--ink);background:var(--teal)}
+.legend i.manual{background:var(--pink)}
+
+/* ============ tape window ============ */
+.tape{border:4px solid var(--ink);background:var(--sheet);margin-bottom:16px}
+.tape-head{
+  display:flex;align-items:center;gap:14px;
+  padding:6px 12px;border-bottom:4px solid var(--ink);background:var(--yellow);
+}
+.tape.mics .tape-head{background:var(--red);color:var(--paper)}
+.tape.all .tape-head{background:var(--teal)}
+.tape-head h2{margin:0;font:700 23px/1 var(--cond);letter-spacing:3.5px;text-transform:uppercase}
+.tape-head .count{font:15px/1 var(--mark);opacity:.95}
+.tape-head .reels{margin-left:auto;display:block}
+.tape.mics .reels{filter:invert(1)}
+
+/* ============ rows ============ */
+.row{
+  display:grid;align-items:center;
+  grid-template-columns:60px 44px minmax(200px,1fr) auto;
+  min-height:74px;border-bottom:2px solid var(--ink);
+  background:var(--sheet);
+  transition:background .1s linear,box-shadow .1s linear;
+}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--yellow);box-shadow:inset 8px 0 0 var(--ink)}
+.row.in-use{background:var(--teal)}
+.row.override{background:var(--pink)}
+.row.off{background:var(--dead);color:var(--dead-ink)}
+.row.off:hover{background:var(--dead);box-shadow:inset 8px 0 0 #8d887a}
+.rank{font:700 34px/1 var(--cond);text-align:center}
+.row.off .rank{opacity:.6}
+.glyph{display:grid;place-items:center}
+.glyph svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:square;stroke-linejoin:miter}
+.name{padding:11px 10px 11px 2px;min-width:0}
+.name strong{display:block;font-size:19.5px;line-height:1.15;font-weight:700}
+.name small{display:block;margin-top:3px;font-size:14.5px;font-weight:700;color:var(--sub)}
+.row.off .name small{color:var(--dead-ink)}
+.row.in-use .name small,.row.override .name small{color:#25211c}
+.tag{
+  display:inline-block;vertical-align:2px;margin-left:9px;
+  background:var(--ink);color:var(--yellow);
+  padding:4px 7px 3px;font:600 11.5px/1 var(--body);letter-spacing:1.4px;
+}
+.tag.grey{background:#6b6659;color:#fff}
+
+.acts{display:flex;gap:5px;padding:0 12px}
+.ibtn,.tbtn{
+  height:40px;min-width:40px;border:2.5px solid currentColor;background:transparent;
+  font:700 14px/1 var(--body);letter-spacing:.5px;
+  transition:background .1s linear,color .1s linear;
+}
+.tbtn{padding:0 13px}
+.ibtn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.8;stroke-linecap:square}
+.ibtn:hover,.tbtn:hover{background:var(--ink);color:var(--paper)}
+.row.in-use .ibtn:hover,.row.in-use .tbtn:hover,
+.row.override .ibtn:hover,.row.override .tbtn:hover{color:var(--yellow)}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button[disabled]:hover{background:transparent;color:inherit}
+
+/* add-device affordance */
+.add{
+  width:100%;height:54px;margin:0 0 20px;
+  border:3px dashed var(--ink);background:transparent;
+  font:19px/1 var(--mark);letter-spacing:.4px;
+  transition:background .1s linear;
+}
+.add:hover{background:var(--yellow)}
+
+/* ============ mixer ============ */
+.row.mix{grid-template-columns:60px 44px minmax(190px,1fr) minmax(180px,270px) 66px 92px}
+.fader-cell{padding:0 16px}
+.fader{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;display:block}
+.fader::-webkit-slider-runnable-track{height:8px;background:var(--ink)}
+.fader::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:28px;margin-top:-10px;background:var(--ink);border:0;box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 6px var(--ink)}
+.fader::-moz-range-track{height:8px;background:var(--ink)}
+.fader::-moz-range-thumb{width:20px;height:28px;border:0;border-radius:0;background:var(--ink);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 6px var(--ink)}
+.fader:hover::-webkit-slider-thumb{box-shadow:inset 0 0 0 3px var(--yellow),inset 0 0 0 6px var(--ink)}
+.fader:hover::-moz-range-thumb{box-shadow:inset 0 0 0 3px var(--yellow),inset 0 0 0 6px var(--ink)}
+.pct{font:700 22px/1 var(--cond);text-align:right;letter-spacing:1px}
+.unavail{font-weight:700;font-size:15px;padding:0 16px}
+.mute{margin:0 12px}
+.mute.on{background:var(--ink);color:var(--yellow)}
+
+/* ============ devices ============ */
+.row.dev{grid-template-columns:44px minmax(200px,1fr) 160px 100px 104px;padding:0 12px;gap:0 10px}
+.row.dev .name{padding-left:8px}
+.picker{
+  width:154px;height:40px;border:2.5px solid var(--ink);background:var(--sheet);
+  padding:0 30px 0 10px;font-weight:700;font-size:15px;
+  -webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 17px,calc(100% - 11px) 17px;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+}
+.picker:hover{background-color:var(--yellow)}
+.dev-note{font:16px/1.3 var(--mark);margin:0 0 12px;padding-left:2px}
+.remembered{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  border:3px solid var(--ink);padding:10px 14px;margin-bottom:14px;background:var(--sheet);
+  font-weight:700;
+}
+
+/* ============ switches ============ */
+.sw{width:60px;height:32px;padding:3px;border:3px solid var(--ink);background:var(--dead);flex:none}
+.sw:after{content:"";display:block;width:20px;height:20px;background:var(--ink);transition:transform .12s linear}
+.sw.on{background:var(--teal)}
+.sw.on:after{transform:translateX(28px)}
+.sw:hover{background:var(--yellow)}
+
+/* ============ bottom fold: settings ============ */
+.fold{
+  border-top:4px dashed var(--ink);background:var(--paper);
+  display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:0;
+}
+.set{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px 20px;border-right:2px solid var(--ink);font-weight:700;min-height:64px;
+}
+.set:last-child{border-right:0}
+.set select{height:40px;border:2.5px solid var(--ink);background:var(--sheet);padding:0 10px;font-weight:700}
+.set select:hover{background:var(--yellow)}
+
+/* ============ toast ============ */
+.toast{
+  position:fixed;right:26px;bottom:26px;background:var(--ink);color:var(--yellow);
+  padding:13px 20px;font:19px/1 var(--mark);
+  transform:rotate(-2deg) translateY(150px);transition:transform .16s cubic-bezier(0.23,1,0.32,1);
+}
+.toast.show{transform:rotate(-2deg) translateY(0)}
+
+@media (max-width:1080px){
+  .row.mix{grid-template-columns:52px 40px 1fr 170px 56px 84px}
+  .row.dev{grid-template-columns:40px 1fr 150px 92px 96px}
+  .fold{grid-template-columns:1fr}
+  .set{border-right:0;border-bottom:2px solid var(--ink)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- spine -->
+  <aside class="spine">
+    <span class="side-chip" id="sideChip" aria-hidden="true">A</span>
+    <span class="spine-title"><b>AudioDeck</b></span>
+    <span class="spine-foot">
+      <span class="spine-no">TYPE II</span>
+      <span class="screw" aria-hidden="true"></span>
+      <span class="screw" aria-hidden="true"></span>
+    </span>
+  </aside>
+
+  <div class="face">
+    <header>
+      <div class="brand">
+        <span class="hubs" aria-hidden="true"><span class="hub"></span><span class="hub b"></span></span>
+        <span class="wordmark"><b>Audio</b><b>Deck</b></span>
+      </div>
+      <nav role="tablist" aria-label="Pages">
+        <button class="tab" role="tab" aria-selected="true" data-page="priority" data-side="A">Priority</button>
+        <button class="tab" role="tab" aria-selected="false" data-page="mixer" data-side="B">Mixer</button>
+        <button class="tab" role="tab" aria-selected="false" data-page="devices" data-side="C">Devices</button>
+      </nav>
+      <p class="status"><span class="live" aria-hidden="true"></span>automation on, <u>every 2s</u></p>
+    </header>
+
+    <main>
+      <section id="priority" class="page on" role="tabpanel" aria-label="Priority"></section>
+      <section id="mixer" class="page" role="tabpanel" aria-label="Mixer"></section>
+      <section id="devices" class="page" role="tabpanel" aria-label="Devices"></section>
+    </main>
+
+    <footer class="fold">
+      <div class="set"><span>Start with Windows</span><button class="sw on" role="switch" aria-checked="true" aria-label="Start with Windows"></button></div>
+      <div class="set"><span>Pause automation</span><button class="sw" role="switch" aria-checked="false" aria-label="Pause automation"></button></div>
+      <label class="set"><span>Check devices every</span>
+        <select aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option></select>
+      </label>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+/* ---------- data ---------- */
+const outputs = [
+  {name:'AirPods Pro', sub:'Apple · Headphones', kind:'headphones', state:'off', tag:'OFFLINE', type:'Headphones'},
+  {name:'Arctis Nova Pro', sub:'Steelseries · Headset', kind:'headset', state:'in-use', tag:'IN USE', vol:100, type:'Headset'},
+  {name:'Quest', sub:'Meta · Headphones', kind:'headphones', vol:62, type:'Headphones'},
+  {name:'NVIDIA High Definition Audio', sub:'LG · TV', kind:'tv', vol:45, type:'TV'}
+];
+const mics = [
+  {name:'Arctis Nova Pro Mic', sub:'Steelseries · Microphone', kind:'mic', vol:100, type:'Headset'},
+  {name:'DJI MIC MINI', sub:'DJI · Wireless microphone', kind:'mic', state:'override', tag:'MANUAL OVERRIDE', vol:62, type:'Headset'}
+];
+
+/* ---------- svg bits ---------- */
+const paths = {
+  headphones:'<path d="M5 18v-4a11 11 0 0 1 22 0v4M4 17h6v11H6a2 2 0 0 1-2-2zM28 17h-6v11h4a2 2 0 0 0 2-2z"/>',
+  headset:'<path d="M5 18v-4a11 11 0 0 1 22 0v4M4 17h6v11H6a2 2 0 0 1-2-2zM28 17h-6v11h4a2 2 0 0 0 2-2zM22 24h4v5h-6"/>',
+  tv:'<path d="M3 6h26v17H3zM11 28h10M16 23v5"/>',
+  spdif:'<path d="M6 5h20v22H6zM16 11a5 5 0 0 1 0 10 5 5 0 0 1 0-10M16 15v2"/>',
+  mic:'<path d="M11 3h10v18H11zM6 15v2a10 10 0 0 0 20 0v-2M16 27v3M11 30h10"/>'
+};
+const glyph = k => `<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32">${paths[k]}</svg></span>`;
+const reels = `<svg class="reels" width="112" height="30" viewBox="0 0 112 30" aria-hidden="true">
+  <rect x="18" y="11" width="76" height="8" fill="#141210"/>
+  <circle cx="20" cy="15" r="13" fill="none" stroke="#141210" stroke-width="3"/>
+  <circle cx="20" cy="15" r="4.5" fill="#141210"/>
+  <circle cx="92" cy="15" r="8" fill="none" stroke="#141210" stroke-width="3"/>
+  <circle cx="92" cy="15" r="4.5" fill="#141210"/>
+</svg>`;
+const ibtn = (d, label, dir) => `<button class="ibtn${dir?' move':' remove'}" ${dir?`data-dir="${dir}"`:''} aria-label="${label}"><svg viewBox="0 0 20 20"><path d="${d}"/></svg></button>`;
+const acts = () => `<div class="acts">${ibtn('M4 12l6-6 6 6','Move up','-1')}${ibtn('M4 8l6 6 6-6','Move down','1')}${ibtn('M5 5l10 10M15 5L5 15','Remove from ranking')}</div>`;
+const tag = d => d.tag ? `<span class="tag${d.state==='off'?' grey':''}">${d.tag}</span>` : '';
+
+/* ---------- rows ---------- */
+function priorityRow(d,i){
+  return `<article class="row ${d.state||''}">
+    <span class="rank">${i+1}</span>${glyph(d.kind)}
+    <div class="name"><strong>${d.name}${tag(d)}</strong><small>${d.sub}</small></div>
+    ${acts()}</article>`;
+}
+function mixRow(d,i){
+  const ctrl = d.state === 'off'
+    ? `<div class="unavail">No signal</div><span class="pct">--</span><button class="tbtn mute" disabled>Mute</button>`
+    : `<div class="fader-cell"><input class="fader" type="range" min="0" max="100" value="${d.vol}" aria-label="${d.name} volume"></div>
+       <span class="pct">${d.vol}%</span><button class="tbtn mute">Mute</button>`;
+  return `<article class="row mix ${d.state||''}">
+    <span class="rank">${i+1}</span>${glyph(d.kind)}
+    <div class="name"><strong>${d.name}${tag(d)}</strong><small>${d.sub}</small></div>
+    ${ctrl}</article>`;
+}
+const types = ['Speakers','Headphones','Headset','TV'];
+function devRow(d){
+  const dis = d.state === 'disabled';
+  return `<article class="row dev ${dis?'off':''}">
+    ${glyph(d.kind)}
+    <div class="name"><strong>${d.name}${dis?'<span class="tag grey">DISABLED</span>':''}</strong><small>${d.sub}</small></div>
+    <select class="picker" aria-label="${d.name} device type">${types.map(t=>`<option${t===d.type?' selected':''}>${t}</option>`).join('')}</select>
+    <button class="tbtn rename">Rename</button>
+    <button class="tbtn toggle-dev">${dis?'Enable':'Disable'}</button>
+  </article>`;
+}
+function tape(cls,title,count,rowsHtml){
+  return `<section class="tape ${cls}">
+    <div class="tape-head"><h2>${title}</h2><span class="count">${count}</span>${reels}</div>
+    ${rowsHtml}</section>`;
+}
+
+/* ---------- pages ---------- */
+const rail = (side, withLegend, note) => `<div class="rail"><span class="side">Side ${side}</span>${
+  withLegend ? `<div class="legend"><span><i></i> Automatic, in use</span><span><i class="manual"></i> Manual override</span></div>`
+             : `<span class="side tally">${note || ''}</span>`
+}</div>`;
+
+$('#priority').innerHTML =
+  rail('A / priority', true) +
+  tape('outs','Outputs','4 ranked', outputs.map(priorityRow).join('')) +
+  `<button class="add">+ Add a device (2 more)</button>` +
+  tape('mics','Microphones','2 ranked', mics.map(priorityRow).join('')) +
+  `<button class="add">+ Add a device (2 more)</button>`;
+
+$('#mixer').innerHTML =
+  rail('B / mixer', true) +
+  tape('outs','Outputs','4 ranked', outputs.map(mixRow).join('')) +
+  tape('mics','Microphones','2 ranked', mics.map(mixRow).join(''));
+
+const all = [...outputs, ...mics, {name:'Realtek Digital Output', sub:'Realtek · S/PDIF out', kind:'spdif', state:'disabled', type:'Speakers'}];
+$('#devices').innerHTML =
+  rail('C / devices', false, '7 endpoints, 1 disabled') +
+  `<p class="dev-note">renaming here renames the device in Windows too</p>` +
+  `<div class="remembered"><span>Show remembered devices (31)</span><button class="sw" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></div>` +
+  tape('all','All endpoints','7 found', all.map(devRow).join(''));
+
+/* ---------- behaviour ---------- */
+const toast = msg => {
+  const t = $('.toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._t); window._t = setTimeout(()=>t.classList.remove('show'), 1600);
+};
+
+function selectTab(tab){
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === tab.dataset.page));
+  const chip = $('#sideChip');
+  chip.textContent = tab.dataset.side;
+  chip.style.background = {A:'var(--yellow)',B:'var(--pink)',C:'var(--teal)'}[tab.dataset.side];
+}
+document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => selectTab(tab)));
+const deep = document.querySelector(`.tab[data-page="${location.hash.slice(1)}"]`);
+if (deep) selectTab(deep);
+
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('fader'))
+    e.target.closest('.row').querySelector('.pct').textContent = e.target.value + '%';
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.classList.contains('sw')) {
+    b.classList.toggle('on');
+    b.setAttribute('aria-checked', String(b.classList.contains('on')));
+  }
+  if (b.classList.contains('mute')) {
+    b.classList.toggle('on');
+    b.textContent = b.classList.contains('on') ? 'Muted' : 'Mute';
+  }
+  if (b.classList.contains('rename')) {
+    const label = b.closest('.row').querySelector('strong').firstChild;
+    const next = prompt('Rename this device in Windows', label.textContent.trim());
+    if (next) { label.textContent = next; toast('renamed'); }
+  }
+  if (b.classList.contains('toggle-dev')) {
+    const row = b.closest('.row'), on = b.textContent === 'Enable';
+    b.textContent = on ? 'Disable' : 'Enable';
+    row.classList.toggle('off', !on);
+    const t = row.querySelector('.tag');
+    if (t) t.remove(); else row.querySelector('strong').insertAdjacentHTML('beforeend','<span class="tag grey">DISABLED</span>');
+    toast(on ? 'endpoint enabled' : 'endpoint disabled');
+  }
+  if (b.classList.contains('remove')) toast('dropped from the ranking');
+  if (b.classList.contains('move')) {
+    const row = b.closest('.row'), up = b.dataset.dir === '-1';
+    const sib = up ? row.previousElementSibling : row.nextElementSibling;
+    if (!sib || !sib.classList.contains('row')) return;
+    up ? row.parentNode.insertBefore(row, sib) : row.parentNode.insertBefore(sib, row);
+    row.parentNode.querySelectorAll('.rank').forEach((r,i) => r.textContent = i + 1);
+  }
+  if (b.classList.contains('add')) toast('pick a device to rank');
+});
+</script>
+</body>
+</html>

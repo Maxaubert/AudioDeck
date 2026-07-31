@@ -1,0 +1,269 @@
+// ipcMain handlers backing the AudioDeckApi contract. Maps renderer requests
+// onto the daemon's services; owns no state of its own.
+
+import { app, BrowserWindow, ipcMain } from "electron";
+import { deviceTypeByKey } from "../shared/deviceTypes.js";
+import { evaluateAvailability } from "./availability.js";
+import { dedupeEndpoints } from "./dedupe.js";
+import { restartShellHost } from "./reapply.js";
+import { IPC } from "../shared/ipc.js";
+import type { AudioControl, EndpointFlow } from "./audioctl.js";
+import type { AudioDeckConfig } from "./config.js";
+import type { Poller, PollSnapshot } from "./poller.js";
+import type { AppState, DeviceView } from "../shared/ipc.js";
+
+export interface IpcDeps {
+  audioctl: AudioControl;
+  poller: Poller;
+  getConfig: () => AudioDeckConfig;
+  saveConfig: (config: AudioDeckConfig) => Promise<void>;
+  /** Toggle automation pause; main keeps poller and tray checkbox in sync. */
+  setPaused: (paused: boolean) => void;
+  /** Apply the autostart flag to the HKCU Run key. */
+  applyAutostart: (enabled: boolean) => Promise<void>;
+}
+
+/**
+ * Endpoints that ignored a volume write this session. Some devices own their
+ * level in hardware, so the fader would otherwise look broken.
+ */
+export function registerIpc(deps: IpcDeps): void {
+  const { audioctl, poller } = deps;
+  const volumeLocked = new Set<string>(deps.getConfig().volumeLocked);
+
+  ipcMain.handle(IPC.getState, async (): Promise<AppState> => {
+    const snapshot = poller.snapshot() ?? (await freshSnapshot(audioctl));
+    const config = deps.getConfig();
+    const devices: DeviceView[] = snapshot.availability.map((a) => ({
+      id: a.endpoint.id,
+      name: a.endpoint.name,
+      alias: config.aliases[a.endpoint.id] ?? null,
+      flow: a.endpoint.flow,
+      state: a.endpoint.state,
+      isDefault: a.endpoint.isDefault,
+      isDefaultComms: a.endpoint.isDefaultComms,
+      formFactor: a.endpoint.formFactor ?? null,
+      volume: a.endpoint.volume,
+      mute: a.endpoint.mute,
+      volumeLocked: volumeLocked.has(a.endpoint.id),
+      available: a.available,
+      availabilityReason: a.reason,
+    }));
+    return {
+      devices,
+      outputPriority: config.outputPriority,
+      micPriority: config.micPriority,
+      override: { ...config.override },
+      paused: poller.isPaused(),
+      autostart: config.autostart,
+      pollIntervalMs: config.pollIntervalMs,
+      appVersion: app.getVersion(),
+    };
+  });
+
+  ipcMain.handle(IPC.setPriority, async (_e, flow: EndpointFlow, ids: string[]) => {
+    const key = flow === "capture" ? "micPriority" : "outputPriority";
+    const cleaned = Array.isArray(ids) ? ids.filter((id) => typeof id === "string") : [];
+    await deps.saveConfig({ ...deps.getConfig(), [key]: cleaned });
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.addToPriority, async (_e, flow: EndpointFlow, id: string) => {
+    if (typeof id !== "string" || id === "") return;
+    const config = deps.getConfig();
+    const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
+    const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
+    if (config[priorityKey].includes(id)) return;
+    await deps.saveConfig({
+      ...config,
+      [priorityKey]: [...config[priorityKey], id],
+      excluded: {
+        ...config.excluded,
+        [excludedKey]: config.excluded[excludedKey].filter((x) => x !== id),
+      },
+    });
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.removeFromPriority, async (_e, flow: EndpointFlow, id: string) => {
+    if (typeof id !== "string" || id === "") return;
+    const config = deps.getConfig();
+    const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
+    const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
+    const excludedIds = config.excluded[excludedKey];
+    await deps.saveConfig({
+      ...config,
+      [priorityKey]: config[priorityKey].filter((x) => x !== id),
+      excluded: {
+        ...config.excluded,
+        [excludedKey]: excludedIds.includes(id) ? excludedIds : [...excludedIds, id],
+      },
+    });
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.setDefault, async (_e, id: string) => {
+    // A user-chosen default is a manual override; the rules engine sees the
+    // deviation on the next tick and engages the hold (design: behavior rules).
+    await audioctl.setDefault(id);
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.setVolume, async (_e, id: string, level: number) => {
+    const wanted = Math.round(level);
+    await audioctl.setVolume(id, wanted);
+    await poller.refreshNow();
+    // Read back: hardware that owns its own level accepts the call and then
+    // reverts. Tolerate a point of rounding either way.
+    const actual = poller.snapshot()?.endpoints.find((e) => e.id === id)?.volume ?? null;
+    const ignored = actual !== null && Math.abs(actual - wanted) > 1;
+    const before = volumeLocked.has(id);
+    if (ignored) volumeLocked.add(id);
+    else volumeLocked.delete(id);
+    if (ignored !== before) {
+      console.log(`[ipc] ${id} ${ignored ? "ignored a volume change, marking it locked" : "accepts volume again"}`);
+      await deps.saveConfig({ ...deps.getConfig(), volumeLocked: [...volumeLocked] });
+    }
+  });
+
+  ipcMain.handle(IPC.setMute, async (_e, id: string, mute: boolean) => {
+    if (mute) await audioctl.mute(id);
+    else await audioctl.unmute(id);
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.setEndpointEnabled, async (_e, id: string, enabled: boolean) => {
+    if (enabled) await audioctl.enable(id);
+    else await audioctl.disable(id);
+    await poller.refreshNow();
+  });
+
+  ipcMain.handle(IPC.setAlias, async (_e, id: string, alias: string | null) => {
+    const config = deps.getConfig();
+    const aliases = { ...config.aliases };
+    const trimmed = alias?.trim() ?? "";
+    if (trimmed === "") delete aliases[id];
+    else aliases[id] = trimmed;
+    await deps.saveConfig({ ...config, aliases });
+  });
+
+  ipcMain.handle(IPC.renameDevice, async (_e, id: string, name: string, suffix?: unknown) => {
+    if (typeof id !== "string" || typeof name !== "string" || name.trim() === "") return;
+    const cleanSuffix =
+      typeof suffix === "string" && suffix.trim() !== "" ? suffix.trim() : undefined;
+    try {
+      await audioctl.rename(id, name.trim(), cleanSuffix);
+      console.log(`[ipc] renamed ${id} to "${name.trim()}"${cleanSuffix === undefined ? "" : ` (${cleanSuffix})`}`);
+    } catch (err) {
+      console.error(`[ipc] rename ${id} failed:`, err);
+      throw err;
+    }
+    // A rename replaces any local alias, and the intent is remembered so the
+    // daemon re-applies it when a driver re-enumeration resets the endpoint.
+    const config = deps.getConfig();
+    const aliases = { ...config.aliases };
+    delete aliases[id];
+    const customizations = { ...config.customizations };
+    customizations[id] = {
+      ...fingerprintFor(id, config, poller),
+      ...customizations[id],
+      name: name.trim(),
+      ...(cleanSuffix === undefined ? {} : { suffix: cleanSuffix }),
+    };
+    await deps.saveConfig({ ...config, aliases, customizations });
+    // Windows recomposes the display name asynchronously (~350 ms measured);
+    // wait it out so the refresh below already carries the new name.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await poller.refreshNow();
+    // The quick-settings flyout (ShellHost) only re-reads device names when
+    // its process restarts; bounce it so the rename shows up there too. It
+    // respawns on demand and holds no user state.
+    restartShellHost();
+  });
+
+  ipcMain.handle(IPC.setDeviceType, async (_e, id: string, typeKey: string) => {
+    if (typeof id !== "string" || typeof typeKey !== "string") return;
+    const type = deviceTypeByKey(typeKey);
+    if (type === undefined) return;
+    try {
+      await audioctl.setType(id, type.formFactor, type.iconPath);
+      console.log(`[ipc] set type of ${id} to ${type.key}`);
+    } catch (err) {
+      console.error(`[ipc] set-type ${id} failed:`, err);
+      throw err;
+    }
+    const config = deps.getConfig();
+    await deps.saveConfig({
+      ...config,
+      customizations: {
+        ...config.customizations,
+        [id]: {
+          ...fingerprintFor(id, config, poller),
+          ...config.customizations[id],
+          typeKey: type.key,
+        },
+      },
+    });
+    await poller.refreshNow();
+    // The flyout caches glyphs the same way it caches names.
+    restartShellHost();
+  });
+
+  ipcMain.handle(IPC.windowMinimize, (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.minimize();
+  });
+
+  ipcMain.handle(IPC.windowToggleMaximize, (e): boolean => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (win === null) return false;
+    if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
+    return win.isMaximized();
+  });
+
+  ipcMain.handle(IPC.windowClose, (e) => {
+    BrowserWindow.fromWebContents(e.sender)?.close();
+  });
+
+  ipcMain.handle(IPC.windowIsMaximized, (e): boolean =>
+    BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false,
+  );
+
+  ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
+    deps.setPaused(paused);
+  });
+
+  ipcMain.handle(IPC.setAutostart, async (_e, enabled: boolean) => {
+    await deps.saveConfig({ ...deps.getConfig(), autostart: enabled });
+    await deps.applyAutostart(enabled);
+  });
+
+  ipcMain.handle(IPC.setPollInterval, async (_e, ms: number) => {
+    // Reject non-finite input: NaN would survive min/max clamping, persist to
+    // config, and turn the poller's setTimeout into a busy loop.
+    if (typeof ms !== "number" || !Number.isFinite(ms)) return;
+    const clamped = Math.min(60_000, Math.max(500, Math.round(ms)));
+    await deps.saveConfig({ ...deps.getConfig(), pollIntervalMs: clamped });
+  });
+}
+
+/**
+ * On the FIRST customization of a device, remember the name the driver gave
+ * it: recreated endpoints come back under a new id wearing exactly this name,
+ * which is how identity migration finds them. Existing entries keep theirs.
+ */
+function fingerprintFor(
+  id: string,
+  config: AudioDeckConfig,
+  poller: Poller,
+): { fingerprint?: string } {
+  if (config.customizations[id] !== undefined) return {};
+  const name = poller.snapshot()?.endpoints.find((e) => e.id === id)?.name;
+  return name === undefined ? {} : { fingerprint: name };
+}
+
+/** Direct gather for the rare window-open before the poller's first tick. */
+async function freshSnapshot(audioctl: AudioControl): Promise<PollSnapshot> {
+  const { endpoints } = dedupeEndpoints(await audioctl.list());
+  return { endpoints, availability: evaluateAvailability(endpoints, null) };
+}

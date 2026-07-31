@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioDeck - Codex punk 4</title>
+  <style>
+    :root {
+      --paper: #eee5c8;
+      --paper-light: #f7efd5;
+      --ink: #32105f;
+      --ink-2: #542884;
+      --ink-3: #79559c;
+      --ink-faint: #b5a0bd;
+      --ink-wash: #d8c9d2;
+      --acid: #b8ef24;
+      --offline: #66576c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: #d9cfb3; }
+
+    body {
+      margin: 0;
+      min-width: 860px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 18%, rgba(50,16,95,.09) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 79% 62%, rgba(50,16,95,.07) 0 1px, transparent 1.6px),
+        repeating-linear-gradient(93deg, rgba(50,16,95,.018) 0 1px, transparent 1px 5px),
+        #d9cfb3;
+      background-size: 7px 9px, 11px 13px, auto, auto;
+      font: 18px/1.3 "Courier New", Courier, monospace;
+    }
+
+    button, select, input { font: inherit; color: inherit; }
+    button, select { cursor: pointer; }
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 3px solid var(--paper-light);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 6px var(--ink);
+    }
+
+    .window {
+      position: relative;
+      width: min(1200px, calc(100% - 40px));
+      margin: 20px auto;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 12% 4%, rgba(50,16,95,.055), transparent 24%),
+        radial-gradient(ellipse at 91% 46%, rgba(50,16,95,.045), transparent 22%),
+        repeating-linear-gradient(0deg, transparent 0 11px, rgba(50,16,95,.016) 11px 12px),
+        var(--paper);
+      border: 4px solid var(--ink);
+      box-shadow: 7px 7px 0 rgba(50,16,95,.2);
+    }
+
+    .window::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: .24;
+      mix-blend-mode: multiply;
+      background:
+        radial-gradient(ellipse at 8% 71%, transparent 0 65px, rgba(50,16,95,.1) 69px 72px, transparent 76px),
+        radial-gradient(ellipse at 86% 21%, rgba(50,16,95,.08) 0 2px, transparent 3px),
+        radial-gradient(ellipse at 51% 91%, rgba(50,16,95,.07) 0 1px, transparent 2px);
+      background-size: auto, 18px 21px, 13px 17px;
+    }
+
+    .appbar {
+      min-height: 108px;
+      display: grid;
+      grid-template-columns: 315px 1fr auto;
+      align-items: stretch;
+      background: var(--ink);
+      color: var(--paper-light);
+      border-bottom: 5px double var(--paper);
+      position: relative;
+      z-index: 3;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 20px;
+      border-right: 2px dashed rgba(247,239,213,.6);
+      transform: rotate(-.35deg);
+      transform-origin: left center;
+    }
+
+    .deck-mark {
+      position: relative;
+      width: 66px;
+      height: 66px;
+      flex: 0 0 auto;
+      border: 4px solid currentColor;
+      transform: rotate(-3deg);
+    }
+
+    .deck-mark::before,
+    .deck-mark::after {
+      content: "";
+      position: absolute;
+      border: 3px solid currentColor;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      top: 9px;
+    }
+
+    .deck-mark::before { left: 7px; }
+    .deck-mark::after { right: 7px; }
+
+    .deck-mark .tape {
+      position: absolute;
+      left: 11px;
+      right: 11px;
+      bottom: 9px;
+      height: 18px;
+      background: currentColor;
+      clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%);
+    }
+
+    .deck-mark .tape::after {
+      content: "AD";
+      position: absolute;
+      inset: 2px 0 0;
+      color: var(--ink);
+      text-align: center;
+      font: 900 13px/1.2 Impact, "Arial Narrow", sans-serif;
+      letter-spacing: 2px;
+    }
+
+    .wordmark {
+      position: relative;
+      font: 900 31px/.86 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .wordmark::after {
+      content: "AUDIODECK";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(247,239,213,.34);
+      pointer-events: none;
+    }
+
+    .wordmark small {
+      display: block;
+      margin-top: 7px;
+      font: 700 11px/1 "Courier New", monospace;
+      letter-spacing: .6px;
+      text-transform: none;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: end;
+      gap: 0;
+      padding: 0 18px;
+    }
+
+    .tab {
+      min-width: 132px;
+      height: 61px;
+      padding: 0 18px;
+      border: 0;
+      border-left: 2px solid rgba(247,239,213,.5);
+      background: transparent;
+      color: var(--paper-light);
+      font: 900 19px/1 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: background .1s, color .1s, transform .1s;
+    }
+
+    .tab:last-child { border-right: 2px solid rgba(247,239,213,.5); }
+    .tab:hover { background: var(--ink-2); transform: translateY(-3px); }
+    .tab.active {
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 7px 0 var(--ink-3);
+    }
+
+    .status {
+      align-self: center;
+      margin-right: 20px;
+      padding: 9px 10px 7px;
+      border: 2px solid var(--paper-light);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      transform: rotate(1.3deg);
+      white-space: nowrap;
+    }
+
+    .status b { color: var(--paper-light); }
+
+    main {
+      min-height: 640px;
+      padding: 25px 29px 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .section { margin: 0 0 25px; }
+
+    .section-head {
+      min-height: 37px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 7px;
+      border-bottom: 7px solid var(--ink);
+    }
+
+    .section-head h2 {
+      margin: 0;
+      padding: 4px 13px 6px 4px;
+      background: var(--ink);
+      color: var(--paper-light);
+      font: 900 24px/1 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      transform: rotate(-.45deg);
+    }
+
+    .section-head span {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: lowercase;
+    }
+
+    .rows { border-top: 1px solid var(--ink); }
+
+    .device-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 58px 48px minmax(300px, 1fr) 178px;
+      align-items: center;
+      min-height: 76px;
+      border-bottom: 2px solid var(--ink);
+      background: rgba(247,239,213,.54);
+      transition: background .09s, transform .09s;
+    }
+
+    .device-row:nth-child(even) { transform: rotate(.08deg); }
+    .device-row:hover { background: rgba(84,40,132,.11); }
+    .device-row::after {
+      content: "";
+      position: absolute;
+      inset: 4px -2px -3px 3px;
+      z-index: -1;
+      border-bottom: 1px solid rgba(84,40,132,.18);
+      pointer-events: none;
+    }
+
+    .device-row.in-use {
+      background:
+        radial-gradient(ellipse at 87% 43%, rgba(247,239,213,.16), transparent 28%),
+        var(--ink-2);
+      color: var(--paper-light);
+      border-color: var(--ink);
+    }
+
+    .device-row.in-use:hover { background: var(--ink); }
+
+    .device-row.override {
+      background: rgba(84,40,132,.14);
+      border-left: 11px solid var(--ink-3);
+      grid-template-columns: 47px 48px minmax(300px, 1fr) 178px;
+    }
+
+    .device-row.offline,
+    .device-row.disabled-device {
+      color: var(--offline);
+      background:
+        repeating-linear-gradient(-15deg, rgba(50,16,95,.045) 0 2px, transparent 2px 7px),
+        rgba(181,160,189,.18);
+    }
+
+    .rank {
+      position: relative;
+      text-align: center;
+      font: 900 33px/1 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+    }
+
+    .rank::after {
+      content: attr(data-rank);
+      position: absolute;
+      left: calc(50% - 7px);
+      top: 2px;
+      color: rgba(84,40,132,.24);
+      transform: translate(2px, 2px);
+      pointer-events: none;
+    }
+
+    .in-use .rank::after { color: rgba(247,239,213,.22); }
+
+    .glyph {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 2px solid currentColor;
+      transform: rotate(-1.2deg);
+    }
+
+    .glyph svg {
+      width: 25px;
+      height: 25px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.3;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .device-name {
+      min-width: 0;
+      padding: 9px 14px 9px 5px;
+    }
+
+    .device-name strong {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font: 900 20px/1.05 "Arial Narrow", Arial, sans-serif;
+      letter-spacing: .1px;
+    }
+
+    .device-name small {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 7px 3px;
+      background: var(--ink);
+      color: var(--paper-light);
+      font: 900 10px/1 "Courier New", monospace;
+      letter-spacing: .6px;
+      transform: rotate(1deg);
+      white-space: nowrap;
+    }
+
+    .in-use .badge {
+      background: var(--paper-light);
+      color: var(--ink);
+    }
+
+    .override .badge {
+      background: var(--acid);
+      color: var(--ink);
+    }
+
+    .offline .badge {
+      background: var(--offline);
+      color: var(--paper-light);
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 5px;
+      padding-right: 9px;
+    }
+
+    .icon-btn,
+    .text-btn,
+    .mute {
+      min-width: 42px;
+      height: 40px;
+      border: 2px solid currentColor;
+      border-radius: 0;
+      background: transparent;
+      font-weight: 900;
+      transition: background .08s, color .08s, transform .08s;
+    }
+
+    .icon-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+
+    .icon-btn:hover,
+    .text-btn:hover,
+    .mute:hover {
+      background: var(--ink);
+      color: var(--paper-light);
+      transform: rotate(-2deg);
+    }
+
+    .in-use .icon-btn:hover {
+      background: var(--paper-light);
+      color: var(--ink);
+    }
+
+    .add-device {
+      width: 100%;
+      min-height: 50px;
+      margin-top: 7px;
+      border: 2px dashed var(--ink);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      font-weight: 900;
+      text-align: left;
+      padding-left: 20px;
+    }
+
+    .add-device:hover {
+      background: rgba(84,40,132,.14);
+      border-style: solid;
+      transform: rotate(-.12deg);
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      width: max-content;
+      max-width: 100%;
+      margin: -9px 0 2px auto;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .swatch {
+      width: 13px;
+      height: 13px;
+      background: var(--ink-2);
+      border: 1px solid var(--ink);
+    }
+    .swatch.manual { background: var(--acid); }
+
+    .mixer-row {
+      grid-template-columns: 58px 48px minmax(260px, 1fr) minmax(215px, .8fr) 76px 92px;
+    }
+
+    .mixer-row.override {
+      grid-template-columns: 47px 48px minmax(260px, 1fr) minmax(215px, .8fr) 76px 92px;
+    }
+
+    .mix-control { padding: 0 18px 0 4px; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 28px;
+      margin: 0;
+      appearance: none;
+      background: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      background: var(--ink-wash);
+      border: 2px solid var(--ink);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 16px;
+      height: 28px;
+      margin-top: -12px;
+      appearance: none;
+      background: var(--ink);
+      border: 2px solid var(--paper-light);
+      border-radius: 0;
+    }
+
+    .in-use input[type="range"]::-webkit-slider-runnable-track {
+      background: var(--paper-light);
+      border-color: var(--paper-light);
+    }
+
+    .in-use input[type="range"]::-webkit-slider-thumb {
+      background: var(--ink);
+      border-color: var(--paper-light);
+    }
+
+    .percent {
+      text-align: right;
+      font: 900 23px/1 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .mute { margin: 0 9px 0 6px; }
+    .mute.on { background: var(--ink); color: var(--paper-light); }
+    .in-use .mute.on { background: var(--paper-light); color: var(--ink); }
+    .unavailable {
+      padding-left: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .remembered {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      margin: 0 0 20px;
+      padding: 8px 12px 8px 17px;
+      background: rgba(84,40,132,.12);
+      border: 2px dashed var(--ink);
+      font-weight: 900;
+    }
+
+    .switch {
+      position: relative;
+      width: 58px;
+      height: 32px;
+      padding: 3px;
+      border: 2px solid currentColor;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .switch::after {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 22px;
+      background: currentColor;
+      transition: transform .1s;
+    }
+
+    .switch.on { background: var(--ink-wash); }
+    .switch.on::after { transform: translateX(28px); }
+
+    .device-manage {
+      grid-template-columns: 52px minmax(280px, 1fr) 170px 98px 102px;
+      padding: 0 8px 0 10px;
+    }
+
+    .device-manage .glyph { margin-right: 6px; }
+    .device-manage select {
+      width: 154px;
+      height: 40px;
+      padding: 4px 7px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: var(--paper-light);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .device-manage .text-btn {
+      margin-left: 6px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .disabled-device .text-btn,
+    .disabled-device select { color: var(--offline); border-color: currentColor; }
+    .disabled-device .enable {
+      color: var(--ink);
+      background: var(--ink-wash);
+    }
+
+    .settings {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.35fr;
+      min-height: 81px;
+      background: var(--ink);
+      color: var(--paper-light);
+      border-top: 5px double var(--paper);
+    }
+
+    .setting {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 15px 18px;
+      border-right: 2px dashed rgba(247,239,213,.55);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .setting:last-child { border-right: 0; }
+    .setting .switch { color: var(--paper-light); }
+    .setting .switch.on { background: var(--ink-3); }
+    .setting select {
+      min-width: 127px;
+      height: 39px;
+      padding: 3px 7px;
+      border: 2px solid var(--paper-light);
+      border-radius: 0;
+      background: var(--ink);
+      color: var(--paper-light);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 30;
+      right: 28px;
+      bottom: 22px;
+      padding: 13px 17px;
+      background: var(--ink);
+      color: var(--paper-light);
+      border: 3px solid var(--paper-light);
+      font-size: 14px;
+      font-weight: 700;
+      transform: translateY(110px) rotate(1deg);
+      transition: transform .14s;
+    }
+
+    .toast.show { transform: translateY(0) rotate(1deg); }
+
+    @media (max-width: 1010px) {
+      .appbar { grid-template-columns: 275px 1fr auto; }
+      .brand { padding-left: 14px; }
+      .tabs { padding: 0 7px; }
+      .tab { min-width: 104px; padding: 0 9px; }
+      main { padding-left: 18px; padding-right: 18px; }
+      .mixer-row { grid-template-columns: 52px 44px minmax(220px,1fr) 180px 67px 78px; }
+      .mixer-row.override { grid-template-columns: 41px 44px minmax(220px,1fr) 180px 67px 78px; }
+      .device-manage { grid-template-columns: 46px minmax(230px,1fr) 145px 84px 88px; }
+      .device-manage select { width: 132px; }
+      .device-manage .text-btn { font-size: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="appbar">
+      <div class="brand" aria-label="AudioDeck">
+        <span class="deck-mark" aria-hidden="true"><i class="tape"></i></span>
+        <div class="wordmark">AudioDeck<small>Windows audio order</small></div>
+      </div>
+      <nav class="tabs" aria-label="Main pages">
+        <button class="tab active" type="button" data-page="priority">Priority</button>
+        <button class="tab" type="button" data-page="mixer">Mixer</button>
+        <button class="tab" type="button" data-page="devices">Devices</button>
+      </nav>
+      <div class="status"><b>● AUTO ON</b><br>SCAN 2s</div>
+    </header>
+
+    <main>
+      <section id="priority" class="page active" aria-label="Priority"></section>
+      <section id="mixer" class="page" aria-label="Mixer"></section>
+      <section id="devices" class="page" aria-label="Devices"></section>
+    </main>
+
+    <footer class="settings" aria-label="Settings">
+      <div class="setting">
+        <span>Start with Windows</span>
+        <button class="switch on" type="button" role="switch" aria-checked="true" aria-label="Start with Windows"></button>
+      </div>
+      <div class="setting">
+        <span>Pause automation</span>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Pause automation"></button>
+      </div>
+      <label class="setting">
+        <span>Check devices every</span>
+        <select aria-label="Device check interval">
+          <option selected>2 seconds</option>
+          <option>5 seconds</option>
+          <option>10 seconds</option>
+        </select>
+      </label>
+    </footer>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (selector, root = document) => root.querySelector(selector);
+
+    const outputs = [
+      { name: "AirPods Pro", sub: "Apple · Headphones", state: "offline", status: "OFFLINE" },
+      { name: "Arctis Nova Pro", sub: "Steelseries · Headset", state: "in-use", status: "IN USE", volume: 100 },
+      { name: "Quest", sub: "Meta · Headphones", volume: 62 },
+      { name: "NVIDIA High Definition Audio", sub: "LG · TV", volume: 45 }
+    ];
+
+    const microphones = [
+      { name: "Arctis Nova Pro Mic", sub: "Steelseries · Microphone", volume: 100, mic: true },
+      { name: "DJI MIC MINI", sub: "DJI · Wireless microphone", state: "override", status: "MANUAL OVERRIDE", volume: 62, mic: true }
+    ];
+
+    const glyph = (isMic) => `
+      <span class="glyph" aria-hidden="true">
+        <svg viewBox="0 0 32 32">
+          ${isMic
+            ? '<rect x="11" y="3" width="10" height="18"/><path d="M7 15v2a9 9 0 0 0 18 0v-2M16 26v3M10 29h12"/>'
+            : '<path d="M5 18v-4a11 11 0 0 1 22 0v4M5 17h5v10H7a2 2 0 0 1-2-2zM27 17h-5v10h3a2 2 0 0 0 2-2z"/>'}
+        </svg>
+      </span>`;
+
+    const control = (path, label, direction = "") => `
+      <button class="icon-btn ${label === "Remove" ? "remove" : "move"}" type="button"
+        ${direction ? `data-direction="${direction}"` : ""} aria-label="${label}">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="${path}"/></svg>
+      </button>`;
+
+    const rowActions = () => `
+      <div class="row-actions">
+        ${control("M4 12l6-6 6 6", "Move up", "-1")}
+        ${control("M4 8l6 6 6-6", "Move down", "1")}
+        ${control("M5 5l10 10M15 5L5 15", "Remove")}
+      </div>`;
+
+    function priorityRow(device, index) {
+      return `
+        <article class="device-row ${device.state || ""}">
+          <span class="rank" data-rank="${index + 1}">${index + 1}</span>
+          ${glyph(device.mic)}
+          <div class="device-name">
+            <strong>${device.name}${device.status ? `<span class="badge">${device.status}</span>` : ""}</strong>
+            <small>${device.sub}</small>
+          </div>
+          ${rowActions()}
+        </article>`;
+    }
+
+    function mixerRow(device, index) {
+      const mixer = device.state === "offline"
+        ? '<div class="unavailable">No control</div><span class="percent">--</span><span></span>'
+        : `<div class="mix-control"><input type="range" min="0" max="100" value="${device.volume}" aria-label="${device.name} volume"></div>
+           <span class="percent">${device.volume}%</span>
+           <button class="mute" type="button">Mute</button>`;
+
+      return `
+        <article class="device-row mixer-row ${device.state || ""}">
+          <span class="rank" data-rank="${index + 1}">${index + 1}</span>
+          ${glyph(device.mic)}
+          <div class="device-name">
+            <strong>${device.name}${device.status ? `<span class="badge">${device.status}</span>` : ""}</strong>
+            <small>${device.sub}</small>
+          </div>
+          ${mixer}
+        </article>`;
+    }
+
+    function deviceSection(title, items, mode) {
+      return `
+        <section class="section">
+          <div class="section-head"><h2>${title}</h2><span>${items.length} ranked</span></div>
+          <div class="rows">${items.map((device, index) => mode === "mixer" ? mixerRow(device, index) : priorityRow(device, index)).join("")}</div>
+          ${mode === "priority" ? '<button class="add-device" type="button">+ Add a device (2 more)</button>' : ""}
+        </section>`;
+    }
+
+    $("#priority").innerHTML = `
+      ${deviceSection("Outputs", outputs, "priority")}
+      ${deviceSection("Microphones", microphones, "priority")}
+      <div class="legend" aria-label="Status legend">
+        <span><i class="swatch"></i> In use</span>
+        <span><i class="swatch manual"></i> Manual override</span>
+      </div>`;
+
+    $("#mixer").innerHTML = `
+      ${deviceSection("Outputs", outputs, "mixer")}
+      ${deviceSection("Microphones", microphones, "mixer")}`;
+
+    const allDevices = [
+      ...outputs,
+      ...microphones,
+      { name: "Realtek Digital Output", sub: "Realtek · Disabled endpoint", state: "disabled-device" }
+    ];
+    const types = ["Speakers", "Headphones", "Headset", "TV"];
+    const selectedTypes = ["Headphones", "Headset", "Headphones", "TV", "Headset", "Headset", "Speakers"];
+
+    $("#devices").innerHTML = `
+      <div class="remembered">
+        <span>Show remembered devices (31)</span>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Show remembered devices"></button>
+      </div>
+      <section class="section">
+        <div class="section-head"><h2>All endpoints</h2><span>${allDevices.length} found</span></div>
+        <div class="rows">
+          ${allDevices.map((device, index) => `
+            <article class="device-row device-manage ${device.state || ""}">
+              ${glyph(device.mic)}
+              <div class="device-name">
+                <strong>${device.name}${device.status ? `<span class="badge">${device.status}</span>` : ""}</strong>
+                <small>${device.sub}</small>
+              </div>
+              <select aria-label="${device.name} device type">
+                ${types.map(type => `<option ${type === selectedTypes[index] ? "selected" : ""}>${type}</option>`).join("")}
+              </select>
+              <button class="text-btn rename" type="button">Rename</button>
+              <button class="text-btn ${device.name.includes("Realtek") ? "enable" : "disable"}" type="button">${device.name.includes("Realtek") ? "Enable" : "Disable"}</button>
+            </article>`).join("")}
+        </div>
+      </section>`;
+
+    const flash = message => {
+      const toast = $(".toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
+    };
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab, .page").forEach(item => item.classList.remove("active"));
+        tab.classList.add("active");
+        $("#" + tab.dataset.page).classList.add("active");
+      });
+    });
+
+    document.addEventListener("input", event => {
+      if (event.target.type === "range") {
+        event.target.closest(".device-row").querySelector(".percent").textContent = event.target.value + "%";
+      }
+    });
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.classList.contains("switch")) {
+        button.classList.toggle("on");
+        button.setAttribute("aria-checked", button.classList.contains("on"));
+      }
+
+      if (button.classList.contains("mute")) {
+        button.classList.toggle("on");
+        button.textContent = button.classList.contains("on") ? "Muted" : "Mute";
+      }
+
+      if (button.classList.contains("rename")) {
+        const name = button.closest(".device-row").querySelector("strong");
+        const value = prompt("Rename this Windows device", name.childNodes[0].textContent.trim());
+        if (value) {
+          name.childNodes[0].textContent = value;
+          flash("Device renamed");
+        }
+      }
+
+      if (button.classList.contains("disable") || button.classList.contains("enable")) {
+        const enabling = button.textContent === "Enable";
+        button.textContent = enabling ? "Disable" : "Enable";
+        button.classList.toggle("enable", !enabling);
+        button.classList.toggle("disable", enabling);
+        flash(enabling ? "Device enabled" : "Device disabled");
+      }
+
+      if (button.classList.contains("remove")) flash("Removed from ranking");
+
+      if (button.classList.contains("move")) {
+        const row = button.closest(".device-row");
+        const sibling = button.dataset.direction === "-1" ? row.previousElementSibling : row.nextElementSibling;
+        if (sibling) {
+          if (button.dataset.direction === "-1") row.parentNode.insertBefore(row, sibling);
+          else row.parentNode.insertBefore(sibling, row);
+        }
+      }
+
+      if (button.classList.contains("add-device")) flash("Device picker opened");
+    });
+  </script>
+</body>
+</html>

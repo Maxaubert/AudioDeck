@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>audioctl</AssemblyName>
+    <RootNamespace>AudioCtl</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <!-- Publish modes (see docs/plans/2026-07-27-v1-implementation.md, Stage 1):
+       NativeAOT:  dotnet publish -c Release -p:PublishAot=true
+       Fallback:   dotnet publish -c Release -p:PublishTrimmed=true -p:PublishSingleFile=true
+       All interop is raw function-pointer vtable calls, so both modes work without
+       built-in COM marshalling.
+       Note for this machine: the ilcompiler vswhere probe misfires here, so run the AOT
+       publish from a VS x64 developer environment with the environmental-tools switch:
+         cmd /c ""...\VC\Auxiliary\Build\vcvars64.bat" && dotnet publish -c Release
+              -p:PublishAot=true -p:IlcUseEnvironmentalTools=true"
+       (vcvars sets Platform=x64, so output lands in bin\x64\Release\...\publish). -->
+
+</Project>

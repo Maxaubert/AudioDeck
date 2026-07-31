@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioDeck - Codex punk 5</title>
+  <style>
+    :root {
+      --desk: #26332b;
+      --paper: #f0f0d4;
+      --paper-alt: #dce8c5;
+      --paper-hi: #faf9df;
+      --ribbon: #20221d;
+      --ribbon-soft: #484b42;
+      --faded: #6b6f64;
+      --disabled: #c8ccbb;
+      --magenta: #a82f65;
+      --magenta-dark: #7e1f49;
+      --dot: "Lucida Console", "Cascadia Mono", "Courier New", monospace;
+      --rule: 2px solid var(--ribbon);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--desk); }
+
+    body {
+      min-width: 980px;
+      margin: 0;
+      padding: 24px;
+      color: var(--ribbon);
+      background:
+        linear-gradient(90deg, transparent 49.7%, rgba(255,255,255,.04) 49.7% 50.3%, transparent 50.3%),
+        var(--desk);
+      font-family: var(--dot);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: .025em;
+    }
+
+    button, select, input { font: inherit; }
+    button, select { color: inherit; }
+    button { cursor: pointer; }
+
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
+      outline: 4px solid var(--magenta);
+      outline-offset: 3px;
+    }
+
+    .paper {
+      position: relative;
+      width: min(1200px, calc(100vw - 48px));
+      min-height: calc(100vh - 48px);
+      margin: 0 auto;
+      overflow: hidden;
+      border: 3px solid var(--ribbon);
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          var(--paper) 0,
+          var(--paper) 42px,
+          var(--paper-alt) 42px,
+          var(--paper-alt) 84px
+        );
+    }
+
+    .paper::before,
+    .paper::after {
+      content: "";
+      position: absolute;
+      z-index: 10;
+      top: 0;
+      bottom: 0;
+      width: 48px;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 24px 18px, var(--desk) 0 7px, var(--ribbon) 7.5px 9px, transparent 9.5px)
+        0 0 / 48px 36px repeat-y,
+        linear-gradient(90deg, rgba(32,34,29,.1), rgba(255,255,255,.14), rgba(32,34,29,.1));
+      border-color: var(--ribbon);
+      border-style: dashed;
+      border-width: 0 2px;
+    }
+
+    .paper::before { left: 0; }
+    .paper::after { right: 0; }
+
+    .appbar {
+      position: relative;
+      z-index: 2;
+      min-height: 76px;
+      margin: 0 48px;
+      padding: 10px 18px;
+      display: grid;
+      grid-template-columns: 285px 1fr auto;
+      align-items: center;
+      gap: 18px;
+      color: var(--paper-hi);
+      background: var(--ribbon);
+      border-bottom: 5px double var(--magenta);
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+
+    .brandmark {
+      width: 47px;
+      height: 47px;
+      flex: 0 0 auto;
+      display: block;
+    }
+
+    .brandmark circle { fill: var(--paper-hi); }
+    .brandmark .hot { fill: var(--magenta); }
+
+    .wordmark {
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .wordmark small {
+      display: block;
+      margin-top: 6px;
+      color: #c6c7ae;
+      font-size: 10px;
+      letter-spacing: .17em;
+    }
+
+    .tabs {
+      height: 42px;
+      display: flex;
+      align-items: stretch;
+      gap: 5px;
+    }
+
+    .tab {
+      min-width: 112px;
+      padding: 0 16px;
+      border: 2px solid var(--paper-hi);
+      background: transparent;
+      color: var(--paper-hi);
+      text-transform: uppercase;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      transition: color 100ms, background 100ms, transform 100ms;
+    }
+
+    .tab:hover { color: var(--ribbon); background: var(--paper-alt); }
+    .tab:active { transform: translate(2px, 2px); }
+    .tab[aria-selected="true"] {
+      color: var(--paper-hi);
+      background: var(--magenta);
+      border-color: var(--magenta);
+      box-shadow: inset 0 -4px 0 var(--paper-hi);
+    }
+
+    .app-status {
+      padding-left: 15px;
+      border-left: 2px dotted #bfc2aa;
+      color: #dfe1c4;
+      font-size: 11px;
+      line-height: 1.45;
+      letter-spacing: .11em;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .app-status b { color: #f2aacb; }
+
+    main {
+      position: relative;
+      z-index: 2;
+      margin: 0 48px;
+      padding: 20px 18px 16px;
+      border-left: 2px solid rgba(32,34,29,.24);
+      border-right: 2px solid rgba(32,34,29,.24);
+    }
+
+    [hidden] { display: none !important; }
+
+    .page {
+      min-height: 590px;
+      animation: feed-in 140ms steps(2, end);
+    }
+
+    @keyframes feed-in {
+      from { transform: translateY(-4px); opacity: .65; }
+      to { transform: none; opacity: 1; }
+    }
+
+    .page-meta {
+      min-height: 25px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: var(--ribbon-soft);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .page-meta .ready {
+      color: var(--magenta-dark);
+      font-weight: 900;
+    }
+
+    .section { margin-bottom: 24px; }
+
+    .section-head {
+      min-height: 34px;
+      margin: 0 0 7px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+      color: var(--paper-hi);
+      background: var(--ribbon);
+      border-left: 12px solid var(--magenta);
+      font-size: 15px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .section-head::before,
+    .section-head::after {
+      content: "================================";
+      flex: 1 1 auto;
+      overflow: hidden;
+      color: #777a6c;
+      letter-spacing: 0;
+    }
+
+    .section-head::before { max-width: 58px; }
+
+    .section-head h2 {
+      margin: 0;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .section-head .count {
+      color: #f0a4c7;
+      font-size: 11px;
+      letter-spacing: .1em;
+    }
+
+    .rows {
+      border-top: var(--rule);
+      border-left: var(--rule);
+      border-right: var(--rule);
+    }
+
+    .device-row {
+      position: relative;
+      min-height: 76px;
+      display: grid;
+      align-items: center;
+      gap: 10px;
+      border-bottom: var(--rule);
+      background: rgba(250,249,223,.76);
+      transition: background 100ms, transform 100ms;
+    }
+
+    .device-row:nth-child(even) { background: rgba(220,232,197,.78); }
+    .device-row:hover { background: var(--paper-hi); }
+    .device-row:focus-within { z-index: 1; background: var(--paper-hi); }
+
+    .priority-row {
+      grid-template-columns: 43px 41px minmax(285px, 1fr) 148px 148px;
+      padding: 0 10px;
+    }
+
+    .rank {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      border-right: 2px dotted var(--faded);
+      color: var(--ribbon);
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.09em;
+    }
+
+    .rank::before { content: attr(data-rank); }
+
+    .glyph {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--ribbon);
+    }
+
+    .glyph svg {
+      width: 31px;
+      height: 31px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .device-copy {
+      min-width: 0;
+      padding: 11px 0;
+    }
+
+    .device-copy strong {
+      display: block;
+      overflow: hidden;
+      color: inherit;
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .device-copy small {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      color: var(--ribbon-soft);
+      font-size: 11px;
+      line-height: 1.2;
+      letter-spacing: .09em;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .state {
+      justify-self: start;
+      padding: 5px 7px 4px;
+      border: 2px solid transparent;
+      color: var(--ribbon-soft);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .in-use {
+      color: var(--paper-hi);
+      background: var(--magenta) !important;
+      border-color: var(--ribbon);
+    }
+
+    .in-use .rank,
+    .in-use .glyph,
+    .in-use .device-copy small { color: var(--paper-hi); }
+    .in-use .rank { border-color: rgba(250,249,223,.6); }
+    .in-use .state {
+      color: var(--ribbon);
+      background: var(--paper-hi);
+      border-color: var(--ribbon);
+    }
+
+    .manual {
+      color: var(--paper-hi);
+      background: var(--ribbon) !important;
+      border-color: var(--magenta);
+    }
+
+    .manual .rank,
+    .manual .glyph,
+    .manual .device-copy small { color: var(--paper-hi); }
+    .manual .rank { border-color: rgba(250,249,223,.55); }
+    .manual .state {
+      color: var(--paper-hi);
+      background: var(--magenta);
+      border-color: var(--paper-hi);
+    }
+
+    .offline {
+      color: #4f524b;
+      background:
+        repeating-linear-gradient(135deg, rgba(79,82,75,.055) 0 4px, transparent 4px 9px),
+        var(--disabled) !important;
+      border-bottom-style: dashed;
+    }
+
+    .offline .device-copy small,
+    .offline .glyph { color: #565950; }
+    .offline .state {
+      color: #4f524b;
+      border-color: #66695f;
+    }
+
+    .row-actions {
+      justify-self: end;
+      display: flex;
+      gap: 5px;
+    }
+
+    .square-btn,
+    .action-btn,
+    .mute-btn,
+    .add-device,
+    .toggle {
+      border: var(--rule);
+      border-radius: 0;
+      background: var(--paper-hi);
+      color: var(--ribbon);
+      font-weight: 900;
+      transition: color 80ms, background 80ms, transform 80ms;
+    }
+
+    .square-btn {
+      width: 42px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+    }
+
+    .square-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: square;
+    }
+
+    .square-btn:hover,
+    .action-btn:hover,
+    .mute-btn:hover,
+    .add-device:hover {
+      color: var(--paper-hi);
+      background: var(--magenta);
+    }
+
+    .square-btn:active,
+    .action-btn:active,
+    .mute-btn:active,
+    .add-device:active,
+    .toggle:active { transform: translate(2px, 2px); }
+
+    .offline .square-btn {
+      color: #5d6057;
+      background: transparent;
+      border-color: #65685e;
+    }
+
+    .offline .square-btn:hover {
+      color: var(--paper-hi);
+      background: #565950;
+    }
+
+    .add-device {
+      width: 100%;
+      min-height: 47px;
+      margin-top: 7px;
+      border-style: dashed;
+      background: rgba(240,240,212,.52);
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .legend {
+      margin: -6px 0 21px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 18px;
+      color: var(--ribbon-soft);
+      font-size: 10px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .swatch { width: 12px; height: 12px; border: 2px solid var(--ribbon); background: var(--magenta); }
+    .swatch.manual-swatch { background: var(--ribbon); border-color: var(--magenta); }
+
+    .mixer-row {
+      grid-template-columns: 43px 41px minmax(250px, 1fr) minmax(170px, 218px) 58px 78px;
+      padding: 0 10px;
+    }
+
+    .level-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+    }
+
+    .volume {
+      width: 100%;
+      height: 28px;
+      margin: 0;
+      accent-color: var(--magenta);
+      cursor: pointer;
+    }
+
+    .percent {
+      text-align: right;
+      font-size: 16px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .mute-btn {
+      width: 72px;
+      min-height: 38px;
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .mute-btn[aria-pressed="true"] {
+      color: var(--paper-hi);
+      background: var(--ribbon);
+      box-shadow: inset 0 -4px 0 var(--magenta);
+    }
+
+    .mix-unavailable {
+      grid-column: 4 / -1;
+      padding-right: 8px;
+      color: #51544d;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .devices-toolbar {
+      margin-bottom: 8px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border: var(--rule);
+      background: rgba(240,240,212,.65);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .remembered-control { display: flex; align-items: center; gap: 12px; }
+
+    .toggle {
+      position: relative;
+      width: 62px;
+      height: 30px;
+      padding: 0;
+      background: var(--disabled);
+    }
+
+    .toggle::before {
+      content: "OFF";
+      position: absolute;
+      inset: 0 5px 0 auto;
+      display: grid;
+      align-items: center;
+      font-size: 9px;
+      letter-spacing: 0;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      background: var(--ribbon);
+      transition: transform 100ms;
+    }
+
+    .toggle[aria-checked="true"] {
+      color: var(--paper-hi);
+      background: var(--magenta);
+    }
+
+    .toggle[aria-checked="true"]::before {
+      content: "ON";
+      right: auto;
+      left: 6px;
+    }
+
+    .toggle[aria-checked="true"]::after {
+      background: var(--paper-hi);
+      transform: translateX(32px);
+    }
+
+    .manage-row {
+      grid-template-columns: 41px minmax(245px, 1fr) 160px 86px 88px;
+      min-height: 73px;
+      padding: 0 10px;
+    }
+
+    .manage-row select,
+    .setting select {
+      min-height: 39px;
+      border: var(--rule);
+      border-radius: 0;
+      background: var(--paper-hi);
+      color: var(--ribbon);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .manage-row select { width: 152px; padding: 0 8px; }
+
+    .action-btn {
+      min-height: 39px;
+      padding: 0 9px;
+      font-size: 11px;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    .disabled-endpoint {
+      color: #4f524b;
+      background:
+        repeating-linear-gradient(135deg, rgba(79,82,75,.055) 0 4px, transparent 4px 9px),
+        var(--disabled) !important;
+      border-bottom-style: dashed;
+    }
+
+    .disabled-endpoint .device-copy small,
+    .disabled-endpoint .glyph { color: #565950; }
+
+    .disabled-endpoint .action-btn:last-child {
+      color: var(--paper-hi);
+      background: var(--magenta);
+    }
+
+    .settings {
+      position: relative;
+      z-index: 2;
+      min-height: 76px;
+      margin: 0 48px;
+      padding: 11px 18px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.35fr;
+      gap: 8px;
+      color: var(--paper-hi);
+      background: var(--ribbon);
+      border-top: 5px double var(--magenta);
+    }
+
+    .setting {
+      min-width: 0;
+      min-height: 46px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px dotted #aeb19d;
+      color: var(--paper-hi);
+      font-size: 11px;
+      letter-spacing: .035em;
+      white-space: nowrap;
+    }
+
+    .setting select {
+      flex: 0 0 auto;
+      padding: 0 7px;
+      border-color: var(--paper-hi);
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 50;
+      right: 30px;
+      bottom: 26px;
+      max-width: 420px;
+      padding: 13px 16px;
+      border: 3px solid var(--paper-hi);
+      color: var(--paper-hi);
+      background: var(--magenta-dark);
+      font-size: 12px;
+      letter-spacing: .06em;
+      transform: translateY(120px);
+      transition: transform 140ms steps(3, end);
+    }
+
+    .toast.show { transform: none; }
+
+    @media (max-width: 1080px) {
+      body { padding: 12px; }
+      .paper { width: calc(100vw - 24px); min-height: calc(100vh - 24px); }
+      .appbar { grid-template-columns: 240px 1fr; }
+      .app-status { display: none; }
+      .priority-row { grid-template-columns: 43px 41px minmax(245px, 1fr) 135px 148px; }
+      .mixer-row { grid-template-columns: 43px 41px minmax(215px, 1fr) 170px 53px 74px; }
+      .manage-row { grid-template-columns: 41px minmax(215px, 1fr) 150px 82px 84px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="paper">
+    <header class="appbar">
+      <div class="brand" aria-label="AudioDeck">
+        <svg class="brandmark" viewBox="0 0 49 49" aria-hidden="true">
+          <circle cx="5" cy="5" r="3"/><circle cx="13" cy="5" r="3"/><circle cx="21" cy="5" r="3"/>
+          <circle cx="29" cy="5" r="3"/><circle cx="37" cy="5" r="3"/><circle class="hot" cx="45" cy="5" r="3"/>
+          <circle cx="5" cy="13" r="3"/><circle class="hot" cx="21" cy="13" r="3"/><circle cx="37" cy="13" r="3"/>
+          <circle cx="5" cy="21" r="3"/><circle cx="13" cy="21" r="3"/><circle cx="21" cy="21" r="3"/>
+          <circle cx="29" cy="21" r="3"/><circle cx="37" cy="21" r="3"/>
+          <circle cx="5" cy="29" r="3"/><circle class="hot" cx="21" cy="29" r="3"/><circle cx="37" cy="29" r="3"/>
+          <circle cx="5" cy="37" r="3"/><circle cx="13" cy="37" r="3"/><circle cx="21" cy="37" r="3"/>
+          <circle cx="29" cy="37" r="3"/><circle cx="37" cy="37" r="3"/><circle class="hot" cx="45" cy="37" r="3"/>
+          <circle cx="5" cy="45" r="3"/><circle cx="21" cy="45" r="3"/><circle cx="37" cy="45" r="3"/>
+        </svg>
+        <div class="wordmark">AUDIO::DECK<small>WINDOWS SIGNAL ORDER</small></div>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="AudioDeck pages">
+        <button class="tab" id="tab-priority" role="tab" aria-controls="priority" aria-selected="true" data-page="priority">Priority</button>
+        <button class="tab" id="tab-mixer" role="tab" aria-controls="mixer" aria-selected="false" data-page="mixer">Mixer</button>
+        <button class="tab" id="tab-devices" role="tab" aria-controls="devices" aria-selected="false" data-page="devices">Devices</button>
+      </nav>
+
+      <div class="app-status"><b>AUTO: ON</b><br>SCAN: 2S</div>
+    </header>
+
+    <main>
+      <section class="page" id="priority" role="tabpanel" aria-labelledby="tab-priority"></section>
+      <section class="page" id="mixer" role="tabpanel" aria-labelledby="tab-mixer" hidden></section>
+      <section class="page" id="devices" role="tabpanel" aria-labelledby="tab-devices" hidden></section>
+    </main>
+
+    <footer class="settings" aria-label="Settings">
+      <div class="setting">
+        <span>Start with Windows</span>
+        <button class="toggle" type="button" role="switch" aria-label="Start with Windows" aria-checked="true"></button>
+      </div>
+      <div class="setting">
+        <span>Pause automation</span>
+        <button class="toggle" type="button" role="switch" aria-label="Pause automation" aria-checked="false"></button>
+      </div>
+      <label class="setting">
+        <span>Check devices every</span>
+        <select id="scan-interval" aria-label="Check devices every">
+          <option selected>2 seconds</option>
+          <option>5 seconds</option>
+          <option>10 seconds</option>
+        </select>
+      </label>
+    </footer>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const outputs = [
+      { name: "AirPods Pro", brand: "Apple", type: "Headphones", state: "offline", label: "OFFLINE" },
+      { name: "Arctis Nova Pro", brand: "Steelseries", type: "Headset", state: "in-use", label: "IN USE", volume: 100 },
+      { name: "Quest", brand: "Meta", type: "Headphones", volume: 62 },
+      { name: "NVIDIA High Definition Audio", brand: "LG", type: "TV", volume: 45 }
+    ];
+
+    const microphones = [
+      { name: "Arctis Nova Pro Mic", brand: "Steelseries", type: "Microphone", mic: true, volume: 100 },
+      { name: "DJI MIC MINI", brand: "DJI", type: "Wireless microphone", mic: true, state: "manual", label: "MANUAL OVERRIDE", volume: 62 }
+    ];
+
+    const deviceTypeOptions = ["Speakers", "Headphones", "Headset", "TV"];
+
+    function deviceGlyph(isMic, type) {
+      if (isMic) {
+        return '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="11" y="3" width="10" height="18"/><path d="M7 15v2c0 5 4 9 9 9s9-4 9-9v-2M16 26v4M10 30h12"/></svg></span>';
+      }
+      if (type === "TV") {
+        return '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="18"/><path d="M10 29h12M16 24v5M10 3l6 3 6-3"/></svg></span>';
+      }
+      return '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 18v-4c0-6 5-11 11-11s11 5 11 11v4M5 17h5v11H8c-2 0-3-1-3-3zM27 17h-5v11h2c2 0 3-1 3-3z"/></svg></span>';
+    }
+
+    function iconButton(kind, label, direction) {
+      const paths = {
+        up: "M3 13l7-7 7 7",
+        down: "M3 7l7 7 7-7",
+        remove: "M4 4l12 12M16 4L4 16"
+      };
+      const directionAttr = direction ? ` data-direction="${direction}"` : "";
+      return `<button class="square-btn ${kind}" type="button" aria-label="${label}"${directionAttr}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="${paths[kind]}"/></svg></button>`;
+    }
+
+    function priorityRow(device, index) {
+      const stateClass = device.state || "";
+      const stateText = device.label || "READY";
+      return `
+        <article class="device-row priority-row ${stateClass}">
+          <span class="rank" data-rank="${index + 1}" aria-label="Rank ${index + 1}"></span>
+          ${deviceGlyph(device.mic, device.type)}
+          <div class="device-copy"><strong>${device.name}</strong><small>${device.brand} / ${device.type}</small></div>
+          <span class="state">${stateText}</span>
+          <div class="row-actions">
+            ${iconButton("up", `Move ${device.name} up`, "-1")}
+            ${iconButton("down", `Move ${device.name} down`, "1")}
+            ${iconButton("remove", `Remove ${device.name}`)}
+          </div>
+        </article>`;
+    }
+
+    function mixerRow(device, index) {
+      const stateClass = device.state || "";
+      const readout = device.state === "offline"
+        ? '<div class="mix-unavailable">NO CONTROL / DEVICE OFFLINE</div>'
+        : `<div class="level-wrap"><input class="volume" type="range" min="0" max="100" value="${device.volume}" aria-label="${device.name} volume"></div><output class="percent">${device.volume}%</output><button class="mute-btn" type="button" aria-pressed="false">Mute</button>`;
+      return `
+        <article class="device-row mixer-row ${stateClass}">
+          <span class="rank" data-rank="${index + 1}" aria-label="Rank ${index + 1}"></span>
+          ${deviceGlyph(device.mic, device.type)}
+          <div class="device-copy"><strong>${device.name}</strong><small>${device.brand} / ${device.type}</small></div>
+          ${readout}
+        </article>`;
+    }
+
+    function banner(title, countLabel) {
+      return `<div class="section-head"><h2>${title}</h2><span class="count">${countLabel}</span></div>`;
+    }
+
+    function prioritySection(title, items) {
+      return `<section class="section">${banner(title, `${items.length} RANKED`)}<div class="rows">${items.map(priorityRow).join("")}</div><button class="add-device" type="button">+ Add a device (2 more)</button></section>`;
+    }
+
+    function mixerSection(title, items) {
+      return `<section class="section">${banner(title, `${items.length} RANKED`)}<div class="rows">${items.map(mixerRow).join("")}</div></section>`;
+    }
+
+    document.querySelector("#priority").innerHTML = `
+      <div class="page-meta"><span>DEFAULT ROUTING ORDER</span><span class="ready">AUTO SWITCHING ACTIVE</span></div>
+      ${prioritySection("OUTPUTS", outputs)}
+      ${prioritySection("MICROPHONES", microphones)}
+      <div class="legend" aria-label="State legend">
+        <span><i class="swatch" aria-hidden="true"></i>IN USE</span>
+        <span><i class="swatch manual-swatch" aria-hidden="true"></i>MANUAL</span>
+      </div>`;
+
+    document.querySelector("#mixer").innerHTML = `
+      <div class="page-meta"><span>PER-DEVICE LEVEL MEMORY</span><span>LIVE LEVELS</span></div>
+      ${mixerSection("OUTPUTS", outputs)}
+      ${mixerSection("MICROPHONES", microphones)}`;
+
+    const allDevices = [
+      ...outputs,
+      ...microphones,
+      { name: "Realtek Digital Output", brand: "Realtek", type: "Speakers", disabled: true }
+    ];
+
+    function typeSelect(device, index) {
+      let selectedType = device.type;
+      if (selectedType === "Microphone" || selectedType === "Wireless microphone") selectedType = "Headset";
+      return `<select aria-label="${device.name} type">${deviceTypeOptions.map(type => `<option${type === selectedType ? " selected" : ""}>${type}</option>`).join("")}</select>`;
+    }
+
+    function manageRow(device, index) {
+      return `
+        <article class="device-row manage-row${device.disabled ? " disabled-endpoint" : ""}">
+          ${deviceGlyph(device.mic, device.type)}
+          <div class="device-copy"><strong>${device.name}</strong><small>${device.brand} / ${device.disabled ? "Disabled endpoint" : device.type}</small></div>
+          ${typeSelect(device, index)}
+          <button class="action-btn rename-btn" type="button">Rename</button>
+          <button class="action-btn device-state-btn" type="button">${device.disabled ? "Enable" : "Disable"}</button>
+        </article>`;
+    }
+
+    document.querySelector("#devices").innerHTML = `
+      <div class="page-meta"><span>WINDOWS AUDIO ENDPOINTS</span><span>${allDevices.length} FOUND</span></div>
+      <div class="devices-toolbar">
+        <span>ALL ENDPOINTS / CONNECTED + DISABLED</span>
+        <div class="remembered-control">
+          <span>Show remembered devices (31)</span>
+          <button class="toggle" type="button" role="switch" aria-label="Show remembered devices (31)" aria-checked="false"></button>
+        </div>
+      </div>
+      <section class="section">
+        ${banner("DEVICES", `${allDevices.length} FOUND`)}
+        <div class="rows">${allDevices.map(manageRow).join("")}</div>
+      </section>`;
+
+    const toast = document.querySelector(".toast");
+    let toastTimer;
+
+    function flash(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    function updateRanks(rows) {
+      rows.querySelectorAll(".rank").forEach((rank, index) => {
+        rank.dataset.rank = String(index + 1);
+        rank.setAttribute("aria-label", `Rank ${index + 1}`);
+      });
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".page").forEach(page => page.hidden = true);
+        tab.setAttribute("aria-selected", "true");
+        document.querySelector(`#${tab.dataset.page}`).hidden = false;
+      });
+    });
+
+    document.addEventListener("input", event => {
+      if (event.target.matches(".volume")) {
+        event.target.closest(".mixer-row").querySelector(".percent").textContent = `${event.target.value}%`;
+      }
+    });
+
+    document.addEventListener("change", event => {
+      if (event.target.matches("#scan-interval")) {
+        document.querySelector(".app-status").innerHTML = `<b>AUTO: ON</b><br>SCAN: ${event.target.value.split(" ")[0]}S`;
+        flash(`Scan interval set to ${event.target.value}`);
+      }
+      if (event.target.matches(".manage-row select")) flash(`Type set to ${event.target.value}`);
+    });
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.matches(".toggle")) {
+        const next = button.getAttribute("aria-checked") !== "true";
+        button.setAttribute("aria-checked", String(next));
+        flash(`${button.getAttribute("aria-label")}: ${next ? "on" : "off"}`);
+      }
+
+      if (button.matches(".mute-btn")) {
+        const next = button.getAttribute("aria-pressed") !== "true";
+        button.setAttribute("aria-pressed", String(next));
+        button.textContent = next ? "Muted" : "Mute";
+      }
+
+      if (button.matches(".up, .down")) {
+        const row = button.closest(".priority-row");
+        const rows = row.parentElement;
+        const direction = Number(button.dataset.direction);
+        const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+        if (sibling) {
+          if (direction < 0) rows.insertBefore(row, sibling);
+          else rows.insertBefore(sibling, row);
+          updateRanks(rows);
+        }
+      }
+
+      if (button.matches(".remove")) flash("Remove device from ranking? Confirmation required.");
+      if (button.matches(".add-device")) flash("Device picker opened.");
+      if (button.matches(".rename-btn")) flash("Rename field ready.");
+
+      if (button.matches(".device-state-btn")) {
+        const enabling = button.textContent.trim() === "Enable";
+        button.textContent = enabling ? "Disable" : "Enable";
+        flash(enabling ? "Endpoint enabled." : "Endpoint disabled.");
+      }
+    });
+  </script>
+</body>
+</html>

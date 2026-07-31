@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AudioDeck - Codex 3</title>
+  <style>
+    :root{
+      --white:#f7f7f4;--ink:#111316;--grey:#dfe1df;--muted:#5d6265;
+      --red:#e52b38;--blue:#1268d7;--yellow:#f4ca16;--green:#15945d;
+      --manual:#f06a22;--display:Impact,"Arial Narrow",sans-serif;--body:"Segoe UI",Arial,sans-serif;--data:Consolas,"Courier New",monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#cfd2d0;color:var(--ink);font:17px/1.35 var(--body);min-width:980px}
+    button,select,input{font:inherit;color:inherit}button{cursor:pointer}
+    button:focus-visible,select:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline-offset:3px}
+    .window{width:min(1220px,calc(100% - 36px));margin:18px auto;background:var(--white);min-height:900px;border:4px solid var(--ink);box-shadow:16px 16px 0 #7e8381;position:relative;padding-bottom:96px}
+    header{height:126px;display:grid;grid-template-columns:330px 1fr;border-bottom:4px solid var(--ink)}
+    .identity{background:var(--ink);color:#fff;padding:21px 24px;display:flex;align-items:center;gap:18px}
+    .roundel{width:66px;height:66px;border:15px solid var(--red);border-radius:50%;position:relative}
+    .roundel:after{content:"AD";position:absolute;left:-16px;right:-16px;top:10px;background:var(--white);color:var(--ink);text-align:center;font:16px/25px var(--display);letter-spacing:1px}
+    .identity strong{font:36px/.9 var(--display);text-transform:uppercase;letter-spacing:1px}.identity strong span{display:block;color:var(--yellow)}
+    .identity small{display:block;font:11px var(--data);margin-top:8px;color:#bfc5c7}
+    .nav-area{display:grid;grid-template-rows:1fr 28px}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr)}
+    .tab{border:0;border-left:3px solid var(--ink);background:var(--white);font:24px var(--display);letter-spacing:.8px;text-transform:uppercase;position:relative}
+    .tab:before{content:"";width:17px;height:17px;border:4px solid var(--ink);border-radius:50%;display:inline-block;margin-right:10px;vertical-align:0}
+    .tab:nth-child(1)[aria-selected=true]{background:var(--red);color:#fff}.tab:nth-child(2)[aria-selected=true]{background:var(--blue);color:#fff}.tab:nth-child(3)[aria-selected=true]{background:var(--yellow)}
+    .tab[aria-selected=true]:before{background:currentColor;box-shadow:inset 0 0 0 4px currentColor;border-color:var(--ink)}
+    .service-line{background:var(--ink);color:#fff;font:12px/28px var(--data);letter-spacing:1px;padding-left:18px}
+    .service-line b{color:#74e3a9}
+    main{padding:28px 28px 20px}
+    .page{display:none}.page.active{display:block}
+    .headline{display:grid;grid-template-columns:170px 1fr 360px;align-items:end;gap:22px;margin-bottom:24px}
+    .route-id{font:15px var(--data);text-transform:uppercase}.route-id b{display:block;font:50px/.9 var(--display);letter-spacing:1px}
+    h1{font:52px/.92 var(--display);text-transform:uppercase;letter-spacing:.5px;margin:0}
+    .headline p{margin:0;color:var(--muted);line-height:1.5;font-size:15px}.headline p b{color:var(--ink)}
+    .route-grid{display:grid;grid-template-columns:1.45fr .8fr;gap:24px}
+    .route-board{border:4px solid var(--ink);background:#fff}
+    .route-board.output{--route:var(--red)}.route-board.mic{--route:var(--blue)}
+    .route-head{background:var(--route);color:#fff;padding:13px 17px;display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid var(--ink)}
+    .route-head h2{font:26px var(--display);letter-spacing:1px;margin:0}.route-head span{font:11px var(--data);padding:5px 7px;background:var(--ink)}
+    .route-list{padding:0 14px 0 22px}
+    .route-row{display:grid;grid-template-columns:66px 50px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:90px;position:relative;border-bottom:2px solid var(--grey);cursor:pointer}
+    .route-row:before{content:"";position:absolute;left:27px;top:0;bottom:0;width:10px;background:var(--route);z-index:0}
+    .route-row:first-child:before{top:50%}.route-row:last-child:before{bottom:50%}
+    .stop{width:38px;height:38px;border:8px solid var(--route);background:#fff;border-radius:50%;z-index:1;display:grid;place-items:center;font:900 11px var(--data)}
+    .route-row.in-use{outline:5px solid var(--green);outline-offset:-5px;background:#effaf5}
+    .route-row.manual{outline:5px solid var(--manual);outline-offset:-5px;background:#fff3eb}
+    .route-row.offline{opacity:.42;filter:grayscale(1);cursor:not-allowed;background:#e7e8e6}
+    .glyph{width:46px;height:46px;border:3px solid var(--ink);display:grid;place-items:center;font-size:21px;background:#fff}
+    .copy{min-width:0}.copy strong{display:block;font-size:17px;line-height:1.2}.copy small{display:block;color:var(--muted);font:11px var(--data);margin-top:5px}
+    .chip{display:inline-block;background:#5d6265;color:#fff;padding:3px 6px;font:9px var(--data);letter-spacing:.5px;margin-left:6px;vertical-align:2px}.chip.live{background:var(--green)}
+    .route-actions{display:grid;grid-template-columns:repeat(3,30px);gap:3px}.route-actions button{height:30px;border:2px solid var(--ink);background:#fff;font-weight:900;padding:0}.route-actions button:hover{background:var(--yellow)}
+    .add{margin:13px;width:calc(100% - 26px);border:3px dashed var(--ink);background:#fff;padding:14px;font-weight:800;text-align:left}.add:hover{background:var(--yellow)}
+    .key{display:flex;gap:10px;margin-top:18px}.key div{flex:1;padding:11px;border:2px solid var(--ink);font:12px var(--data);background:#fff}.key i{display:inline-block;width:17px;height:17px;border:5px solid var(--green);vertical-align:-4px;margin-right:8px}.key .manual i{border-color:var(--manual)}
+    .mix-board{border:4px solid var(--ink);background:#fff;margin-bottom:22px}.mix-board h2{font:27px var(--display);letter-spacing:1px;margin:0;padding:12px 16px;background:var(--blue);color:#fff;border-bottom:4px solid var(--ink)}.mix-board.output h2{background:var(--red)}
+    .mix-row{display:grid;grid-template-columns:58px 52px minmax(250px,1fr) minmax(240px,1.3fr) 80px 88px;gap:14px;align-items:center;min-height:82px;padding:10px 15px;border-bottom:2px solid var(--ink)}
+    .mix-row:last-child{border-bottom:0}.mix-row.offline{grid-template-columns:58px 52px 1fr auto;opacity:.44;background:var(--grey)}
+    .mix-number{font:31px var(--display);text-align:center}.mix-row input{width:100%;accent-color:var(--blue)}
+    .percent{font:22px var(--data);font-weight:900}.mute{border:3px solid var(--ink);background:var(--yellow);padding:10px 8px;font-weight:900}.mute.on{background:var(--red);color:#fff}
+    .endpoint-table{border:4px solid var(--ink);background:#fff}.endpoint-head,.endpoint{display:grid;grid-template-columns:55px minmax(250px,1fr) 210px 100px 112px;gap:14px;align-items:center}
+    .endpoint-head{padding:10px 15px;background:var(--yellow);border-bottom:4px solid var(--ink);font:12px var(--data);font-weight:900}.endpoint{padding:12px 15px;border-bottom:2px solid var(--ink)}.endpoint:last-child{border-bottom:0}.endpoint.disabled{opacity:.44;background:var(--grey)}
+    select{border:3px solid var(--ink);background:#fff;padding:9px}.action{border:3px solid var(--ink);background:#fff;padding:9px 7px;font-weight:800}.action:hover{background:var(--yellow)}.action.disable{background:#ffe1e3}.endpoint.disabled .action.disable{background:#dbf6e9}
+    .remembered{margin-top:16px;border:4px solid var(--ink);background:var(--blue);color:#fff;padding:15px 18px;display:flex;justify-content:space-between;align-items:center}.remembered small{display:block;font:11px var(--data);margin-top:4px}
+    .switch{width:64px;height:32px;border:3px solid var(--ink);background:#8b8e8c;position:relative;padding:0}.switch:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:2px;background:#fff;border:2px solid var(--ink);transition:.15s}.switch.on{background:var(--green)}.switch.on:before{left:33px}
+    .settings{position:absolute;left:0;right:0;bottom:0;min-height:84px;border-top:4px solid var(--ink);display:grid;grid-template-columns:1fr 1fr 1.25fr;background:#fff}
+    .setting{display:flex;align-items:center;gap:13px;padding:12px 20px;border-right:3px solid var(--ink)}.setting:last-child{border:0}.setting b{display:block;font-size:15px}.setting small{display:block;font:10px var(--data);color:var(--muted);margin-top:3px}.setting select{margin-left:auto}
+    .toast{position:fixed;right:30px;bottom:108px;background:var(--ink);color:#fff;border:5px solid var(--yellow);padding:14px 20px;font-weight:800;opacity:0;transform:translateY(12px);transition:.16s;z-index:10}.toast.show{opacity:1;transform:none}
+    @media(max-width:1060px){.route-grid{grid-template-columns:1fr}.headline{grid-template-columns:140px 1fr}.headline p{grid-column:1/-1}.endpoint-head,.endpoint{grid-template-columns:50px 1fr 180px 90px 100px}.window{width:calc(100% - 20px)}}
+  </style>
+</head>
+<body>
+<div class="window">
+  <header>
+    <div class="identity"><div class="roundel" aria-hidden="true"></div><div><strong>Audio<span>Deck</span></strong><small>WINDOWS SOUND ROUTING</small></div></div>
+    <div class="nav-area"><nav class="tabs" aria-label="Main pages"><button class="tab" data-page="priority" aria-selected="true">Priority</button><button class="tab" data-page="mixer" aria-selected="false">Mixer</button><button class="tab" data-page="devices" aria-selected="false">Devices</button></nav><div class="service-line"><b>● GOOD SERVICE</b> &nbsp; AUTOMATION IS CHECKING DEVICES EVERY 2 SECONDS</div></div>
+  </header>
+  <main>
+    <section class="page active" id="priority">
+      <div class="headline"><div class="route-id">Route control<b>P1</b></div><h1>Next available<br>becomes default.</h1><p>AudioDeck follows each route from stop 1 onward. The <b>highest available device automatically becomes the Windows default</b>. Click a stop to switch and create an orange manual override.</p></div>
+      <div class="route-grid">
+        <section class="route-board output"><div class="route-head"><h2>OUTPUTS</h2><span>WINDOWS PLAYBACK ROUTE</span></div><div class="route-list ranked-list">
+          <div class="route-row offline" data-name="Apple / Airpods Pro"><span class="stop">1</span><span class="glyph">🎧</span><span class="copy"><strong>Apple / Airpods Pro <i class="chip">OFFLINE</i></strong><small>BLUETOOTH HEADPHONES</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+          <div class="route-row in-use" data-name="Steelseries / Arctis Nova Pro"><span class="stop">2</span><span class="glyph">🎧</span><span class="copy"><strong>Steelseries / Arctis Nova Pro <i class="chip live">IN USE</i></strong><small>USB GAMING HEADSET</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+          <div class="route-row" data-name="Meta / Quest"><span class="stop">3</span><span class="glyph">◉</span><span class="copy"><strong>Meta / Quest</strong><small>VIRTUAL REALITY HEADSET</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+          <div class="route-row" data-name="LG / NVIDIA High Definition Audio"><span class="stop">4</span><span class="glyph">▣</span><span class="copy"><strong>LG / NVIDIA High Definition Audio</strong><small>HDMI TELEVISION</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+        </div><button class="add">+ Add a device (2 more)</button></section>
+        <section class="route-board mic"><div class="route-head"><h2>MICROPHONES</h2><span>WINDOWS INPUT ROUTE</span></div><div class="route-list ranked-list">
+          <div class="route-row in-use" data-name="Steelseries / Sonar Microphone"><span class="stop">1</span><span class="glyph">●</span><span class="copy"><strong>Steelseries / Sonar Microphone <i class="chip live">IN USE</i></strong><small>VIRTUAL MICROPHONE</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+          <div class="route-row" data-name="DJI / MIC MINI"><span class="stop">2</span><span class="glyph">●</span><span class="copy"><strong>DJI / MIC MINI</strong><small>WIRELESS RECEIVER</small></span><span class="route-actions"><button data-move="up">↑</button><button data-move="down">↓</button><button data-remove>×</button></span></div>
+        </div><button class="add">+ Add a device (2 more)</button><div class="key"><div><i></i><b>GREEN</b><br>automatic in use</div><div class="manual"><i></i><b>ORANGE</b><br>manual override</div></div></section>
+      </div>
+    </section>
+
+    <section class="page" id="mixer">
+      <div class="headline"><div class="route-id">Level control<b>M2</b></div><h1>Volume on<br>every route.</h1><p>Active stops have a 0–100 fader, exact readout, and Mute button. Offline ranked devices remain visible without a fader.</p></div>
+      <section class="mix-board output"><h2>OUTPUTS</h2>
+        <div class="mix-row offline"><span class="mix-number">1</span><span class="glyph">🎧</span><span class="copy"><strong>Apple / Airpods Pro <i class="chip">OFFLINE</i></strong><small>BLUETOOTH HEADPHONES</small></span><b>LEVEL UNAVAILABLE</b></div>
+        <div class="mix-row"><span class="mix-number">2</span><span class="glyph">🎧</span><span class="copy"><strong>Steelseries / Arctis Nova Pro</strong><small>USB HEADSET · IN USE</small></span><input type="range" min="0" max="100" value="74" aria-label="Arctis volume"><span class="percent">74%</span><button class="mute">Mute</button></div>
+        <div class="mix-row"><span class="mix-number">3</span><span class="glyph">◉</span><span class="copy"><strong>Meta / Quest</strong><small>VIRTUAL REALITY HEADSET</small></span><input type="range" min="0" max="100" value="58" aria-label="Quest volume"><span class="percent">58%</span><button class="mute">Mute</button></div>
+        <div class="mix-row"><span class="mix-number">4</span><span class="glyph">▣</span><span class="copy"><strong>LG / NVIDIA High Definition Audio</strong><small>HDMI TELEVISION</small></span><input type="range" min="0" max="100" value="42" aria-label="LG volume"><span class="percent">42%</span><button class="mute">Mute</button></div>
+      </section>
+      <section class="mix-board"><h2>MICROPHONES</h2>
+        <div class="mix-row"><span class="mix-number">1</span><span class="glyph">●</span><span class="copy"><strong>Steelseries / Sonar Microphone</strong><small>VIRTUAL MICROPHONE</small></span><input type="range" min="0" max="100" value="82" aria-label="Steelseries microphone volume"><span class="percent">82%</span><button class="mute">Mute</button></div>
+        <div class="mix-row"><span class="mix-number">2</span><span class="glyph">●</span><span class="copy"><strong>DJI / MIC MINI</strong><small>WIRELESS MICROPHONE RECEIVER</small></span><input type="range" min="0" max="100" value="68" aria-label="DJI microphone volume"><span class="percent">68%</span><button class="mute">Mute</button></div>
+      </section>
+    </section>
+
+    <section class="page" id="devices">
+      <div class="headline"><div class="route-id">Endpoint map<b>D3</b></div><h1>Every device.<br>Even disabled.</h1><p>Choose Speakers, Headphones, Headset, or TV. Renamed device names apply to <b>Windows itself</b>, including its sound menus and apps.</p></div>
+      <section class="endpoint-table"><div class="endpoint-head"><span>GLYPH</span><span>WINDOWS ENDPOINT</span><span>TYPE</span><span>NAME</span><span>STATUS</span></div>
+        <div class="endpoint"><span class="glyph">🎧</span><span class="copy"><strong>Apple / Airpods Pro</strong><small>BLUETOOTH · OFFLINE</small></span><select aria-label="Airpods type"><option>Headphones</option><option>Speakers</option><option>Headset</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint"><span class="glyph">🎧</span><span class="copy"><strong>Steelseries / Arctis Nova Pro</strong><small>USB · DEFAULT OUTPUT</small></span><select aria-label="Arctis type"><option>Headset</option><option>Speakers</option><option>Headphones</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint"><span class="glyph">◉</span><span class="copy"><strong>Meta / Quest</strong><small>USB · READY</small></span><select aria-label="Quest type"><option>Headset</option><option>Speakers</option><option>Headphones</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint"><span class="glyph">▣</span><span class="copy"><strong>LG / NVIDIA High Definition Audio</strong><small>HDMI · READY</small></span><select aria-label="LG type"><option>TV</option><option>Speakers</option><option>Headphones</option><option>Headset</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint"><span class="glyph">●</span><span class="copy"><strong>Steelseries / Sonar Microphone</strong><small>VIRTUAL · DEFAULT INPUT</small></span><select aria-label="Steelseries mic type"><option>Headset</option><option>Speakers</option><option>Headphones</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint"><span class="glyph">●</span><span class="copy"><strong>DJI / MIC MINI</strong><small>USB · READY</small></span><select aria-label="DJI type"><option>Headset</option><option>Speakers</option><option>Headphones</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Disable</button></div>
+        <div class="endpoint disabled"><span class="glyph">◌</span><span class="copy"><strong>Realtek Digital Output</strong><small>BUILT-IN · DISABLED</small></span><select aria-label="Realtek type"><option>Speakers</option><option>Headphones</option><option>Headset</option><option>TV</option></select><button class="action rename">Rename</button><button class="action disable">Enable</button></div>
+      </section>
+      <div class="remembered"><span><b>Show remembered devices (31)</b><small>INCLUDE ENDPOINTS WINDOWS HAS SEEN BEFORE</small></span><button class="switch" role="switch" aria-checked="false" aria-label="Show remembered devices"></button></div>
+    </section>
+  </main>
+  <footer class="settings">
+    <div class="setting"><button class="switch on" role="switch" aria-checked="true" aria-label="Start with Windows"></button><span><b>Start with Windows</b><small>RUN AFTER SIGN-IN</small></span></div>
+    <div class="setting"><button class="switch" role="switch" aria-checked="false" aria-label="Pause automation"></button><span><b>Pause automation</b><small>KEEP CURRENT DEFAULTS</small></span></div>
+    <div class="setting"><span><b>Check devices every</b><small>CONNECTION SCAN INTERVAL</small></span><select aria-label="Device check interval"><option selected>2 seconds</option><option>5 seconds</option><option>10 seconds</option></select></div>
+  </footer>
+</div>
+<div class="toast" role="status"></div>
+<script>
+  const toast=document.querySelector('.toast');
+  const announce=t=>{toast.textContent=t;toast.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>toast.classList.remove('show'),1700)};
+  document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected','false'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));tab.setAttribute('aria-selected','true');document.getElementById(tab.dataset.page).classList.add('active')}));
+  document.querySelectorAll('.route-row:not(.offline)').forEach(row=>row.addEventListener('click',e=>{if(e.target.closest('button'))return;row.closest('.ranked-list').querySelectorAll('.route-row').forEach(r=>r.classList.remove('manual'));row.classList.add('manual');announce(`${row.dataset.name} is now the manual Windows default`)}));
+  const rerank=list=>[...list.querySelectorAll('.route-row')].forEach((row,i)=>row.querySelector('.stop').textContent=i+1);
+  document.querySelectorAll('[data-move]').forEach(btn=>btn.addEventListener('click',()=>{const row=btn.closest('.route-row'),list=row.parentNode;if(btn.dataset.move==='up'&&row.previousElementSibling)list.insertBefore(row,row.previousElementSibling);if(btn.dataset.move==='down'&&row.nextElementSibling)list.insertBefore(row.nextElementSibling,row);rerank(list)}));
+  document.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{const row=btn.closest('.route-row'),list=row.parentNode;announce(`${row.dataset.name} removed from the route`);row.remove();rerank(list)}));
+  document.querySelectorAll('input[type=range]').forEach(input=>input.addEventListener('input',()=>input.nextElementSibling.textContent=input.value+'%'));
+  document.querySelectorAll('.mute').forEach(btn=>btn.addEventListener('click',()=>{btn.classList.toggle('on');btn.textContent=btn.classList.contains('on')?'Muted':'Mute'}));
+  document.querySelectorAll('.switch').forEach(btn=>btn.addEventListener('click',()=>{btn.classList.toggle('on');btn.setAttribute('aria-checked',btn.classList.contains('on'))}));
+  document.querySelectorAll('.disable').forEach(btn=>btn.addEventListener('click',()=>{const row=btn.closest('.endpoint');row.classList.toggle('disabled');btn.textContent=row.classList.contains('disabled')?'Enable':'Disable'}));
+  document.querySelectorAll('.rename').forEach(btn=>btn.addEventListener('click',()=>{const label=btn.closest('.endpoint').querySelector('.copy strong'),name=prompt('Rename this device in Windows:',label.textContent);if(name&&name.trim()){label.textContent=name.trim();announce('Windows device name updated')}}));
+  document.querySelectorAll('.add').forEach(btn=>btn.addEventListener('click',()=>announce('Device picker opened')));
+</script>
+</body>
+</html>
