@@ -143,12 +143,47 @@ export function headsetPowerState(device: HeadsetDevice): boolean | null {
 }
 
 /**
- * Match a HeadsetControl device to a Windows endpoint by name: every word of
- * the product name must appear in the endpoint's friendly name (Windows names
- * look like "Speakers (Arctis Nova Pro Wireless)" while HeadsetControl says
- * "SteelSeries Arctis Nova Pro Wireless").
+ * Match a HeadsetControl device to a Windows endpoint.
+ *
+ * The USB ids in the endpoint's association are the reliable key, because this
+ * app renames endpoints as a feature: a headset renamed "Steelseries (Arctis
+ * Nova Pro)" no longer contains the product name, the name match silently
+ * stopped matching, and the daemon never saw the headset power off (observed
+ * live 2026-07-31). The name match stays as the fallback for endpoints that
+ * carry no USB ids, Bluetooth and virtual devices among them.
  */
-export function matchesEndpointName(device: HeadsetDevice, endpointName: string): boolean {
+export function matchesEndpoint(
+  device: HeadsetDevice,
+  endpoint: { name: string; association: string | null },
+): boolean {
+  return (
+    matchesEndpointUsbIds(device, endpoint.association) ||
+    matchesEndpointName(device, endpoint.name)
+  );
+}
+
+/** VID/PID out of a device interface path like `{1}.USB\VID_1038&PID_12E0\...`. */
+function matchesEndpointUsbIds(device: HeadsetDevice, association: string | null): boolean {
+  if (association === null) return false;
+  const found = /VID_([0-9a-f]{4})&PID_([0-9a-f]{4})/i.exec(association);
+  if (found === null) return false;
+  return (
+    found[1]?.toLowerCase() === hexId(device.id_vendor) &&
+    found[2]?.toLowerCase() === hexId(device.id_product)
+  );
+}
+
+/** "0x12e0", "12E0" and "0X12E0" are the same id. */
+function hexId(id: string): string {
+  return id.trim().toLowerCase().replace(/^0x/, "");
+}
+
+/**
+ * Match by name: every word of the product name must appear in the endpoint's
+ * friendly name (Windows names look like "Speakers (Arctis Nova Pro Wireless)"
+ * while HeadsetControl says "SteelSeries Arctis Nova Pro Wireless").
+ */
+function matchesEndpointName(device: HeadsetDevice, endpointName: string): boolean {
   const haystack = endpointName.toLowerCase();
   const words = device.product
     .toLowerCase()

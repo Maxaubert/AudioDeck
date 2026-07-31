@@ -1,7 +1,7 @@
 // Merge Windows endpoint states with headset power into per-device availability.
 
 import type { Endpoint } from "./audioctl.js";
-import { headsetPowerState, matchesEndpointName } from "./headsetcontrol.js";
+import { headsetPowerState, matchesEndpoint } from "./headsetcontrol.js";
 import type { HeadsetSnapshot } from "./headsetcontrol.js";
 
 /** How a device's availability was decided, for logging and the UI badges. */
@@ -32,7 +32,7 @@ export function evaluateAvailability(
       return { endpoint, available: false, reason: "endpoint-inactive" as const };
     }
 
-    const headset = headsets?.devices.find((d) => matchesEndpointName(d, endpoint.name));
+    const headset = headsets?.devices.find((d) => matchesEndpoint(d, endpoint));
     if (headset === undefined) {
       return { endpoint, available: true, reason: "endpoint-active" as const };
     }
