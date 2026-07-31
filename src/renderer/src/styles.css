@@ -515,16 +515,17 @@ select {
   opacity: 0.82;
 }
 
-.strip-tags {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 14px;
+/* One row per device: rank, glyph, name, volume, level, action, expander. The
+   expanded panel is an eighth child spanning every column. The minimums total
+   754px, which clears the usable width at the window's 900px minimum with the
+   view padding, the list borders and a vertical scrollbar all taken off. */
+.device-strip {
+  grid-template-columns: 72px 58px minmax(170px, 1fr) minmax(190px, 1.05fr) 86px 120px 58px;
 }
 
-/* Devices rows carry no rank slab. */
-.device-strip {
-  grid-template-columns: 58px minmax(240px, 1fr) auto auto;
+/* Unranked rows keep the column so every row lines up, without the slab. */
+.rank.is-unranked {
+  background: transparent;
 }
 
 /* ---------- badges ---------- */
@@ -548,6 +549,11 @@ select {
 
 .badge-headset-off {
   border-style: dashed;
+}
+
+/* Empty until something is in flight; no gap in the name row while it waits. */
+.saving-slot:empty {
+  display: none;
 }
 
 .badge-saving {
@@ -631,6 +637,7 @@ select {
   border-color: var(--ink);
 }
 
+/* Reorder buttons on the Priority rows. */
 .move-controls {
   display: flex;
   align-items: center;
@@ -710,11 +717,7 @@ select {
   color: var(--dead-ink);
 }
 
-/* ---------- mixer ---------- */
-
-.mixer-strip {
-  grid-template-columns: 88px 58px minmax(200px, 1fr) minmax(240px, 1.1fr) 92px 116px;
-}
+/* ---------- volume ---------- */
 
 /* Segmented meter: 20 blocks, filled up to the level. The range input sits
    invisibly on top so dragging behaves exactly like a normal slider. */
@@ -790,14 +793,13 @@ select {
    clickable, it explains why the fader is gone. The reason shows on hover and
    on keyboard focus. */
 
-/* Same footprint as the Mute button it stands in for, so the control column
+/* Fills the action slot the Mute button would occupy, so the control column
    stays a straight line down the list. */
 .vol-lock-slot {
   position: relative;
   display: grid;
   place-items: center;
-  width: 80px;
-  margin: 0 18px 0 12px;
+  width: 100%;
 }
 
 .vol-lock {
@@ -850,14 +852,87 @@ select {
   }
 }
 
+/* The one action a row offers at rest: Mute for a device whose level we can
+   set, Enable for a disabled endpoint, the lock stamp for hardware that owns
+   its own volume, nothing for anything else. */
+.row-action {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+}
+
 .mute {
-  width: 80px;
-  margin: 0 18px 0 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.row-action .btn {
+  width: 100%;
+  padding: 0 8px;
 }
 
 .mute.is-on {
   background: var(--fg);
   color: var(--bg);
+}
+
+/* ---------- device settings panel ---------- */
+
+/* Solid, and inverted while open: this is a control, so it must not read as
+   dashed (which means inert everywhere else in the app). */
+.btn-expand {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  cursor: pointer;
+  transition:
+    background 100ms linear,
+    color 100ms linear;
+}
+
+.btn-expand:hover,
+.btn-expand.is-open {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.device-panel {
+  grid-column: 1 / -1;
+  padding: 16px 20px 18px;
+  border-top: 3px solid var(--fg);
+  background: var(--bg);
+}
+
+.device-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The break between ranked devices and the rest of the hardware. */
+.section-break {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.section-break::after {
+  content: "";
+  flex: 1;
+  height: 3px;
+  background: var(--ink);
 }
 
 /* ---------- devices page ---------- */
@@ -889,6 +964,12 @@ select {
   align-items: center;
   gap: 10px;
   margin-top: 10px;
+}
+
+/* Its own line under the type and action buttons, never squeezed beside them. */
+.device-controls .rename-form {
+  flex-basis: 100%;
+  margin-top: 2px;
 }
 
 .rename-input {

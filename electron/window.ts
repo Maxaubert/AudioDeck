@@ -22,7 +22,9 @@ export class WindowManager {
     const win = new BrowserWindow({
       width: 1180,
       height: 900,
-      minWidth: 900,
+      // Matches the stylesheet's `body { min-width }`: any narrower and the
+      // window only gains a horizontal scrollbar, it does not show more.
+      minWidth: 940,
       minHeight: 640,
       backgroundColor: "#000000",
       autoHideMenuBar: true,
