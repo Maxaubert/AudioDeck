@@ -1,6 +1,8 @@
 # electron-builder configuration: Windows NSIS installer + portable exe.
-# The two helper executables ship as extraResources (outside the asar) so the
+# The helper executables ship as extraResources (outside the asar) so the
 # daemon can spawn them; electron/binaries.ts resolves these paths at runtime.
+# The Equalizer APO setup rides along for the same reason: the end user should
+# never have to go and find a second tool for AudioDeck's own features to work.
 # Run scripts/check-bundle-inputs.mjs (wired into `npm run dist`) before
 # building so a missing helper fails with a clear message.
 
@@ -18,6 +20,8 @@ extraResources:
     to: bin/audioctl.exe
   - from: vendor/headsetcontrol.exe
     to: vendor/headsetcontrol.exe
+  - from: vendor/equalizerapo-setup.exe
+    to: vendor/equalizerapo-setup.exe
 win:
   target:
     - nsis

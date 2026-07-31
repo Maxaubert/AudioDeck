@@ -21,6 +21,12 @@ const inputs = [
     file: path.join("vendor", "headsetcontrol.exe"),
     fix: "Fetch it first: powershell -File scripts/fetch-headsetcontrol.ps1",
   },
+  {
+    // Ships inside AudioDeck so the Studio tab can set up audio effects
+    // without sending the user off to find a second tool.
+    file: path.join("vendor", "equalizerapo-setup.exe"),
+    fix: "Fetch it first: powershell -File scripts/fetch-equalizerapo.ps1",
+  },
 ];
 
 let ok = true;
@@ -47,7 +53,9 @@ if (!ok) {
   console.error("Cannot package AudioDeck until the inputs above are fixed.");
   process.exit(1);
 }
-console.log("Bundle inputs OK: audioctl.exe fresh, headsetcontrol.exe present.");
+console.log(
+  "Bundle inputs OK: audioctl.exe fresh, headsetcontrol.exe and equalizerapo-setup.exe present.",
+);
 
 function newestCsTime(dir) {
   let newest = { file: "", time: 0 };
