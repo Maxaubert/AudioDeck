@@ -55,6 +55,14 @@ export interface EffectsStatusView {
 }
 
 /** Everything the renderer needs to draw all three views plus settings. */
+/** Something else is winning the default on this flow, and AudioDeck stopped. */
+export interface ContestedView {
+  flow: EndpointFlow;
+  deviceId: string;
+  /** Display name at the time, so the banner can say who without a lookup. */
+  deviceName: string;
+}
+
 export interface AppState {
   devices: DeviceView[];
   outputPriority: string[];
@@ -62,6 +70,11 @@ export interface AppState {
   /** Manual-override hold per flow: audio was pointed somewhere by hand. */
   override: { output: boolean; mic: boolean };
   paused: boolean;
+  /**
+   * Flows AudioDeck has stopped switching because another program keeps taking
+   * the default straight back. Empty when nothing is fighting it.
+   */
+  contested: ContestedView[];
   autostart: boolean;
   pollIntervalMs: number;
   /** False until the first-run guide has been through once. */

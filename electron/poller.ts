@@ -8,6 +8,12 @@ import { decide, diffEvents, pruneMissing, seedPriorityList } from "./rules.js";
 import { endpointFingerprint, shouldQueryHeadsets } from "./headset-gate.js";
 import { matchesEndpoint } from "./headsetcontrol.js";
 import { dedupeEndpoints } from "./dedupe.js";
+import {
+  clearContention,
+  emptyContention,
+  noteAssertion,
+  releaseIfGone,
+} from "./contention.js";
 import { migrateIdentities, migrateSupersessions } from "./identity.js";
 import { reapplyCustomizations } from "./reapply.js";
 import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
@@ -15,6 +21,13 @@ import type { AudioDeckConfig } from "./config.js";
 import type { DeviceAvailability } from "./availability.js";
 import type { HeadsetQuerier, HeadsetSnapshot } from "./headsetcontrol.js";
 import type { GateState } from "./headset-gate.js";
+import type { ContentionState } from "./contention.js";
+
+/** A flow AudioDeck has stopped asserting, and what is holding it. */
+export interface ContentionView {
+  flow: EndpointFlow;
+  deviceId: string;
+}
 
 export interface PollerDeps {
   audioctl: AudioControl;
@@ -58,6 +71,8 @@ export class Poller {
   private last: PollSnapshot | null = null;
   /** Consecutive ticks each ranked id has been missing from Windows entirely. */
   private missingTicks = new Map<string, number>();
+  /** Fight detection per flow. */
+  private contention = new Map<EndpointFlow, ContentionState>();
   /** Whether HeadsetControl is worth asking, and when it was last asked. */
   private headsetGate: GateState | null = null;
   /** Last HeadsetControl answer, reused on ticks that skip the query. */
@@ -86,6 +101,24 @@ export class Poller {
 
   isPaused(): boolean {
     return this.paused;
+  }
+
+  /** Flows AudioDeck has stopped asserting because something keeps winning. */
+  contested(): ContentionView[] {
+    const out: ContentionView[] = [];
+    for (const [flow, state] of this.contention) {
+      if (state.contestedBy !== null) out.push({ flow, deviceId: state.contestedBy });
+    }
+    return out;
+  }
+
+  /**
+   * Try again, on every flow. The user changing the ranking or picking a device
+   * by hand is a new instruction, and deserves a fresh attempt even against a
+   * program that won the last one.
+   */
+  clearContention(): void {
+    for (const state of this.contention.values()) clearContention(state);
   }
 
   /** Latest gathered state, or null before the first completed tick. */
@@ -207,6 +240,17 @@ export class Poller {
       const defaultMoved =
         !this.lastDefaults.has(flow) || this.lastDefaults.get(flow) !== currentDefaultId;
       this.lastDefaults.set(flow, currentDefaultId);
+
+      let contention = this.contention.get(flow);
+      if (contention === undefined) {
+        contention = emptyContention();
+        this.contention.set(flow, contention);
+      }
+      // Nothing else clears this: once we stop asserting there is no more
+      // fight to see, so the contender leaving is the only signal that comes
+      // on its own.
+      releaseIfGone(contention, new Set(endpoints.map((e) => e.id)));
+
       const decision = decide(
         config[priorityKey],
         flowAvailability,
@@ -214,6 +258,7 @@ export class Poller {
         currentDefaultId,
         override[overrideKey],
         defaultMoved,
+        contention.contestedBy !== null,
       );
 
       if (decision.engageOverride && !override[overrideKey]) {
@@ -231,6 +276,17 @@ export class Poller {
         console.log(`[poller] ${flow}: setting default to ${decision.setDefaultTo}`);
         try {
           await this.deps.audioctl.setDefault(decision.setDefaultTo);
+          // Having to do this repeatedly is what a fight looks like from here:
+          // in a settled system the default is set when something changes, and
+          // things do not change several times a minute on their own.
+          const wasContested = contention.contestedBy;
+          noteAssertion(contention, decision.setDefaultTo, currentDefaultId, Date.now());
+          if (contention.contestedBy !== null && wasContested === null) {
+            console.log(
+              `[poller] ${flow}: ${contention.contestedBy} keeps taking the default back, ` +
+                "standing down",
+            );
+          }
         } catch (err) {
           console.error(`[poller] ${flow}: set-default failed:`, err);
         }

@@ -161,8 +161,18 @@ export function decide(
   currentDefaultId: string | null,
   overrideActive: boolean,
   defaultMoved: boolean = true,
+  contested: boolean = false,
 ): Decision {
   const winner = pickWinner(priority, availability);
+
+  // Checked before the availability branch, unlike the manual-override hold.
+  // The programs this defends against create and tear down their endpoint as
+  // they take and release the audio, so they manufacture an availability event
+  // on nearly every cycle; a hold that events could clear would clear on the
+  // very ticks it exists for.
+  if (contested) {
+    return { setDefaultTo: null, engageOverride: false, releaseOverride: false };
+  }
 
   if (events.length > 0) {
     return {

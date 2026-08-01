@@ -7,6 +7,7 @@ import { DeviceManagerView } from "./views/DeviceManagerView.js";
 import { StudioView } from "./views/StudioView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { WindowCaption } from "./components/WindowCaption.js";
+import { splitDeviceName } from "../../../shared/deviceName.js";
 import { FirstRunGuide } from "./components/FirstRunGuide.js";
 
 type ViewName = "devices" | "studio" | "settings";
@@ -56,6 +57,15 @@ export default function App() {
       {state?.paused === true ? (
         <div className="paused-banner">Automation is paused. Devices will not switch.</div>
       ) : null}
+      {(state?.contested ?? []).map((c) => (
+        <div className="contested-banner" key={`${c.flow}:${c.deviceId}`} role="status">
+          {/* The title alone, not the composed name: "LG TV" is what people
+              call it, and the interface part makes the sentence unreadable. */}
+          <b>{splitDeviceName(c.deviceName).title}</b> keeps taking your{" "}
+          {c.flow === "capture" ? "microphone" : "sound"} back, so AudioDeck has stopped
+          switching it. Rank it first if you want it, or remove it from the list.
+        </div>
+      ))}
       {state === null ? (
         <div className="loading">Reading your audio devices&hellip;</div>
       ) : view === "devices" ? (
