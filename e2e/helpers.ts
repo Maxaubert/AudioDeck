@@ -25,20 +25,23 @@ export interface LaunchedApp {
  * backend supplies deterministic device data.
  */
 export async function launchApp(
-  /** Partial config written before launch; missing fields take their defaults. */
+  /**
+   * Partial config written before launch; missing fields take their defaults.
+   * The first-run guide is marked seen unless the caller says otherwise: it is
+   * a modal dialog, so leaving it to open would block every other test from
+   * reaching the app behind it.
+   */
   seedConfig?: Record<string, unknown>,
   /** Extra environment, for exercising states the mock backend can fake. */
   extraEnv: Record<string, string> = {},
 ): Promise<LaunchedApp> {
   const appData = await mkdtemp(path.join(os.tmpdir(), "audiodeck-e2e-"));
-  if (seedConfig !== undefined) {
-    await mkdir(path.join(appData, "AudioDeck"), { recursive: true });
-    await writeFile(
-      path.join(appData, "AudioDeck", "config.json"),
-      JSON.stringify(seedConfig, null, 2),
-      "utf8",
-    );
-  }
+  await mkdir(path.join(appData, "AudioDeck"), { recursive: true });
+  await writeFile(
+    path.join(appData, "AudioDeck", "config.json"),
+    JSON.stringify({ guideSeen: true, ...seedConfig }, null, 2),
+    "utf8",
+  );
   const app = await _electron.launch({
     args: ["."],
     cwd: repoRoot,

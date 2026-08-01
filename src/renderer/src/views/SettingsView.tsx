@@ -1,7 +1,8 @@
 // Settings page. Only controls that actually change behaviour appear here:
 // autostart, the automation pause, and the poll interval. Anything AudioDeck
 // does unconditionally (re-applying names after a driver reset, pruning
-// deleted endpoints) is stated as behaviour, not offered as a fake switch.
+// deleted endpoints) belongs in the first-run guide, not here: a settings page
+// listing things you cannot set is a page you stop reading.
 
 import type { AppState, AudioDeckApi } from "../../../../shared/ipc.js";
 
@@ -46,7 +47,16 @@ function Switch({
   );
 }
 
-export function SettingsView({ state, actions }: { state: AppState; actions: AudioDeckApi }) {
+export function SettingsView({
+  state,
+  actions,
+  onReplayGuide,
+}: {
+  state: AppState;
+  actions: AudioDeckApi;
+  /** Reopens the first-run guide, without waiting on a round trip to disk. */
+  onReplayGuide: () => void;
+}) {
   const pollValue = POLL_CHOICES.some((c) => c.ms === state.pollIntervalMs)
     ? state.pollIntervalMs
     : 2000;
@@ -125,37 +135,30 @@ export function SettingsView({ state, actions }: { state: AppState; actions: Aud
         </div>
       </div>
 
-      <SectionLabel title="What AudioDeck always does" note="Behaviour" />
+      <SectionLabel title="Guide" note="First run" />
       <div className="setlist">
         <div className="setrow">
           <div className="setlabel">
-            <b>Keeps your manual pick until a device changes</b>
+            <b>Show the guide again</b>
             <span>
-              Choosing a device by hand holds until something connects or disconnects, then the
-              ranking takes over again
+              The four cards AudioDeck opens with the first time, covering ranking, the device row,
+              Studio and what it does on its own
             </span>
           </div>
-        </div>
-        <div className="setrow">
-          <div className="setlabel">
-            <b>Re-applies your names and icons after a driver reset</b>
-            <span>Windows rebuilds endpoints and loses custom names; AudioDeck writes them back</span>
-          </div>
-        </div>
-        <div className="setrow">
-          <div className="setlabel">
-            <b>Forgets devices Windows has deleted</b>
-            <span>Ranked entries drop off once the endpoint is gone entirely, not merely offline</span>
-          </div>
+          <button type="button" className="btn" onClick={onReplayGuide}>
+            Show
+          </button>
         </div>
       </div>
 
       <div className="about">
-        <span>AudioDeck {state.appVersion}</span>
-        <span className="about-d" aria-hidden="true" />
-        <span>audioctl</span>
-        <span className="about-d" aria-hidden="true" />
-        <span>headsetcontrol 4.0.0</span>
+        {/* The wordmark rather than plain text, with the stencil bars cut
+            across AUDIO only, exactly as the title bar draws it. */}
+        <span className="about-brand">
+          <span className="stencil">Audio</span>
+          <span className="about-deck">Deck</span>
+        </span>
+        <span className="about-version">{state.appVersion}</span>
       </div>
     </section>
   );

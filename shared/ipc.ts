@@ -64,6 +64,8 @@ export interface AppState {
   paused: boolean;
   autostart: boolean;
   pollIntervalMs: number;
+  /** False until the first-run guide has been through once. */
+  guideSeen: boolean;
   /** Shown on the Settings page. */
   appVersion: string;
 }
@@ -98,6 +100,8 @@ export interface AudioDeckApi {
   /** Take AudioDeck's effects back out, leaving the machine as it was. */
   removeEffects(): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
+  /** Record whether the first-run guide should appear on the next launch. */
+  setGuideSeen(seen: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;
   /** Frameless window caption controls. */
@@ -130,6 +134,7 @@ export const IPC = {
   installEffects: "audiodeck:install-effects",
   removeEffects: "audiodeck:remove-effects",
   setPaused: "audiodeck:set-paused",
+  setGuideSeen: "audiodeck:set-guide-seen",
   setAutostart: "audiodeck:set-autostart",
   setPollInterval: "audiodeck:set-poll-interval",
   windowMinimize: "audiodeck:window-minimize",

@@ -62,6 +62,7 @@ export function registerIpc(deps: IpcDeps): void {
       paused: poller.isPaused(),
       autostart: config.autostart,
       pollIntervalMs: config.pollIntervalMs,
+      guideSeen: config.guideSeen,
       appVersion: app.getVersion(),
     };
   });
@@ -264,13 +265,25 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.installEffects, async () => runEqualizerApoSetup());
 
   ipcMain.handle(IPC.removeEffects, async () => {
-    // The profiles stay in AudioDeck's config: removing the effects should not
-    // throw away tuning the user may want back later.
+    // Switched off rather than deleted: the tuning is kept so turning effects
+    // back on restores it. Without this the daemon simply re-applies every
+    // profile on its next start and the removal silently undoes itself, which
+    // makes the button's promise to leave the PC as it was untrue.
+    const config = deps.getConfig();
+    const eq = Object.fromEntries(
+      Object.entries(config.eq).map(([id, profile]) => [id, { ...profile, enabled: false }]),
+    );
+    await deps.saveConfig({ ...config, eq });
     await deps.effects.removeAll();
   });
 
-  ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
+  ipcMain.handle(IPC.setGuideSeen, async (_e, seen: boolean) => {
+    await deps.saveConfig({ ...deps.getConfig(), guideSeen: seen });
+  });
+
+  ipcMain.handle(IPC.setPaused, async (_e, paused: boolean) => {
     deps.setPaused(paused);
+    await deps.saveConfig({ ...deps.getConfig(), paused });
   });
 
   ipcMain.handle(IPC.setAutostart, async (_e, enabled: boolean) => {
