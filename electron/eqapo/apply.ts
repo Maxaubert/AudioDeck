@@ -5,7 +5,7 @@
 //   - our own config is written whole, atomically, and is the only file we own;
 //   - config.txt gains exactly one line and is otherwise never rewritten.
 
-import { rename, readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AUDIODECK_CONFIG, ensureIncludeLine, removeIncludeLine } from "./include.js";
 import { renderConfig } from "./render.js";
@@ -65,8 +65,21 @@ export async function removeProfiles(io: FileIo, configPath: string): Promise<vo
   await io.remove(path.join(configPath, AUDIODECK_CONFIG));
 }
 
-/** Real filesystem access. Writes go via a temp file so a crash mid-write
- *  cannot leave Equalizer APO reading half a config. */
+/**
+ * Real filesystem access.
+ *
+ * Written in place, NOT through a temp file and a rename. Equalizer APO keeps
+ * these files open to watch them, and Windows refuses to rename over a file
+ * another process holds open: every write failed with EPERM, which looked from
+ * the outside like the equalizer simply not working (observed 2026-08-01).
+ * Atomicity was protecting against a torn read that Equalizer APO recovers
+ * from anyway, since it re-reads whenever the file changes.
+ *
+ * A brief retry covers the moment it has the file open for reading.
+ */
+const WRITE_ATTEMPTS = 4;
+const RETRY_DELAY_MS = 40;
+
 export const realFileIo: FileIo = {
   read: async (file) => {
     try {
@@ -76,9 +89,20 @@ export const realFileIo: FileIo = {
     }
   },
   write: async (file, text) => {
-    const temp = `${file}.audiodeck-tmp`;
-    await writeFile(temp, text, "utf8");
-    await rename(temp, file);
+    let last: unknown;
+    for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+      try {
+        await writeFile(file, text, "utf8");
+        return;
+      } catch (err) {
+        last = err;
+        const code = (err as NodeJS.ErrnoException).code;
+        // Only worth retrying while another process has it open.
+        if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw err;
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
+    throw last;
   },
   remove: async (file) => {
     await rm(file, { force: true });

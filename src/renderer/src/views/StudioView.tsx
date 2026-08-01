@@ -11,8 +11,12 @@ import { SectionLabel } from "../components/SectionLabel.js";
 import { displayDetail, displayName } from "../useAppState.js";
 import type { AppState, AudioDeckApi, EffectsStatusView, EqProfileView } from "../../../../shared/ipc.js";
 
-/** Wait this long after the last change before writing it through. */
-const COMMIT_DELAY_MS = 250;
+/**
+ * Wait this long after the last change before writing it through. Short enough
+ * that a slider feels connected to the sound rather than lagging behind it;
+ * long enough that one drag is a handful of writes rather than one per frame.
+ */
+const COMMIT_DELAY_MS = 50;
 
 function flat(): EqProfileView {
   return { enabled: true, bands: EQ_BANDS.map(() => 0), bassBoost: 0, clarity: 0, width: 100 };
@@ -207,11 +211,16 @@ export function StudioView({ state, actions }: { state: AppState; actions: Audio
               disabled={off}
               onChange={(clarity) => edit({ ...profile, clarity })}
             />
+            {/* Narrowing only. Widening needs each channel to subtract some
+                of the other, and Equalizer APO destroys the audio when a Copy
+                factor is negative: every setting above 100 % came back as
+                thuds. Offering a range that breaks the sound is worse than
+                not offering it. */}
             <EffectSlider
-              label="Width"
+              label="Stereo width"
               value={profile.width}
               min={0}
-              max={200}
+              max={100}
               step={5}
               unit="%"
               disabled={off}

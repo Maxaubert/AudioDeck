@@ -53,6 +53,12 @@ export class EffectsService {
   private readonly io: FileIo;
   private install: EqApoInstall | null = null;
   private error: string | null = null;
+  /**
+   * Tail of the write chain. Dragging a slider produces a burst of applies,
+   * and two of them interleaving on the same file is how a half-written config
+   * reaches the audio engine.
+   */
+  private chain: Promise<void> = Promise.resolve();
 
   constructor(deps: EffectsDeps = {}) {
     this.detect = deps.detect ?? (() => detectEqApo({ queryRegistry }));
@@ -75,6 +81,12 @@ export class EffectsService {
    * user needs shouting about.
    */
   async apply(config: AudioDeckConfig): Promise<void> {
+    const run = this.chain.then(() => this.applyNow(config));
+    this.chain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async applyNow(config: AudioDeckConfig): Promise<void> {
     if (this.install === null) await this.refresh();
     const install = this.install;
     if (install === null) return;

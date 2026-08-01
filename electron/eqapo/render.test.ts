@@ -17,12 +17,6 @@ function lines(text: string): string[] {
     .filter((l) => l.trim() !== "" && !l.startsWith("#"));
 }
 
-/** The Preamp line, or null. Found rather than indexed, so adding a line
- *  elsewhere in the section does not break every headroom test. */
-function preamp(text: string): string | null {
-  return lines(text).find((l) => l.startsWith("Preamp:")) ?? null;
-}
-
 describe("renderConfig", () => {
   it("says who wrote the file and that edits do not survive", () => {
     // Anyone who opens config.txt should learn where the settings really live.
@@ -78,53 +72,61 @@ describe("renderConfig", () => {
       expect(lines(renderConfig([section({ width: 100 })]))).toEqual([]);
     });
 
-    it("collapses to mono at 0 percent", () => {
-      const out = lines(renderConfig([section({ width: 0 })]));
-      expect(out).toContain("Copy: L=0.5*L+0.5*R R=0.5*R+0.5*L");
+    it("snapshots the channels before mixing them", () => {
+      // Equalizer APO applies the assignments in a Copy line one after the
+      // other, so a matrix written directly computes R from the already
+      // modified L. That asymmetry destroyed the audio as width rose.
+      const out = lines(renderConfig([section({ width: 50 })]));
+      expect(out).toContain("Copy: ADL=L ADR=R");
+      const matrix = out.find((l) => l.startsWith("Copy: L="));
+      expect(matrix).not.toContain("*L ");
+      expect(matrix).not.toContain("*R ");
     });
 
-    it("subtracts the opposite channel when widening", () => {
-      // w = 1.5 gives a = 1.25, b = -0.25.
-      const out = lines(renderConfig([section({ width: 150 })]));
-      expect(out).toContain("Copy: L=1.25*L-0.25*R R=1.25*R-0.25*L");
+    it("collapses to mono at 0 percent", () => {
+      const out = lines(renderConfig([section({ width: 0 })]));
+      expect(out).toContain("Copy: L=0.5*ADL+0.5*ADR R=0.5*ADR+0.5*ADL");
+    });
+
+    it("never emits a negative factor, whatever is asked for", () => {
+      // Widening needs each channel to subtract some of the other, and
+      // Equalizer APO destroys the audio when a Copy factor is negative:
+      // every setting above 100 % came back as thuds, three times over. The
+      // UI does not offer it, and the renderer refuses it too, so a config
+      // hand-edited to 200 % cannot reach the audio engine.
+      for (const width of [110, 150, 200]) {
+        const out = lines(renderConfig([section({ width })])).join("\n");
+        expect(out).not.toMatch(/-\d/);
+      }
+    });
+
+    it("treats anything above 100 percent as untouched", () => {
+      expect(lines(renderConfig([section({ width: 200 })]))).toEqual([]);
     });
   });
 
-  describe("preamp", () => {
-    it("is absent when nothing is boosted", () => {
-      expect(preamp(renderConfig([section({ bands: [-6, 0, 0, 0, 0, 0, 0, 0, 0, 0] })]))).toBeNull();
+  describe("gain", () => {
+    it("writes the boost the user asked for, undiminished", () => {
+      // An earlier version subtracted the peak boost as a preamp, which left
+      // the boosted band exactly where it started and merely lowered
+      // everything else. Reported from listening as "only the audio getting
+      // lower". A boost has to boost.
+      const text = renderConfig([section({ bands: [8, 0, 0, 0, 0, 0, 0, 0, 0, 0] })]);
+      expect(text).toContain("32 8.0");
+      expect(text).not.toContain("Preamp:");
     });
 
-    it("offsets the loudest boost so a peak cannot clip", () => {
-      expect(preamp(renderConfig([section({ bands: [3, 8, 0, 0, 0, 0, 0, 0, 0, 0] })]))).toBe(
-        "Preamp: -8.0 dB",
-      );
-    });
-
-    it("counts the shelves as well as the curve", () => {
+    it("never emits a preamp, whatever is boosted", () => {
       const text = renderConfig([
-        section({ bands: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0], bassBoost: 3, clarity: 2 }),
+        section({ bands: [12, 0, 0, 0, 0, 0, 0, 0, 0, 12], bassBoost: 12, clarity: 12, width: 200 }),
       ]);
-      expect(preamp(text)).toBe("Preamp: -9.0 dB");
+      expect(text).not.toContain("Preamp:");
     });
 
-    it("counts the widening matrix, which can also exceed unity", () => {
-      // At 200 percent a = 1.5 and b = -0.5, so a fully anti-correlated pair
-      // (L = +1, R = -1) comes out at |a| + |b| = 2.0, which is 6 dB.
-      expect(preamp(renderConfig([section({ width: 200 })]))).toBe("Preamp: -6.0 dB");
-    });
-
-    it("comes before the filters it compensates for", () => {
-      const out = lines(renderConfig([section({ bands: [6, 0, 0, 0, 0, 0, 0, 0, 0, 0] })]));
-      expect(out[0]).toBe("Device: Speakers");
-      expect(out[1]).toBe("Preamp: -6.0 dB");
-    });
-
-    it("ignores cuts, which cannot clip", () => {
-      const text = renderConfig([
-        section({ bands: [-12, 0, 0, 0, 0, 0, 0, 0, 0, 0], bassBoost: -6 }),
-      ]);
-      expect(preamp(text)).toBeNull();
+    it("leaves bass boost at its full value", () => {
+      const out = lines(renderConfig([section({ bassBoost: 8 })]));
+      expect(out).toContain("Filter: ON LS Fc 100 Hz Gain 8.0 dB");
+      expect(out.some((l) => l.startsWith("Preamp:"))).toBe(false);
     });
   });
 

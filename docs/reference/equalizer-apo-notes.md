@@ -117,3 +117,37 @@ GraphicEQ: 25 0; 40 0; ...
 So an untouched install is already 6 dB down with a bass lift. AudioDeck should say so and offer to
 clear it, rather than silently competing with it or leaving the user to wonder why "flat" is not
 flat.
+
+## Copy: assignments are sequential, and negative factors are unusable
+
+Two findings, both from listening rather than from the documentation.
+
+**Assignments in one `Copy:` line apply one after another, not simultaneously.**
+A mid-side matrix written directly:
+
+```
+Copy: L=1.5*L-0.5*R R=1.5*R-0.5*L
+```
+
+computes the new L, then computes R from that *already modified* L, giving
+`1.75R - 0.75L` rather than the intended `1.5R - 0.5L`. Snapshot the originals
+into virtual channels first, which is why Equalizer APO's own
+`selective_delay.txt` example does exactly that:
+
+```
+Copy: ADL=L ADR=R
+Copy: L=a*ADL+b*ADR R=a*ADR+b*ADL
+```
+
+**A negative factor destroys the audio.** With the snapshot form above and
+correct coefficients, every width setting over 100 %, where `b = (1-w)/2` turns
+negative, came back as "just thud sounds" on real hardware, three separate
+attempts. Below 100 %, where both coefficients are positive, the same code path
+behaves correctly. Nothing Equalizer APO ships uses a negative factor.
+
+Stereo *widening* needs each channel to subtract some of the other, so it is
+not implementable through `Copy:` and AudioDeck does not offer it. Narrowing
+towards mono is, and is what the Stereo width control does. If this is ever
+revisited, the thing to establish first is whether the parser accepts a
+negative coefficient at all, ideally through Equalizer APO's own trace or
+benchmark tooling rather than by asking someone to listen again.

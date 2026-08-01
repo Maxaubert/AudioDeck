@@ -4,6 +4,14 @@
 // audio sounds like is here, so it can be tested by reading the text it emits
 // rather than by listening.
 //
+// No automatic preamp. An earlier version emitted `Preamp: -<peak boost>` to
+// guarantee nothing could clip, which made every boost inaudible: raising the
+// bass 8 dB and pulling everything down 8 dB leaves the bass where it started
+// and merely makes the rest quieter. Reported from real listening as "the only
+// thing I can hear is the audio getting lower". A boost has to boost, so what
+// the user dials is what is written, and loud material with a large boost may
+// clip exactly as it would in any other equalizer.
+//
 // The `Device:` matching string is supplied by the caller rather than derived
 // here: Equalizer APO matches on the name its own Configurator shows, which is
 // not AudioDeck's endpoint id, and the mapping is established against a real
@@ -70,9 +78,6 @@ function renderSection({ match, profile }: DeviceSection): string | null {
   const clarity = clamp(profile.clarity, -MAX_EFFECT_DB, MAX_EFFECT_DB);
   const width = clamp(profile.width, 0, 200);
 
-  const headroom = requiredHeadroomDb(bands, bass, clarity, width);
-  if (headroom > 0) lines.push(`Preamp: ${fmt(-headroom)} dB`);
-
   if (bands.some((g) => g !== 0)) {
     lines.push(`GraphicEQ: ${bands.map((g, i) => `${BANDS[i]} ${fmt(g)}`).join("; ")}`);
   }
@@ -82,8 +87,7 @@ function renderSection({ match, profile }: DeviceSection): string | null {
   if (clarity !== 0) {
     lines.push(`Filter: ON HS Fc ${CLARITY_FC_HZ} Hz Gain ${fmt(clarity)} dB`);
   }
-  const copy = renderWidth(width);
-  if (copy !== null) lines.push(copy);
+  lines.push(...renderWidth(width));
 
   // A device whose profile does nothing gets no section at all, rather than a
   // Device: line with nothing under it.
@@ -92,46 +96,34 @@ function renderSection({ match, profile }: DeviceSection): string | null {
 }
 
 /**
- * Mid-side widening expressed as a channel matrix.
+ * Narrowing towards mono, expressed as a channel matrix.
  *
- *   M = (L+R)/2,  S = (L-R)/2,  L' = M + wS,  R' = M - wS
+ *   M = (L+R)/2,  L' = aL + bR,  R' = bL + aR,  a = (1+w)/2, b = (1-w)/2
  *
- * which expands to L' = aL + bR and R' = bL + aR with a = (1+w)/2 and
- * b = (1-w)/2. At w = 1 that is a = 1, b = 0: the identity, so it is omitted
- * entirely rather than written as a no-op matrix. At w = 0 both are 0.5, which
- * is mono.
+ * At w = 1 that is the identity, so nothing is emitted. At w = 0 both
+ * coefficients are 0.5, which is mono.
+ *
+ * Only w <= 1 is supported, and that is a limitation of the engine rather than
+ * a choice. Widening needs b < 0, meaning each channel subtracts some of the
+ * other, and Equalizer APO does not do the right thing with a negative factor
+ * in a Copy line: every value above 100 % destroyed the audio, verified by
+ * listening three times over on 2026-08-01. Nothing it ships uses a negative
+ * factor either. Widening is therefore not implementable this way and the UI
+ * does not offer it.
+ *
+ * The originals are snapshotted into virtual channels first, because Equalizer
+ * APO applies the assignments in a Copy line SEQUENTIALLY: writing the matrix
+ * directly computes R from the already-modified L.
  */
-function renderWidth(widthPercent: number): string | null {
-  const w = widthPercent / 100;
-  if (w === 1) return null;
+function renderWidth(widthPercent: number): string[] {
+  const w = Math.min(1, widthPercent / 100);
+  if (w === 1) return [];
   const a = (1 + w) / 2;
   const b = (1 - w) / 2;
-  return `Copy: L=${factor(a)}*L${signed(b)}*R R=${factor(a)}*R${signed(b)}*L`;
-}
-
-/**
- * How much to pull the signal down so nothing added above can clip.
- *
- * Pessimistic on purpose: it assumes the worst case where the loudest band,
- * both shelves and the widening matrix all line up on the same sample. Being
- * quieter than strictly necessary is a fair trade against a distorted peak,
- * and the user can make it back up with the system volume.
- */
-function requiredHeadroomDb(
-  bands: readonly number[],
-  bass: number,
-  clarity: number,
-  widthPercent: number,
-): number {
-  const peakBand = Math.max(0, ...bands);
-  const w = widthPercent / 100;
-  const a = (1 + w) / 2;
-  const b = (1 - w) / 2;
-  // Worst-case channel gain from the matrix, in dB, when it can exceed unity.
-  const matrixGain = Math.abs(a) + Math.abs(b);
-  const matrixDb = matrixGain > 1 ? 20 * Math.log10(matrixGain) : 0;
-  const total = peakBand + Math.max(0, bass) + Math.max(0, clarity) + matrixDb;
-  return round(Math.max(0, total));
+  return [
+    "Copy: ADL=L ADR=R",
+    `Copy: L=${factor(a)}*ADL${signed(b)}*ADR R=${factor(a)}*ADR${signed(b)}*ADL`,
+  ];
 }
 
 function normaliseBands(bands: readonly number[]): number[] {

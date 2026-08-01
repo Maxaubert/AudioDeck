@@ -36,7 +36,7 @@ test("draws a ten point curve and three effect sliders", async () => {
   await expect(page.locator(".fx")).toHaveCount(3);
   await expect(page.locator(".fx-list")).toContainText("Bass boost");
   await expect(page.locator(".fx-list")).toContainText("Clarity");
-  await expect(page.locator(".fx-list")).toContainText("Width");
+  await expect(page.locator(".fx-list")).toContainText("Stereo width");
 });
 
 test("a band change reaches the config, keyed to that device", async () => {
