@@ -25,7 +25,7 @@ test("offers setup when the processing component is missing", async () => {
   await expect(page.locator(".eq-curve")).toHaveCount(0);
 });
 
-test("draws a ten point curve and three effect sliders", async () => {
+test("draws a ten point curve and the effect sliders", async () => {
   ctx = await launchApp();
   const { page } = ctx;
   await page.getByRole("button", { name: "Studio", exact: true }).click();
@@ -33,9 +33,11 @@ test("draws a ten point curve and three effect sliders", async () => {
   await expect(page.locator(".eq-point")).toHaveCount(10);
   await expect(page.getByRole("slider", { name: "32 hertz" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "16k hertz" })).toBeVisible();
-  await expect(page.locator(".fx")).toHaveCount(3);
+  await expect(page.locator(".fx")).toHaveCount(5);
+  await expect(page.locator(".fx-list")).toContainText("Volume boost");
   await expect(page.locator(".fx-list")).toContainText("Bass boost");
   await expect(page.locator(".fx-list")).toContainText("Clarity");
+  await expect(page.locator(".fx-list")).toContainText("Reverb");
   await expect(page.locator(".fx-list")).toContainText("Surround");
 });
 

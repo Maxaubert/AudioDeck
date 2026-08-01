@@ -365,7 +365,13 @@ select {
 
 /* ---------- views ---------- */
 
+/* Ink on sheet is the default for anything inside a page. Rows and the topbar
+   override these; without them, every `var(--fg)` used outside a row resolves
+   to nothing and the whole declaration is dropped, which is how the device
+   picker ended up with no border at all and only showed one when focused. */
 .view {
+  --fg: var(--ink);
+  --bg: var(--sheet);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -947,11 +953,24 @@ select {
   cursor: var(--cur-hand);
 }
 
+/* The dropdown list itself. Chromium draws this popup, so it takes the sheet
+   and ink rather than the system's own white-on-blue. */
 .type-select option,
 .select option {
-  background: #fff;
-  color: #000;
+  background: var(--sheet);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 16px;
+  font-weight: 700;
   text-transform: none;
+  padding: 8px 12px;
+}
+
+.type-select option:checked,
+.select option:checked {
+  background: var(--marker);
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .rename-form {
@@ -1151,7 +1170,9 @@ label.setrow {
   display: flex;
   align-items: flex-end;
   gap: 16px;
-  margin-bottom: 6px;
+  /* Clears the section label below it: the picker carries a heavy frame and
+     the two were touching. */
+  margin-bottom: 20px;
 }
 
 .studio-picker {
@@ -1164,6 +1185,9 @@ label.setrow {
 
 .studio-picker .select {
   width: 100%;
+  min-height: 56px;
+  border-width: var(--rule);
+  font-size: 17px;
 }
 
 /* The curve sits on a sheet, framed like every other block in the app. */

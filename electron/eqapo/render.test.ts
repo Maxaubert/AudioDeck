@@ -43,15 +43,24 @@ describe("renderConfig", () => {
     expect(lines(renderConfig([on])).length).toBeGreaterThan(0);
   });
 
-  it("writes the curve as one GraphicEQ line over the band frequencies", () => {
+  it("writes the curve as one peaking biquad per band, never GraphicEQ", () => {
+    // GraphicEQ is FFT convolution and does not survive every device's
+    // processing path: on an Arctis Nova Pro Wireless the curve did nothing
+    // while a Preamp and a shelf on the same device worked. Peace uses biquads
+    // for its equalizer for the same reason.
     const bands = [3, 0, -2, 0, 0, 0, 0, 0, 0, 1.5];
     const out = lines(renderConfig([section({ bands })]));
-    const eq = out.find((l) => l.startsWith("GraphicEQ:"));
-    expect(eq).toBe(
-      "GraphicEQ: 32 3.0; 64 0.0; 125 -2.0; 250 0.0; 500 0.0; 1000 0.0; " +
-        "2000 0.0; 4000 0.0; 8000 0.0; 16000 1.5",
-    );
+    expect(out.join("\n")).not.toContain("GraphicEQ");
+    expect(out).toContain("Filter: ON PK Fc 32 Hz Gain 3.0 dB Q 1.41");
+    expect(out).toContain("Filter: ON PK Fc 125 Hz Gain -2.0 dB Q 1.41");
+    expect(out).toContain("Filter: ON PK Fc 16000 Hz Gain 1.5 dB Q 1.41");
     expect(BANDS).toHaveLength(bands.length);
+  });
+
+  it("emits nothing for the bands left at zero", () => {
+    // Ten filters where two are needed is ten filters of work per sample.
+    const out = lines(renderConfig([section({ bands: [4, 0, 0, 0, 0, 0, 0, 0, 0, 0] })]));
+    expect(out.filter((l) => l.includes(" PK "))).toHaveLength(1);
   });
 
   it("writes bass boost as a low shelf and clarity as a high shelf", () => {
@@ -98,6 +107,70 @@ describe("renderConfig", () => {
     });
   });
 
+  describe("volume boost", () => {
+    it("writes a preamp, ahead of the filters", () => {
+      const out = lines(renderConfig([section({ volumeBoost: 6, bassBoost: 3 })]));
+      expect(out[0]).toBe("Device: Speakers");
+      expect(out[1]).toBe("Preamp: 6.0 dB");
+    });
+
+    it("emits nothing at zero", () => {
+      expect(lines(renderConfig([section({ volumeBoost: 0 })]))).toEqual([]);
+    });
+
+    it("is capped well below the other effects", () => {
+      // Digital gain multiplies samples already near full scale, and sustained
+      // clipping is what damages drivers. 40 dB of bass is survivable; 40 dB
+      // of broadband gain is not.
+      const out = lines(renderConfig([section({ volumeBoost: 99 })]));
+      expect(out).toContain("Preamp: 10.0 dB");
+    });
+
+    it("can attenuate too, which is the part that always works", () => {
+      // Some devices ignore Windows volume entirely and let their own base
+      // station own the level; a preamp is the only thing left that changes
+      // what you hear.
+      const out = lines(renderConfig([section({ volumeBoost: -8 })]));
+      expect(out).toContain("Preamp: -8.0 dB");
+    });
+  });
+
+  describe("reverb", () => {
+    it("emits nothing when dry", () => {
+      expect(lines(renderConfig([section({ reverb: 0 })]))).toEqual([]);
+    });
+
+    it("crossfades dry into wet rather than adding wet on top", () => {
+      // Keeping the dry signal at full level and piling wet on top made the
+      // reverb slider double as a volume control.
+      const out = lines(renderConfig([section({ reverb: 0.25 })]));
+      expect(out).toContain("Copy: RVL=L RVR=R");
+      expect(out).toContain("Copy: L=0.75*L+0.25*RVL R=0.75*R+0.25*RVR");
+    });
+
+    it("picks the response matching the device's sample rate", () => {
+      // Equalizer APO will not resample an impulse response, so both common
+      // rates ship and its own expression syntax chooses at runtime.
+      const out = lines(renderConfig([section({ reverb: 1 })]));
+      expect(out).toContain("If: sampleRate == 48000");
+      expect(out).toContain("Convolution: audiodeck-cathedral-48000.wav");
+      expect(out).toContain("ElseIf: sampleRate == 44100");
+      expect(out).toContain("Convolution: audiodeck-cathedral-44100.wav");
+      expect(out).toContain("EndIf:");
+    });
+
+    it("hands the channel selection back afterwards", () => {
+      // Anything downstream would otherwise inherit the wet-only selection.
+      const out = lines(renderConfig([section({ reverb: 1, bassBoost: 3 })]));
+      expect(out.lastIndexOf("Channel: L R")).toBeGreaterThan(out.indexOf("Channel: RVL RVR"));
+    });
+
+    it("scales the wet signal with the amount", () => {
+      const out = lines(renderConfig([section({ reverb: 0.25 })])).join("\n");
+      expect(out).toContain("+0.25*RVL");
+    });
+  });
+
   describe("gain", () => {
     it("writes the boost the user asked for, undiminished", () => {
       // An earlier version subtracted the peak boost as a preamp, which left
@@ -105,11 +178,13 @@ describe("renderConfig", () => {
       // everything else. Reported from listening as "only the audio getting
       // lower". A boost has to boost.
       const text = renderConfig([section({ bands: [8, 0, 0, 0, 0, 0, 0, 0, 0, 0] })]);
-      expect(text).toContain("32 8.0");
+      expect(text).toContain("Fc 32 Hz Gain 8.0 dB");
       expect(text).not.toContain("Preamp:");
     });
 
-    it("never emits a preamp, whatever is boosted", () => {
+    it("adds no preamp of its own, whatever is boosted", () => {
+      // Only the volume control writes a Preamp now. Nothing here may add one
+      // behind the user's back, which is what made every boost inaudible.
       const text = renderConfig([
         section({ bands: [12, 0, 0, 0, 0, 0, 0, 0, 0, 12], bassBoost: 12, clarity: 12, width: 200 }),
       ]);
@@ -130,18 +205,19 @@ describe("renderConfig", () => {
           section({ bands: [99, 0, 0, 0, 0, 0, 0, 0, 0, 0], bassBoost: 99, clarity: 99 }),
         ]),
       ).join("\n");
-      expect(out).toContain("32 12.0");
-      // Bass gets more range than the presence shelf: it works over a narrow
-      // slice where there is headroom, and the same range on presence is harsh.
-      expect(out).toContain("Fc 100 Hz Gain 20.0 dB");
+      expect(out).toContain("Fc 32 Hz Gain 12.0 dB");
+      // Bass gets far more range than the presence shelf: it works over a
+      // narrow slice where there is headroom, and the same on presence is harsh.
+      expect(out).toContain("Fc 100 Hz Gain 40.0 dB");
       expect(out).toContain("Fc 6000 Hz Gain 12.0 dB");
     });
 
     it("survives a short or ragged band array", () => {
-      // Config written by an older version, or hand-edited.
+      // Config written by an older version, or hand-edited. The missing bands
+      // are treated as flat, so they simply produce no filter.
       const out = lines(renderConfig([{ match: "X", profile: { ...flatProfile(), bands: [5] } }]));
-      expect(out.join("\n")).toContain("32 5.0");
-      expect(out.join("\n")).toContain("64 0.0");
+      expect(out.join("\n")).toContain("Fc 32 Hz Gain 5.0 dB");
+      expect(out.filter((l) => l.includes(" PK "))).toHaveLength(1);
     });
 
     it("treats NaN as no change rather than emitting it", () => {

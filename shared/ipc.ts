@@ -38,6 +38,10 @@ export interface EqProfileView {
   clarity: number;
   /** Stereo width percentage; 100 leaves the signal untouched. */
   width: number;
+  /** Digital gain in dB, applied as a preamp. */
+  volumeBoost: number;
+  /** Reverb mix, 0 to 1. */
+  reverb: number;
 }
 
 /** Whether audio effects can be applied at all, and where. */
