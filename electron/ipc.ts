@@ -6,7 +6,11 @@ import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
 import { dedupeEndpoints } from "./dedupe.js";
 import { restartShellHost } from "./reapply.js";
+import { flatEqProfile } from "./eqapo/service.js";
+import { runEqualizerApoSetup } from "./eqapo/install.js";
 import { IPC } from "../shared/ipc.js";
+import type { EffectsService } from "./eqapo/service.js";
+import type { EffectsStatusView, EqProfileView } from "../shared/ipc.js";
 import type { AudioControl, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { Poller, PollSnapshot } from "./poller.js";
@@ -15,6 +19,7 @@ import type { AppState, DeviceView } from "../shared/ipc.js";
 export interface IpcDeps {
   audioctl: AudioControl;
   poller: Poller;
+  effects: EffectsService;
   getConfig: () => AudioDeckConfig;
   saveConfig: (config: AudioDeckConfig) => Promise<void>;
   /** Toggle automation pause; main keeps poller and tray checkbox in sync. */
@@ -228,6 +233,41 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.windowIsMaximized, (e): boolean =>
     BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false,
   );
+
+  ipcMain.handle(IPC.getEffectsStatus, async (): Promise<EffectsStatusView> => {
+    // Detection is re-run rather than cached: the answer changes the moment
+    // the user finishes the setup, and the tab asks again when it opens.
+    const install = await deps.effects.refresh();
+    return {
+      installed: install !== null,
+      configPath: install?.configPath ?? null,
+      error: deps.effects.status().error,
+    };
+  });
+
+  ipcMain.handle(
+    IPC.getEqProfile,
+    async (_e, deviceId: string): Promise<EqProfileView> =>
+      deps.getConfig().eq[deviceId] ?? flatEqProfile(),
+  );
+
+  ipcMain.handle(IPC.setEqProfile, async (_e, deviceId: string, profile: EqProfileView) => {
+    if (typeof deviceId !== "string" || deviceId === "") return;
+    const config = deps.getConfig();
+    const next = { ...config, eq: { ...config.eq, [deviceId]: profile } };
+    await deps.saveConfig(next);
+    // Written straight through: Equalizer APO watches the file and applies
+    // changes with no restart, so this is the whole of "make it audible".
+    await deps.effects.apply(next);
+  });
+
+  ipcMain.handle(IPC.installEffects, async () => runEqualizerApoSetup());
+
+  ipcMain.handle(IPC.removeEffects, async () => {
+    // The profiles stay in AudioDeck's config: removing the effects should not
+    // throw away tuning the user may want back later.
+    await deps.effects.removeAll();
+  });
 
   ipcMain.handle(IPC.setPaused, (_e, paused: boolean) => {
     deps.setPaused(paused);

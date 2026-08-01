@@ -29,6 +29,27 @@ export interface DeviceView {
   availabilityReason: AvailabilityReason;
 }
 
+/** Per-device equalizer and effect settings, as the renderer edits them. */
+export interface EqProfileView {
+  enabled: boolean;
+  /** Gain in dB per band, ten entries matching EQ_BANDS. */
+  bands: number[];
+  bassBoost: number;
+  clarity: number;
+  /** Stereo width percentage; 100 leaves the signal untouched. */
+  width: number;
+}
+
+/** Whether audio effects can be applied at all, and where. */
+export interface EffectsStatusView {
+  /** False until the processing component is installed. */
+  installed: boolean;
+  /** Where its config lives, for error messages. Null when not installed. */
+  configPath: string | null;
+  /** Set when the last write failed; the profile is saved but not in effect. */
+  error: string | null;
+}
+
 /** Everything the renderer needs to draw all three views plus settings. */
 export interface AppState {
   devices: DeviceView[];
@@ -63,6 +84,15 @@ export interface AudioDeckApi {
   renameDevice(id: string, name: string, suffix?: string): Promise<void>;
   /** Change what kind of device Windows shows this endpoint as (see deviceTypes). */
   setDeviceType(id: string, typeKey: string): Promise<void>;
+  /** Whether audio effects are available, and any error from the last write. */
+  getEffectsStatus(): Promise<EffectsStatusView>;
+  /** The device's saved profile, or a flat one if it has never been tuned. */
+  getEqProfile(deviceId: string): Promise<EqProfileView>;
+  setEqProfile(deviceId: string, profile: EqProfileView): Promise<void>;
+  /** Launch the bundled setup for the processing component. */
+  installEffects(): Promise<{ started: boolean; error?: string }>;
+  /** Take AudioDeck's effects back out, leaving the machine as it was. */
+  removeEffects(): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   setAutostart(enabled: boolean): Promise<void>;
   setPollInterval(ms: number): Promise<void>;
@@ -90,6 +120,11 @@ export const IPC = {
   setAlias: "audiodeck:set-alias",
   renameDevice: "audiodeck:rename-device",
   setDeviceType: "audiodeck:set-device-type",
+  getEffectsStatus: "audiodeck:get-effects-status",
+  getEqProfile: "audiodeck:get-eq-profile",
+  setEqProfile: "audiodeck:set-eq-profile",
+  installEffects: "audiodeck:install-effects",
+  removeEffects: "audiodeck:remove-effects",
   setPaused: "audiodeck:set-paused",
   setAutostart: "audiodeck:set-autostart",
   setPollInterval: "audiodeck:set-poll-interval",
