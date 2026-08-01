@@ -79,8 +79,17 @@ export class EffectsService {
     const install = this.install;
     if (install === null) return;
 
+    const sections = sectionsFor(config);
     try {
-      await applyProfiles(this.io, install.configPath, sectionsFor(config));
+      if (sections.length === 0) {
+        // Nothing to apply: take our file and our line back out rather than
+        // leaving an empty include behind. AudioDeck should not appear in
+        // someone's audio configuration until they have actually asked for an
+        // effect, and should disappear again when they remove the last one.
+        await removeProfiles(this.io, install.configPath);
+      } else {
+        await applyProfiles(this.io, install.configPath, sections);
+      }
       this.error = null;
     } catch (err) {
       // A failed write must not take the daemon down, and must not be silent

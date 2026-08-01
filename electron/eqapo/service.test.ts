@@ -19,6 +19,10 @@ function fakeIo(initial: Record<string, string> = {}) {
 }
 
 const INSTALL = { installPath: "C:\\EQ", configPath: "C:\\EQ\\config" };
+const MAIN = "C:\\EQ\\config\\config.txt";
+const OURS = "C:\\EQ\\config\\audiodeck.txt";
+const STOCK = "Preamp: -6 dB\n";
+const DEVICE = "{0.0.0.00000000}.{aaaaaaaa-1111-2222-3333-444444444444}";
 
 describe("deviceMatchPattern", () => {
   it("takes the endpoint GUID out of an AudioDeck id", () => {
@@ -95,7 +99,7 @@ describe("EffectsService", () => {
       remove: async () => {},
     };
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await expect(service.apply(withEq({}))).resolves.toBeUndefined();
+    await expect(service.apply(withEq({ [DEVICE]: flatEqProfile() }))).resolves.toBeUndefined();
     expect(service.status().error).toContain("Could not write audio effects");
   });
 
@@ -109,11 +113,32 @@ describe("EffectsService", () => {
       remove: async () => {},
     };
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await service.apply(withEq({}));
+    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
     expect(service.status().error).not.toBeNull();
     fail = false;
-    await service.apply(withEq({}));
+    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
     expect(service.status().error).toBeNull();
+  });
+
+  it("stays out of the config entirely until there is a profile", async () => {
+    // AudioDeck should not appear in someone else's audio configuration
+    // before they have asked for a single effect. Found by watching the daemon
+    // link an empty include on first start.
+    const { io, files } = fakeIo({ [MAIN]: STOCK });
+    const service = new EffectsService({ detect: async () => INSTALL, io });
+    await service.apply(withEq({}));
+    expect(files.has(OURS)).toBe(false);
+    expect(files.get(MAIN)).toBe(STOCK);
+  });
+
+  it("unlinks itself again when the last profile goes", async () => {
+    const { io, files } = fakeIo({ [MAIN]: STOCK });
+    const service = new EffectsService({ detect: async () => INSTALL, io });
+    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
+    expect(files.get(MAIN)).toContain("Include:");
+    await service.apply(withEq({}));
+    expect(files.get(MAIN)).toBe(STOCK);
+    expect(files.has(OURS)).toBe(false);
   });
 
   it("removes everything it wrote", async () => {

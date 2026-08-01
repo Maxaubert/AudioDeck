@@ -11,47 +11,60 @@
 #   - its failure is never AudioDeck's failure. A cancelled prompt or a failed
 #     setup leaves AudioDeck installed and working, offering setup again from
 #     the Studio tab.
+#
+# customPageAfterChangeDir is expanded where page declarations go, between
+# MUI_PAGE_DIRECTORY and MUI_PAGE_INSTFILES, so it declares a page rather than
+# containing dialog code. Putting the nsDialogs calls directly in the macro
+# builds, but the callbacks are never referenced and makensis zeroes them out.
+
+# This file is compiled into the uninstaller as well, where the MUI page
+# machinery does not exist. Everything the installer needs is guarded; the
+# uninstaller gets nothing from here.
+!ifndef BUILD_UNINSTALLER
 
 !include nsDialogs.nsh
 !include LogicLib.nsh
 
-Var EffectsDialog
 Var EffectsCheckbox
 Var EffectsWanted
 
-Function AudioDeckEffectsToggled
+Function AudioDeckEffectsPageCreate
+  ; Already installed: nothing to offer, and asking would only invite a
+  ; pointless reinstall.
+  ReadRegStr $0 HKLM "SOFTWARE\EqualizerAPO" "InstallPath"
+  ${If} $0 != ""
+    StrCpy $EffectsWanted ${BST_UNCHECKED}
+    Abort
+  ${EndIf}
+
+  ; No MUI_HEADER_TEXT here: electron-builder includes this file before the MUI
+  ; headers exist, so the macro is undefined at parse time. The page's own text
+  ; carries the explanation instead.
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 46u "AudioDeck can equalise each of your audio devices. The processing is done by Equalizer APO, a free open source component included with AudioDeck, so there is nothing to download.$\r$\n$\r$\nIt asks for administrator approval, and may need a restart to finish."
+  Pop $0
+
+  ${NSD_CreateCheckbox} 0 54u 100% 12u "Set up audio effects"
+  Pop $EffectsCheckbox
+  ${NSD_Check} $EffectsCheckbox
+
+  ${NSD_CreateLabel} 0 72u 100% 24u "Equalizer APO by Jonas Thedering, licensed GPL-3. You can set this up later from AudioDeck's Studio tab instead."
+  Pop $0
+
+  nsDialogs::Show
+FunctionEnd
+
+Function AudioDeckEffectsPageLeave
   ${NSD_GetState} $EffectsCheckbox $EffectsWanted
 FunctionEnd
 
 !macro customPageAfterChangeDir
-  ; Skip the question entirely if Equalizer APO is already installed: there is
-  ; nothing to offer, and asking would only invite the user to reinstall it.
-  ReadRegStr $0 HKLM "SOFTWARE\EqualizerAPO" "InstallPath"
-  ${If} $0 != ""
-    StrCpy $EffectsWanted ${BST_UNCHECKED}
-  ${Else}
-    !insertmacro MUI_HEADER_TEXT "Audio effects" "Equalizer, bass boost and stereo width"
-
-    nsDialogs::Create 1018
-    Pop $EffectsDialog
-    ${If} $EffectsDialog == error
-      Abort
-    ${EndIf}
-
-    ${NSD_CreateLabel} 0 0 100% 48u "AudioDeck can equalise each of your audio devices. The processing is done by Equalizer APO, a free open source component included with AudioDeck, so there is nothing to download.$\r$\n$\r$\nIt asks for administrator approval, and may need a restart to finish."
-    Pop $0
-
-    ${NSD_CreateCheckbox} 0 56u 100% 12u "Set up audio effects"
-    Pop $EffectsCheckbox
-    ${NSD_Check} $EffectsCheckbox
-    StrCpy $EffectsWanted ${BST_CHECKED}
-    ${NSD_OnClick} $EffectsCheckbox AudioDeckEffectsToggled
-
-    ${NSD_CreateLabel} 0 74u 100% 20u "Equalizer APO by Jonas Thedering, licensed GPL-3. You can set this up later from AudioDeck's Studio tab instead."
-    Pop $0
-
-    nsDialogs::Show
-  ${EndIf}
+  Page custom AudioDeckEffectsPageCreate AudioDeckEffectsPageLeave
 !macroend
 
 !macro customInstall
@@ -68,3 +81,5 @@ FunctionEnd
     ${EndIf}
   ${EndIf}
 !macroend
+
+!endif
