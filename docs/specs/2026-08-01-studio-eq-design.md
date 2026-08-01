@@ -48,11 +48,36 @@ of 2026-08-01 was careful to avoid.
 Tabs become `Devices | Studio | Settings`. "Studio" rather than "Equalizer" because it will hold
 more than an equalizer, and because it fits the tab strip at the display font's width.
 
+### Installing it as part of AudioDeck's own wizard
+
+The processing component is installed during AudioDeck's install, not as a second setup the user
+has to find and open. electron-builder's NSIS target takes a custom script through `nsis.include`,
+and its `customInstall` macro runs the bundled setup silently with `/S`.
+
+Four things shape it:
+
+- **It is a checkbox, ticked by default.** Most people installing AudioDeck want the audio
+  switching; not all of them want a component registered in their system audio path. Ticked by
+  default means the common path is still one wizard with no extra clicks, while anyone who does not
+  want it can say so. Forcing it on everyone to save one checkbox is the wrong trade.
+- **Only that step elevates.** AudioDeck installs per user and needs no administrator today.
+  Equalizer APO writes to Program Files and HKLM, so it does. The step runs through
+  `ExecShellWait "runas"`, which raises the prompt for that child process alone and leaves
+  AudioDeck installable without admin for anyone who declines.
+- **Its failure is never AudioDeck's failure.** A cancelled prompt or a failed install leaves
+  AudioDeck installed and working, with the Studio tab simply offering setup later.
+- **The in-app path stays.** The portable build has no installer at all, and anyone who unticks the
+  box may want effects later. The Studio tab's setup panel remains the fallback for both, running
+  the same bundled binary.
+
+The restart still cannot be removed. The wizard's finish page offers it.
+
 ### When Equalizer APO is absent
 
-Every user goes through this once, not just the developer. Bundling removes the download; it cannot
-remove the installation. Windows loads audio processing objects when the audio engine starts, so
-registering one and restarting is unavoidable on any route to system-wide audio effects.
+Reached by portable users, by anyone who declined the checkbox, and by anyone whose install failed.
+Bundling removes the download; it cannot remove the installation. Windows loads audio processing
+objects when the audio engine starts, so registering one and restarting is unavoidable on any route
+to system-wide audio effects.
 
 What is avoidable is how much of it the user sees. The bundled installer is NSIS, so it accepts
 `/S` and can run silently while AudioDeck shows its own progress. The target experience is:

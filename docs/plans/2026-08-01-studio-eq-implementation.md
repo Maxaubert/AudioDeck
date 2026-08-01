@@ -86,8 +86,18 @@ registry readers so it is unit-testable.
 ## Stage 5 - packaging and safety
 
 - `scripts/fetch-equalizerapo.ps1`, pinned, mirroring `fetch-headsetcontrol.ps1`, with the same
-  post-download verification.
-- `scripts/check-bundle-inputs.mjs` learns about the new vendor file.
+  post-download verification. (Done ahead of schedule, along with the extraResources entry and the
+  preflight check.)
+- `build/installer.nsh`, referenced from `electron-builder.yml` as `nsis.include`:
+  - a page with one checkbox, ticked by default, offering to set up audio effects;
+  - `customInstall` running `vendor\equalizerapo-setup.exe /S` through `ExecShellWait "runas"` so
+    only that step elevates, skipped entirely when the box is unticked or when detection shows it
+    is already installed;
+  - the result ignored for the purposes of AudioDeck's own success, and a reboot offered on the
+    finish page.
+- Verify by installing from the built NSIS package on this machine: one wizard, one elevation
+  prompt, no second window, and AudioDeck still installs cleanly when the box is unticked and when
+  the elevation prompt is cancelled.
 - Settings gains `Remove audio effects`, calling `remove.ts`.
 - README: credit Equalizer APO under GPL-3 next to HeadsetControl, and document that effects
   require it.
