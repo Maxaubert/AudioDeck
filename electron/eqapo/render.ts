@@ -23,6 +23,13 @@ export const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] as c
 /** Gain limits, per band and per effect. Beyond this it stops being useful. */
 export const MAX_BAND_DB = 12;
 export const MAX_EFFECT_DB = 12;
+/**
+ * Bass gets more range than the other effects. A low shelf is doing its work
+ * over a narrow slice of the spectrum where there is usually headroom to
+ * spare, and 12 dB was not enough to be worth the slider. The same range on
+ * the presence shelf would just be harsh.
+ */
+export const MAX_BASS_DB = 20;
 
 /** Corner frequencies for the two shelf effects. */
 const BASS_FC_HZ = 100;
@@ -62,6 +69,20 @@ const HEADER = [
   "# tab instead, or use Settings > Remove audio effects to take them out.",
 ].join("\n");
 
+/**
+ * Does this rendered config actually ask Equalizer APO to do anything?
+ *
+ * A profile can exist and still render to nothing: every band at zero, every
+ * effect at rest. Deciding on the presence of profiles rather than on the
+ * presence of directives is how AudioDeck ended up writing a comments-only
+ * file and linking it from someone's config for no reason.
+ */
+export function hasDirectives(config: string): boolean {
+  return config
+    .split(/\r?\n/)
+    .some((line) => line.trim() !== "" && !line.trimStart().startsWith("#"));
+}
+
 export function renderConfig(sections: readonly DeviceSection[]): string {
   const blocks = sections
     .filter((s) => s.profile.enabled)
@@ -74,7 +95,7 @@ export function renderConfig(sections: readonly DeviceSection[]): string {
 function renderSection({ match, profile }: DeviceSection): string | null {
   const lines: string[] = [];
   const bands = normaliseBands(profile.bands);
-  const bass = clamp(profile.bassBoost, -MAX_EFFECT_DB, MAX_EFFECT_DB);
+  const bass = clamp(profile.bassBoost, -MAX_BASS_DB, MAX_BASS_DB);
   const clarity = clamp(profile.clarity, -MAX_EFFECT_DB, MAX_EFFECT_DB);
   const width = clamp(profile.width, 0, 200);
 
@@ -103,20 +124,18 @@ function renderSection({ match, profile }: DeviceSection): string | null {
  * At w = 1 that is the identity, so nothing is emitted. At w = 0 both
  * coefficients are 0.5, which is mono.
  *
- * Only w <= 1 is supported, and that is a limitation of the engine rather than
- * a choice. Widening needs b < 0, meaning each channel subtracts some of the
- * other, and Equalizer APO does not do the right thing with a negative factor
- * in a Copy line: every value above 100 % destroyed the audio, verified by
- * listening three times over on 2026-08-01. Nothing it ships uses a negative
- * factor either. Widening is therefore not implementable this way and the UI
- * does not offer it.
+ * Above 100 % this widens, which needs b < 0: each channel subtracts some of
+ * the other. Earlier attempts at that destroyed the audio, but every one of
+ * them emitted the term as `-0.35*ADR`, leaving `ADL-0.35` for Equalizer APO
+ * to make sense of. Its grammar joins terms with `+`, so the term is now
+ * written `+-0.35*ADR`. Whether that is the whole story is still unproven.
  *
  * The originals are snapshotted into virtual channels first, because Equalizer
  * APO applies the assignments in a Copy line SEQUENTIALLY: writing the matrix
  * directly computes R from the already-modified L.
  */
 function renderWidth(widthPercent: number): string[] {
-  const w = Math.min(1, widthPercent / 100);
+  const w = widthPercent / 100;
   if (w === 1) return [];
   const a = (1 + w) / 2;
   const b = (1 - w) / 2;
@@ -146,10 +165,17 @@ function factor(value: number): string {
   return (rounded === 0 ? 0 : rounded).toString();
 }
 
-/** A matrix term with its sign attached, so terms can be concatenated. */
+/**
+ * A matrix term, always introduced by a `+`, so a negative coefficient reads
+ * as `+-0.35*ADR` rather than `-0.35*ADR`.
+ *
+ * Equalizer APO's grammar joins terms with `+`; every example it ships does.
+ * Writing `1.35*ADL-0.35*ADR` instead leaves `ADL-0.35` for it to interpret,
+ * which is very likely what mangled the audio at every width above 100 %.
+ */
 function signed(value: number): string {
   const rounded = Math.round(value * 1000) / 1000;
-  return rounded < 0 ? `-${factor(-rounded)}` : `+${factor(rounded)}`;
+  return `+${factor(rounded)}`;
 }
 
 function round(value: number): number {

@@ -88,20 +88,13 @@ describe("renderConfig", () => {
       expect(out).toContain("Copy: L=0.5*ADL+0.5*ADR R=0.5*ADR+0.5*ADL");
     });
 
-    it("never emits a negative factor, whatever is asked for", () => {
-      // Widening needs each channel to subtract some of the other, and
-      // Equalizer APO destroys the audio when a Copy factor is negative:
-      // every setting above 100 % came back as thuds, three times over. The
-      // UI does not offer it, and the renderer refuses it too, so a config
-      // hand-edited to 200 % cannot reach the audio engine.
-      for (const width of [110, 150, 200]) {
-        const out = lines(renderConfig([section({ width })])).join("\n");
-        expect(out).not.toMatch(/-\d/);
-      }
-    });
-
-    it("treats anything above 100 percent as untouched", () => {
-      expect(lines(renderConfig([section({ width: 200 })]))).toEqual([]);
+    it("introduces every term with a plus, even a negative one", () => {
+      // Equalizer APO's grammar joins terms with "+". Emitting the negative
+      // term as "-0.25*ADR" leaves it "ADL-0.25" to interpret, which is the
+      // likeliest reason every width above 100 % mangled the audio.
+      const out = lines(renderConfig([section({ width: 150 })]));
+      expect(out).toContain("Copy: L=1.25*ADL+-0.25*ADR R=1.25*ADR+-0.25*ADL");
+      expect(out.join("\n")).not.toMatch(/\*ADL-|\*ADR-/);
     });
   });
 
@@ -132,9 +125,16 @@ describe("renderConfig", () => {
 
   describe("robustness", () => {
     it("clamps gains beyond the supported range", () => {
-      const out = lines(renderConfig([section({ bands: [99, 0, 0, 0, 0, 0, 0, 0, 0, 0], bassBoost: 99 })]));
-      expect(out.join("\n")).toContain("32 12.0");
-      expect(out.join("\n")).toContain("Gain 12.0 dB");
+      const out = lines(
+        renderConfig([
+          section({ bands: [99, 0, 0, 0, 0, 0, 0, 0, 0, 0], bassBoost: 99, clarity: 99 }),
+        ]),
+      ).join("\n");
+      expect(out).toContain("32 12.0");
+      // Bass gets more range than the presence shelf: it works over a narrow
+      // slice where there is headroom, and the same range on presence is harsh.
+      expect(out).toContain("Fc 100 Hz Gain 20.0 dB");
+      expect(out).toContain("Fc 6000 Hz Gain 12.0 dB");
     });
 
     it("survives a short or ragged band array", () => {

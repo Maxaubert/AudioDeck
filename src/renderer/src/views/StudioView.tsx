@@ -195,7 +195,7 @@ export function StudioView({ state, actions }: { state: AppState; actions: Audio
               label="Bass boost"
               value={profile.bassBoost}
               min={0}
-              max={12}
+              max={20}
               step={0.5}
               unit="dB"
               disabled={off}
@@ -211,16 +211,14 @@ export function StudioView({ state, actions }: { state: AppState; actions: Audio
               disabled={off}
               onChange={(clarity) => edit({ ...profile, clarity })}
             />
-            {/* Narrowing only. Widening needs each channel to subtract some
-                of the other, and Equalizer APO destroys the audio when a Copy
-                factor is negative: every setting above 100 % came back as
-                thuds. Offering a range that breaks the sound is worse than
-                not offering it. */}
+            {/* Below 100 % narrows towards mono, above widens. Widening needs
+                a negative coefficient, which mangled the audio until the term
+                was written as `+-0.35*ADR` rather than `-0.35*ADR`. */}
             <EffectSlider
-              label="Stereo width"
+              label="Surround"
               value={profile.width}
               min={0}
-              max={100}
+              max={200}
               step={5}
               unit="%"
               disabled={off}

@@ -24,6 +24,9 @@ const OURS = "C:\\EQ\\config\\audiodeck.txt";
 const STOCK = "Preamp: -6 dB\n";
 const DEVICE = "{0.0.0.00000000}.{aaaaaaaa-1111-2222-3333-444444444444}";
 
+/** A profile that actually renders a directive, unlike a flat one. */
+const tuned = () => ({ ...flatEqProfile(), bassBoost: 5 });
+
 describe("deviceMatchPattern", () => {
   it("takes the endpoint GUID out of an AudioDeck id", () => {
     // Equalizer APO matches against "Device_name Connection_name GUID", so the
@@ -99,7 +102,7 @@ describe("EffectsService", () => {
       remove: async () => {},
     };
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await expect(service.apply(withEq({ [DEVICE]: flatEqProfile() }))).resolves.toBeUndefined();
+    await expect(service.apply(withEq({ [DEVICE]: tuned() }))).resolves.toBeUndefined();
     expect(service.status().error).toContain("Could not write audio effects");
   });
 
@@ -113,10 +116,10 @@ describe("EffectsService", () => {
       remove: async () => {},
     };
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
+    await service.apply(withEq({ [DEVICE]: tuned() }));
     expect(service.status().error).not.toBeNull();
     fail = false;
-    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
+    await service.apply(withEq({ [DEVICE]: tuned() }));
     expect(service.status().error).toBeNull();
   });
 
@@ -134,17 +137,28 @@ describe("EffectsService", () => {
   it("unlinks itself again when the last profile goes", async () => {
     const { io, files } = fakeIo({ [MAIN]: STOCK });
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
+    await service.apply(withEq({ [DEVICE]: tuned() }));
     expect(files.get(MAIN)).toContain("Include:");
     await service.apply(withEq({}));
     expect(files.get(MAIN)).toBe(STOCK);
     expect(files.has(OURS)).toBe(false);
   });
 
+  it("stays out when the only profile is flat", async () => {
+    // A profile can exist and render to nothing. Deciding on the presence of
+    // profiles rather than of directives left a comments-only file and a
+    // pointless Include in the user's config.
+    const { io, files } = fakeIo({ [MAIN]: STOCK });
+    const service = new EffectsService({ detect: async () => INSTALL, io });
+    await service.apply(withEq({ [DEVICE]: flatEqProfile() }));
+    expect(files.has(OURS)).toBe(false);
+    expect(files.get(MAIN)).toBe(STOCK);
+  });
+
   it("removes everything it wrote", async () => {
     const { io, files } = fakeIo({ "C:\\EQ\\config\\config.txt": "Preamp: -6 dB\n" });
     const service = new EffectsService({ detect: async () => INSTALL, io });
-    await service.apply(withEq({ "{0.0.0.00000000}.{aaaaaaaa-1111-2222-3333-444444444444}": flatEqProfile() }));
+    await service.apply(withEq({ [DEVICE]: tuned() }));
     await service.removeAll();
     expect(files.has("C:\\EQ\\config\\audiodeck.txt")).toBe(false);
     expect(files.get("C:\\EQ\\config\\config.txt")).toBe("Preamp: -6 dB\n");

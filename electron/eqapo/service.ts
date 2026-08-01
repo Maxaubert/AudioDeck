@@ -9,6 +9,7 @@ import { applyProfiles, realFileIo, removeProfiles } from "./apply.js";
 import type { EqApoInstall } from "./detect.js";
 import type { FileIo } from "./apply.js";
 import type { AudioDeckConfig, EqProfile } from "../config.js";
+import { hasDirectives, renderConfig } from "./render.js";
 import type { DeviceSection } from "./render.js";
 
 export interface EffectsStatus {
@@ -93,7 +94,9 @@ export class EffectsService {
 
     const sections = sectionsFor(config);
     try {
-      if (sections.length === 0) {
+      // Judged on what the config actually says, not on whether profiles
+      // exist: a profile with everything at rest renders to comments alone.
+      if (!hasDirectives(renderConfig(sections))) {
         // Nothing to apply: take our file and our line back out rather than
         // leaving an empty include behind. AudioDeck should not appear in
         // someone's audio configuration until they have actually asked for an
