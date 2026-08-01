@@ -139,3 +139,45 @@ test("reset to flat clears the curve and the effects", async () => {
     "0",
   );
 });
+
+test("removing effects sticks, rather than being undone by a restart", async () => {
+  ctx = await launchApp();
+  const { page, configFile } = ctx;
+  await page.getByRole("button", { name: "Studio", exact: true }).click();
+
+  await page.getByRole("slider", { name: "500 hertz" }).focus();
+  await page.keyboard.press("ArrowUp");
+  await expect
+    .poll(async () => Object.values((await readConfigFile(configFile)).eq)[0]?.enabled)
+    .toBe(true);
+
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Remove", exact: true }).click();
+
+  // Switched off rather than deleted: the daemon re-applies every profile on
+  // its next start, so a removal that only deleted files would undo itself.
+  await expect
+    .poll(async () => {
+      const profile = Object.values((await readConfigFile(configFile)).eq)[0];
+      return profile === undefined ? null : `${profile.enabled}:${profile.bands[4]}`;
+    })
+    .toBe("false:0.5");
+});
+
+test("pausing automation is persisted, and honoured on the next start", async () => {
+  ctx = await launchApp();
+  await ctx.page.getByRole("button", { name: "Settings", exact: true }).click();
+  await ctx.page.getByRole("switch", { name: /Pause automation/ }).click();
+  await expect.poll(async () => (await readConfigFile(ctx.configFile)).paused).toBe(true);
+
+  // Someone who paused because the switching was fighting them should not find
+  // it running again after a restart, so the flag has to be read back at start.
+  await ctx.close();
+  ctx = await launchApp({ paused: true });
+  await expect(ctx.page.locator(".paused-banner")).toBeVisible();
+});
+
+test("an unpaused config starts running, so the banner is not merely always on", async () => {
+  ctx = await launchApp({ paused: false });
+  await expect(ctx.page.locator(".paused-banner")).toHaveCount(0);
+});

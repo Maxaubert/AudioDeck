@@ -7,6 +7,7 @@ import { DeviceManagerView } from "./views/DeviceManagerView.js";
 import { StudioView } from "./views/StudioView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { WindowCaption } from "./components/WindowCaption.js";
+import { FirstRunGuide } from "./components/FirstRunGuide.js";
 
 type ViewName = "devices" | "studio" | "settings";
 
@@ -19,6 +20,10 @@ const TABS: { name: ViewName; label: string }[] = [
 export default function App() {
   const [view, setView] = useState<ViewName>("devices");
   const { state, error, actions } = useAppState();
+  // Held locally as well as in config so replaying the guide from Settings is
+  // instant, rather than waiting for the next state poll to come back.
+  const [guideOpen, setGuideOpen] = useState<boolean | null>(null);
+  const showGuide = guideOpen ?? (state !== null && !state.guideSeen);
 
   return (
     <div className="shell" data-loaded={state !== null}>
@@ -58,8 +63,16 @@ export default function App() {
       ) : view === "studio" ? (
         <StudioView state={state} actions={actions} />
       ) : (
-        <SettingsView state={state} actions={actions} />
+        <SettingsView state={state} actions={actions} onReplayGuide={() => setGuideOpen(true)} />
       )}
+      {showGuide ? (
+        <FirstRunGuide
+          onDismiss={() => {
+            setGuideOpen(false);
+            void actions.setGuideSeen(true);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

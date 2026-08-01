@@ -18,8 +18,20 @@ export interface AudioDeckConfig {
   /** Endpoint IDs, highest priority first. */
   micPriority: string[];
   override: OverrideState;
+  /**
+   * Automation held by the user. Persisted: someone who paused because the
+   * switching was fighting them should not find it silently running again
+   * after a restart.
+   */
+  paused: boolean;
   pollIntervalMs: number;
   autostart: boolean;
+  /**
+   * The first-run guide has been through once. Stored rather than inferred
+   * from the config file merely existing: the config is written the first time
+   * anything at all is saved, which happens before anyone has read a word.
+   */
+  guideSeen: boolean;
   /** Endpoint IDs the user has hidden from AudioDeck's lists. */
   hiddenDevices: string[];
   /** User-chosen display aliases, endpoint ID to alias. */
@@ -83,7 +95,9 @@ export function defaultConfig(): AudioDeckConfig {
     outputPriority: [],
     micPriority: [],
     override: { output: false, mic: false },
+    paused: false,
     pollIntervalMs: 2000,
+    guideSeen: false,
     autostart: true,
     hiddenDevices: [],
     aliases: {},
@@ -174,6 +188,8 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
       output: partial.override?.output ?? base.override.output,
       mic: partial.override?.mic ?? base.override.mic,
     },
+    paused: typeof partial.paused === "boolean" ? partial.paused : base.paused,
+    guideSeen: typeof partial.guideSeen === "boolean" ? partial.guideSeen : base.guideSeen,
     pollIntervalMs:
       typeof partial.pollIntervalMs === "number" && partial.pollIntervalMs >= 250
         ? partial.pollIntervalMs

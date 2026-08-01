@@ -87,6 +87,7 @@ export function useAppState(): AppStateHook {
       installEffects: () => api.installEffects(),
       removeEffects: wrap(() => api.removeEffects()),
       setPaused: wrap((paused) => api.setPaused(paused)),
+      setGuideSeen: wrap((seen) => api.setGuideSeen(seen)),
       setAutostart: wrap((enabled) => api.setAutostart(enabled)),
       setPollInterval: wrap((ms) => api.setPollInterval(ms)),
       windowMinimize: () => api.windowMinimize(),

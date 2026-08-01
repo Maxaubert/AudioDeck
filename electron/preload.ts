@@ -31,6 +31,7 @@ const api: AudioDeckApi = {
   installEffects: () => ipcRenderer.invoke(IPC.installEffects),
   removeEffects: () => ipcRenderer.invoke(IPC.removeEffects),
   setPaused: (paused: boolean) => ipcRenderer.invoke(IPC.setPaused, paused),
+  setGuideSeen: (seen: boolean) => ipcRenderer.invoke(IPC.setGuideSeen, seen),
   setAutostart: (enabled: boolean) => ipcRenderer.invoke(IPC.setAutostart, enabled),
   setPollInterval: (ms: number) => ipcRenderer.invoke(IPC.setPollInterval, ms),
   windowMinimize: () => ipcRenderer.invoke(IPC.windowMinimize),

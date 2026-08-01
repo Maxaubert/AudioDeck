@@ -107,6 +107,10 @@ async function boot(): Promise<void> {
     void effects.apply(config).catch((err) => console.error("[effects] initial apply:", err));
   }
 
+  // Restore the held state before the first tick, so a paused AudioDeck does
+  // not switch a device on the way up.
+  if (config.paused) setPaused(true);
+
   poller.start();
   console.log(`[main] AudioDeck daemon up, poll interval ${config.pollIntervalMs} ms`);
 

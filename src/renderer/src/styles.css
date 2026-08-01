@@ -1111,23 +1111,58 @@ label.setrow {
 
 .about {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 14px;
-  flex-wrap: wrap;
   margin-top: 26px;
   padding: 16px 22px;
   background: var(--ink);
   color: var(--paper);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+}
+
+/* The wordmark, at the weight the title bar uses. The stencil bars are cut
+   across AUDIO only; DECK carries the accent instead. */
+.about-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
-.about-d {
-  width: 3px;
-  height: 15px;
-  background: var(--paper);
+.about-brand .stencil {
+  color: var(--paper);
+}
+
+/* The bars are the strip showing through, so they paint in its background. */
+.about-brand .stencil::before,
+.about-brand .stencil::after {
+  background: var(--ink);
+  left: -1px;
+  right: -1px;
+  height: 2.5px;
+}
+
+.about-brand .stencil::before {
+  top: 6px;
+}
+
+.about-brand .stencil::after {
+  top: 14px;
+}
+
+.about-deck {
+  color: var(--marker);
+}
+
+.about-version {
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--paper);
+  opacity: 0.72;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1376,4 +1411,677 @@ label.setrow {
 
 .fx-range:disabled::-webkit-slider-thumb {
   background: var(--dead);
+}
+
+/* ---------- first-run guide ---------- */
+
+/* A native <dialog>: the top layer, the focus trap, the inert background and
+   Escape all come from the platform instead of from key handlers of my own. */
+.guide {
+  display: flex;
+  flex-direction: column;
+  width: min(660px, calc(100vw - 48px));
+  /* The window is resizable, and the illustration panel has a fixed height, so
+     a short window would otherwise push the footer past the bottom edge with
+     no way to reach Next. The copy scrolls; the footer never leaves. */
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--rule) solid var(--ink);
+  box-shadow: 14px 14px 0 var(--ink);
+}
+
+.guide::backdrop {
+  background: rgb(0 0 0 / 0.66);
+}
+
+.guide[open] {
+  animation: guide-in 220ms var(--ease-out);
+}
+
+.guide[open]::backdrop {
+  animation: guide-backdrop 220ms var(--ease-out);
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    /* Not scale(0): nothing in the world appears from nothing. */
+    transform: scale(0.96);
+  }
+}
+
+@keyframes guide-backdrop {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Keyed by step, so arriving at a card remounts it: the illustration starts
+   on its first frame rather than wherever its loop happened to be. */
+.guide-card {
+  min-height: 0;
+  overflow-y: auto;
+  animation: guide-card-in 200ms var(--ease-out);
+}
+
+@keyframes guide-card-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+.guide-art {
+  display: grid;
+  place-items: center;
+  height: 222px;
+  overflow: hidden;
+  background: var(--sheet);
+  border-bottom: var(--rule) solid var(--ink);
+}
+
+.guide-copy {
+  padding: 22px 30px 26px;
+}
+
+.guide-where {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 3px 10px;
+  background: var(--marker);
+  color: #6b3c00;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.guide-title {
+  margin: 0 0 10px;
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.guide-body {
+  max-width: 62ch;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.guide-foot {
+  --fg: var(--ink);
+  --bg: var(--paper);
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 16px 20px;
+  border-top: var(--rule) solid var(--ink);
+}
+
+.guide-nav {
+  display: flex;
+  gap: 10px;
+}
+
+/* Fixed, so the group keeps its width when the label grows from "Next" to
+   "Get started" on the last card. Every slot in the footer is then a constant
+   width and the dots stay put, which absolute centring cannot achieve here:
+   centred dots need both sides as wide as the widest one, and that does not
+   fit, so they ended up overlapping Back. */
+.guide-nav .btn-accent {
+  min-width: 178px;
+}
+
+/* Hidden rather than removed on the last card: it keeps its width, so the
+   dots do not slide sideways, and visibility also takes it out of the tab
+   order and the accessibility tree. */
+.guide-skip.is-gone {
+  visibility: hidden;
+}
+
+.guide-dots {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The mark is 12px; the target around it is the full 44px. */
+.guide-dot {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: var(--cur-hand);
+}
+
+.guide-dot::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: transparent;
+  border: 3px solid var(--ink);
+  transition: transform 140ms var(--ease-out);
+}
+
+.guide-dot:hover::before {
+  transform: scale(1.25);
+}
+
+.guide-dot.is-on::before {
+  background: var(--ink);
+  transform: scale(1.25);
+}
+
+/* ---------- the guide's looping illustrations ---------- */
+
+/* Each one ends held, then resets while faded out, so the loop does not snap
+   back in view. */
+@keyframes ga-cycle {
+  0% {
+    opacity: 0;
+  }
+  6%,
+  86% {
+    opacity: 1;
+  }
+  92%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.ga {
+  position: relative;
+}
+
+/* The shapes are <i> elements, which would otherwise inherit italics and skew
+   the numerals inside them. Font only: giving these a position here would
+   out-specify the position each shape sets for itself. */
+.ga i,
+.ga b {
+  font-style: normal;
+}
+
+/* --- ranked rows being dragged into a new order --- */
+
+.ga-rank {
+  width: 280px;
+  height: 132px;
+  animation: ga-cycle 5s linear infinite;
+}
+
+.ga-row {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  background: var(--sheet);
+  border: 4px solid var(--ink);
+}
+
+.ga-row .ga-n {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 100%;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.ga-n-from {
+  animation: ga-num-from 5s steps(1, end) infinite;
+}
+
+.ga-n-to {
+  animation: ga-num-to 5s steps(1, end) infinite;
+}
+
+/* Stepped, not tweened: two numerals cross-dissolving through a half-lit
+   ghost of each other is less legible than a clean swap. */
+@keyframes ga-num-from {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  58%,
+  92% {
+    opacity: 0;
+  }
+  96%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes ga-num-to {
+  0%,
+  50% {
+    opacity: 0;
+  }
+  58%,
+  92% {
+    opacity: 1;
+  }
+  96%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A stand-in for the device name, so a row looks like a row. */
+.ga-row::after {
+  content: "";
+  height: 8px;
+  margin-left: 48px;
+  flex: 0 0 130px;
+  background: var(--dead);
+}
+
+.ga-row-a {
+  top: 0;
+  animation: ga-shift 5s var(--ease-out) infinite;
+}
+
+.ga-row-b {
+  top: 48px;
+  animation: ga-shift 5s var(--ease-out) infinite;
+}
+
+.ga-row-c {
+  top: 96px;
+  animation: ga-lift 5s var(--ease-out) infinite;
+}
+
+@keyframes ga-lift {
+  0%,
+  14% {
+    transform: translate(0, 0) scale(1);
+    background: var(--sheet);
+  }
+  24% {
+    transform: translate(12px, -8px) scale(1.05);
+    background: var(--marker);
+  }
+  50% {
+    transform: translate(12px, -104px) scale(1.05);
+    background: var(--marker);
+  }
+  58%,
+  92% {
+    transform: translate(0, -96px) scale(1);
+    background: var(--marker);
+  }
+  96%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    background: var(--sheet);
+  }
+}
+
+@keyframes ga-shift {
+  0%,
+  24% {
+    transform: translateY(0);
+  }
+  50%,
+  92% {
+    transform: translateY(48px);
+  }
+  96%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* --- one device row carrying every control --- */
+
+.ga-strip {
+  display: flex;
+  align-items: stretch;
+  width: 404px;
+  height: 84px;
+  background: var(--sheet);
+  border: 4px solid var(--ink);
+}
+
+.gs-rank {
+  display: grid;
+  place-items: center;
+  flex: 0 0 58px;
+  background: var(--ink);
+  color: var(--marker);
+  font-family: var(--display);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.gs-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 9px;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.gs-name {
+  width: 122px;
+  height: 11px;
+  background: var(--ink);
+}
+
+/* Fixed width, because the knob travels a distance in pixels: a fader whose
+   width came from the layout would put the knob somewhere else at every size. */
+.gs-fader {
+  position: relative;
+  width: 160px;
+  height: 12px;
+  background: var(--dead);
+  border: 3px solid var(--ink);
+}
+
+.gs-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--marker);
+  transform-origin: left center;
+  animation: gs-fill 3.4s ease-in-out infinite alternate;
+}
+
+/* Narrow, and riding the fill rather than sitting on top of it: a knob as wide
+   as the fill at its lowest setting hides the very thing it is pointing at. */
+.gs-knob {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 12px;
+  height: 24px;
+  background: var(--ink);
+  animation: gs-knob 3.4s ease-in-out infinite alternate;
+}
+
+/* The fill's leading edge and the knob have to arrive together. */
+@keyframes gs-fill {
+  from {
+    transform: scaleX(0.3);
+  }
+  to {
+    transform: scaleX(0.95);
+  }
+}
+
+@keyframes gs-knob {
+  from {
+    transform: translateX(34px);
+  }
+  to {
+    transform: translateX(140px);
+  }
+}
+
+.gs-mute {
+  align-self: center;
+  padding: 9px 12px;
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: 0.1em;
+}
+
+.gs-more {
+  display: flex;
+  gap: 5px;
+  align-self: center;
+  margin: 0 14px 0 10px;
+  padding: 13px 9px;
+  border: 3px solid var(--ink);
+}
+
+.gs-more b {
+  width: 5px;
+  height: 5px;
+  background: var(--ink);
+}
+
+/* --- equalizer bands --- */
+
+.ga-studio {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  height: 124px;
+}
+
+.ga-band {
+  width: 16px;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: bottom center;
+  animation: ga-band 2.2s ease-in-out infinite;
+}
+
+/* Peaks and a dip, so the row of bands is a curve at every instant rather
+   than a ramp. */
+@keyframes ga-band {
+  0% {
+    transform: scaleY(0.3);
+  }
+  22% {
+    transform: scaleY(0.96);
+  }
+  44% {
+    transform: scaleY(0.42);
+  }
+  70% {
+    transform: scaleY(0.78);
+  }
+  100% {
+    transform: scaleY(0.3);
+  }
+}
+
+/* --- a window folding down into the tray --- */
+
+.ga-tray {
+  width: 280px;
+  height: 158px;
+  animation: ga-cycle 4.6s linear infinite;
+}
+
+.gt-window {
+  position: absolute;
+  top: 0;
+  left: 34px;
+  width: 190px;
+  height: 108px;
+  background: var(--sheet);
+  border: 4px solid var(--ink);
+  transform-origin: 84% 100%;
+  animation: gt-minimize 4.6s var(--ease-out) infinite;
+}
+
+.gt-bar {
+  display: block;
+  height: 18px;
+  background: var(--ink);
+  border-bottom: 4px solid var(--marker);
+}
+
+.gt-taskbar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  height: 32px;
+  padding-right: 18px;
+  background: var(--ink);
+}
+
+.gt-dot {
+  width: 14px;
+  height: 14px;
+  background: var(--dead-ink);
+}
+
+.gt-trayicon {
+  width: 14px;
+  height: 14px;
+  background: var(--dead-ink);
+  animation: gt-flash 4.6s var(--ease-out) infinite;
+}
+
+@keyframes gt-minimize {
+  0%,
+  26% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  54%,
+  100% {
+    transform: translate(0, 52px) scale(0.08);
+    opacity: 0;
+  }
+}
+
+@keyframes gt-flash {
+  0%,
+  50% {
+    transform: scale(1);
+    background: var(--dead-ink);
+  }
+  62% {
+    transform: scale(1.6);
+    background: var(--marker);
+  }
+  74%,
+  100% {
+    transform: scale(1);
+    background: var(--marker);
+  }
+}
+
+/* Held on a frame that still tells the story: the row has moved to the top,
+   the bands make a curve, the app is in the tray. Freezing them mid-loop, or
+   dropping them for empty boxes, would lose the explanation along with the
+   movement. */
+@media (prefers-reduced-motion: reduce) {
+  .guide[open],
+  .guide[open]::backdrop,
+  .guide-card,
+  .guide-dot::before,
+  .ga-rank,
+  .ga-row,
+  .ga-n,
+  .gs-fill,
+  .gs-knob,
+  .ga-band,
+  .ga-tray,
+  .gt-window,
+  .gt-trayicon {
+    animation: none;
+    transition: none;
+  }
+
+  .ga-row-a,
+  .ga-row-b {
+    transform: translateY(48px);
+  }
+
+  .ga-row-c {
+    transform: translateY(-96px);
+    background: var(--marker);
+  }
+
+  /* The held frame is after the move, so the ranks read 1, 2, 3 down the list. */
+  .ga-n-from {
+    opacity: 0;
+  }
+
+  .ga-n-to {
+    opacity: 1;
+  }
+
+  .gs-fill {
+    transform: scaleX(0.62);
+  }
+
+  .gs-knob {
+    transform: translateX(104px);
+  }
+
+  .ga-band:nth-child(1) {
+    transform: scaleY(0.72);
+  }
+  .ga-band:nth-child(2) {
+    transform: scaleY(0.92);
+  }
+  .ga-band:nth-child(3) {
+    transform: scaleY(1);
+  }
+  .ga-band:nth-child(4) {
+    transform: scaleY(0.76);
+  }
+  .ga-band:nth-child(5) {
+    transform: scaleY(0.48);
+  }
+  .ga-band:nth-child(6) {
+    transform: scaleY(0.34);
+  }
+  .ga-band:nth-child(7) {
+    transform: scaleY(0.46);
+  }
+  .ga-band:nth-child(8) {
+    transform: scaleY(0.68);
+  }
+  .ga-band:nth-child(9) {
+    transform: scaleY(0.88);
+  }
+  .ga-band:nth-child(10) {
+    transform: scaleY(0.6);
+  }
+
+  /* The window stays visible, unlike the end of the animation: a held frame
+     showing an empty taskbar illustrates nothing. Sitting above the tray with
+     the mark lit says "running, and down there" without moving. */
+  .gt-window {
+    transform: none;
+    opacity: 1;
+  }
+
+  .gt-trayicon {
+    background: var(--marker);
+  }
 }
