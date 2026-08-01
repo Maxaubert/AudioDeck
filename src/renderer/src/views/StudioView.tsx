@@ -7,6 +7,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EQ_BANDS, EqCurve } from "../components/EqCurve.js";
 import { EffectSlider } from "../components/EffectSlider.js";
+import {
+  MAX_BASS_DB,
+  MAX_BOOST_DB,
+  MAX_REVERB,
+  MAX_EFFECT_DB,
+  MAX_WIDTH,
+  NEUTRAL_WIDTH,
+} from "../../../../electron/eqapo/render.js";
 import { SectionLabel } from "../components/SectionLabel.js";
 import { displayDetail, displayName } from "../useAppState.js";
 import type { AppState, AudioDeckApi, EffectsStatusView, EqProfileView } from "../../../../shared/ipc.js";
@@ -19,12 +27,25 @@ import type { AppState, AudioDeckApi, EffectsStatusView, EqProfileView } from ".
 const COMMIT_DELAY_MS = 50;
 
 function flat(): EqProfileView {
-  return { enabled: true, bands: EQ_BANDS.map(() => 0), bassBoost: 0, clarity: 0, width: 100 };
+  return {
+    enabled: true,
+    bands: EQ_BANDS.map(() => 0),
+    bassBoost: 0,
+    clarity: 0,
+    width: 100,
+    volumeBoost: 0,
+    reverb: 0,
+  };
 }
 
 function isFlat(p: EqProfileView): boolean {
   return (
-    p.bands.every((g) => g === 0) && p.bassBoost === 0 && p.clarity === 0 && p.width === 100
+    p.bands.every((g) => g === 0) &&
+    p.bassBoost === 0 &&
+    p.clarity === 0 &&
+    p.width === 100 &&
+    p.volumeBoost === 0 &&
+    p.reverb === 0
   );
 }
 
@@ -191,13 +212,23 @@ export function StudioView({ state, actions }: { state: AppState; actions: Audio
 
           <SectionLabel title="Effects" note="" />
           <div className="fx-list">
+            {/* Digital gain, so it is capped far lower than the others: it
+                multiplies samples already near full scale, and sustained
+                clipping is what damages drivers. It cannot raise the
+                hardware's own ceiling either. */}
+            <EffectSlider
+              label="Volume boost"
+              value={profile.volumeBoost}
+              min={0}
+              max={MAX_BOOST_DB}
+              disabled={off}
+              onChange={(volumeBoost) => edit({ ...profile, volumeBoost })}
+            />
             <EffectSlider
               label="Bass boost"
               value={profile.bassBoost}
               min={0}
-              max={20}
-              step={0.5}
-              unit="dB"
+              max={MAX_BASS_DB}
               disabled={off}
               onChange={(bassBoost) => edit({ ...profile, bassBoost })}
             />
@@ -205,22 +236,30 @@ export function StudioView({ state, actions }: { state: AppState; actions: Audio
               label="Clarity"
               value={profile.clarity}
               min={0}
-              max={12}
-              step={0.5}
-              unit="dB"
+              max={MAX_EFFECT_DB}
               disabled={off}
               onChange={(clarity) => edit({ ...profile, clarity })}
             />
-            {/* Below 100 % narrows towards mono, above widens. Widening needs
-                a negative coefficient, which mangled the audio until the term
-                was written as `+-0.35*ADR` rather than `-0.35*ADR`. */}
+            {/* Reflections rather than convolution: Equalizer APO's
+                Convolution is the same FFT machinery as GraphicEQ, which does
+                nothing at all on some devices. */}
+            <EffectSlider
+              label="Reverb"
+              value={profile.reverb}
+              min={0}
+              max={MAX_REVERB}
+              disabled={off}
+              onChange={(reverb) => edit({ ...profile, reverb })}
+            />
+            {/* Level 0 is 100 %, the untouched signal, so the slider only
+                widens. Narrowing towards mono is possible but is not what the
+                control is for, and a slider whose middle means "do nothing"
+                reads as broken. */}
             <EffectSlider
               label="Surround"
               value={profile.width}
-              min={0}
-              max={200}
-              step={5}
-              unit="%"
+              min={NEUTRAL_WIDTH}
+              max={MAX_WIDTH}
               disabled={off}
               onChange={(width) => edit({ ...profile, width })}
             />

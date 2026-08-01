@@ -6,8 +6,9 @@
 
 import { detectEqApo, queryRegistry } from "./detect.js";
 import { applyProfiles, realFileIo, removeProfiles } from "./apply.js";
+import { impulseResponses } from "./impulses.js";
 import type { EqApoInstall } from "./detect.js";
-import type { FileIo } from "./apply.js";
+import type { FileIo, ImpulseResponses } from "./apply.js";
 import type { AudioDeckConfig, EqProfile } from "../config.js";
 import { hasDirectives, renderConfig } from "./render.js";
 import type { DeviceSection } from "./render.js";
@@ -22,6 +23,7 @@ export interface EffectsStatus {
 export interface EffectsDeps {
   detect?: () => Promise<EqApoInstall | null>;
   io?: FileIo;
+  impulses?: ImpulseResponses;
 }
 
 /**
@@ -52,6 +54,7 @@ export function sectionsFor(config: AudioDeckConfig): DeviceSection[] {
 export class EffectsService {
   private readonly detect: () => Promise<EqApoInstall | null>;
   private readonly io: FileIo;
+  private readonly impulses: ImpulseResponses;
   private install: EqApoInstall | null = null;
   private error: string | null = null;
   /**
@@ -64,6 +67,7 @@ export class EffectsService {
   constructor(deps: EffectsDeps = {}) {
     this.detect = deps.detect ?? (() => detectEqApo({ queryRegistry }));
     this.io = deps.io ?? realFileIo;
+    this.impulses = deps.impulses ?? impulseResponses;
   }
 
   status(): EffectsStatus {
@@ -103,7 +107,7 @@ export class EffectsService {
         // effect, and should disappear again when they remove the last one.
         await removeProfiles(this.io, install.configPath);
       } else {
-        await applyProfiles(this.io, install.configPath, sections);
+        await applyProfiles(this.io, install.configPath, sections, this.impulses);
       }
       this.error = null;
     } catch (err) {
@@ -131,5 +135,13 @@ export class EffectsService {
 
 /** A profile with everything at rest, for a device that has never been tuned. */
 export function flatEqProfile(): EqProfile {
-  return { enabled: true, bands: new Array(10).fill(0), bassBoost: 0, clarity: 0, width: 100 };
+  return {
+    enabled: true,
+    bands: new Array(10).fill(0),
+    bassBoost: 0,
+    clarity: 0,
+    width: 100,
+    volumeBoost: 0,
+    reverb: 0,
+  };
 }

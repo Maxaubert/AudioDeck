@@ -22,6 +22,10 @@ extraResources:
     to: vendor/headsetcontrol.exe
   - from: vendor/equalizerapo-setup.exe
     to: vendor/equalizerapo-setup.exe
+  # Reverb impulse responses, copied next to Equalizer APO's config at runtime
+  # because Convolution resolves its paths from there.
+  - from: assets/ir
+    to: ir
 win:
   target:
     - nsis

@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "electron-vite build && playwright test",
-    "dist": "node scripts/check-bundle-inputs.mjs && electron-vite build && electron-builder --win",
+    "reverb-ir": "node scripts/make-reverb-ir.mjs",
+    "dist": "node scripts/make-reverb-ir.mjs && node scripts/check-bundle-inputs.mjs && electron-vite build && electron-builder --win",
     "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs",
     "cursors": "electron-vite build && node design/cursor-check.mjs"
   },

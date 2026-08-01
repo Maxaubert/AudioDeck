@@ -24,16 +24,69 @@ export const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] as c
 export const MAX_BAND_DB = 12;
 export const MAX_EFFECT_DB = 12;
 /**
- * Bass gets more range than the other effects. A low shelf is doing its work
- * over a narrow slice of the spectrum where there is usually headroom to
- * spare, and 12 dB was not enough to be worth the slider. The same range on
- * the presence shelf would just be harsh.
+ * Bass gets far more range than the other effects. A low shelf works over a
+ * narrow slice of the spectrum where there is usually headroom to spare, and
+ * on hardware that already has weight of its own the earlier ceilings were not
+ * enough to be worth the slider. The same range on the presence shelf would
+ * only be harsh, so clarity keeps MAX_EFFECT_DB.
  */
-export const MAX_BASS_DB = 20;
+export const MAX_BASS_DB = 40;
+
+/** Stereo width: 100 is the untouched signal, and the slider only widens. */
+export const NEUTRAL_WIDTH = 100;
+export const MAX_WIDTH = 400;
+
+/**
+ * Volume boost, in dB, applied as a Preamp.
+ *
+ * Deliberately the smallest range of any control here. This is digital gain:
+ * it multiplies samples that are often already near full scale, so past a few
+ * dB it hard-clips, and sustained clipping is what damages drivers. It also
+ * cannot raise the hardware's own ceiling, only push the signal harder into
+ * it, so a large number would buy distortion rather than loudness. 10 dB is
+ * roughly three times the amplitude, which is plenty for a quiet source.
+ *
+ * It is worth having because some devices ignore Windows volume entirely: an
+ * Arctis Nova Pro Wireless lets its base station own the level, and a Preamp
+ * is the only thing on the PC that still changes what you hear (verified by
+ * listening, 2026-08-01).
+ */
+export const MAX_BOOST_DB = 10;
+
+/**
+ * Reverb, as a mix amount from 0 to 1.
+ *
+ * Built from delayed, darkened, cross-fed reflections rather than convolution.
+ * Equalizer APO does have a Convolution command, but it is the same FFT
+ * machinery as GraphicEQ, and GraphicEQ was silently doing nothing on an
+ * Arctis Nova Pro Wireless while plain biquads on the same device worked
+ * (2026-08-01). Convolution would also mean shipping impulse responses under a
+ * compatible licence. Delay, Copy and biquads are all proven on that hardware.
+ *
+ * The result is a sense of space rather than a long tail: there is no feedback
+ * path in a linear filter chain, so this is early reflections only. That is
+ * also what an "ambience" control is usually doing.
+ */
+export const MAX_REVERB = 0.34;
+
+/** Sample rates the impulse response is generated at, most likely first. */
+export const IR_RATES = [48000, 44100] as const;
+
+/** Named per rate, since Equalizer APO will not resample the response. */
+export function irFileName(rate: number): string {
+  return `audiodeck-cathedral-${rate}.wav`;
+}
 
 /** Corner frequencies for the two shelf effects. */
 const BASS_FC_HZ = 100;
 const CLARITY_FC_HZ = 6000;
+
+/**
+ * Q for the curve's peaking filters. The bands sit roughly an octave apart,
+ * and 1.41 is the octave-wide value, so neighbouring bands meet rather than
+ * leaving gaps or piling up.
+ */
+const BAND_Q = 1.41;
 
 export interface EqProfile {
   enabled: boolean;
@@ -45,6 +98,10 @@ export interface EqProfile {
   clarity: number;
   /** Stereo width as a percentage; 100 leaves the signal untouched. */
   width: number;
+  /** Digital gain in dB, applied as a Preamp. 0 leaves the level alone. */
+  volumeBoost: number;
+  /** Reverb mix, 0 to 1. 0 leaves the signal dry. */
+  reverb: number;
 }
 
 export interface DeviceSection {
@@ -60,6 +117,8 @@ export function flatProfile(): EqProfile {
     bassBoost: 0,
     clarity: 0,
     width: 100,
+    volumeBoost: 0,
+    reverb: 0,
   };
 }
 
@@ -97,10 +156,25 @@ function renderSection({ match, profile }: DeviceSection): string | null {
   const bands = normaliseBands(profile.bands);
   const bass = clamp(profile.bassBoost, -MAX_BASS_DB, MAX_BASS_DB);
   const clarity = clamp(profile.clarity, -MAX_EFFECT_DB, MAX_EFFECT_DB);
-  const width = clamp(profile.width, 0, 200);
+  const width = clamp(profile.width, 0, MAX_WIDTH);
+  const boost = clamp(profile.volumeBoost, -MAX_BOOST_DB, MAX_BOOST_DB);
 
-  if (bands.some((g) => g !== 0)) {
-    lines.push(`GraphicEQ: ${bands.map((g, i) => `${BANDS[i]} ${fmt(g)}`).join("; ")}`);
+  // First in the section, as Equalizer APO's own configs put it: the level
+  // going into the filters rather than out of them.
+  if (boost !== 0) lines.push(`Preamp: ${fmt(boost)} dB`);
+
+  // One peaking biquad per band rather than a single GraphicEQ line.
+  //
+  // GraphicEQ is FFT convolution, and it does not survive every device's
+  // processing path: on a SteelSeries Arctis Nova Pro Wireless the curve did
+  // nothing at all while a Preamp and a shelf filter on the same device worked
+  // (verified by listening, 2026-08-01). Peace, the most used Equalizer APO
+  // front end, uses biquads for its equalizer for the same reason. They are
+  // also cheaper per sample, which matters for a daemon that is meant to stay
+  // out of a game's way.
+  for (const [i, gain] of bands.entries()) {
+    if (gain === 0) continue;
+    lines.push(`Filter: ON PK Fc ${BANDS[i]} Hz Gain ${fmt(gain)} dB Q ${BAND_Q}`);
   }
   if (bass !== 0) {
     lines.push(`Filter: ON LS Fc ${BASS_FC_HZ} Hz Gain ${fmt(bass)} dB`);
@@ -109,6 +183,7 @@ function renderSection({ match, profile }: DeviceSection): string | null {
     lines.push(`Filter: ON HS Fc ${CLARITY_FC_HZ} Hz Gain ${fmt(clarity)} dB`);
   }
   lines.push(...renderWidth(width));
+  lines.push(...renderReverb(clamp(profile.reverb, 0, MAX_REVERB)));
 
   // A device whose profile does nothing gets no section at all, rather than a
   // Device: line with nothing under it.
@@ -142,6 +217,49 @@ function renderWidth(widthPercent: number): string[] {
   return [
     "Copy: ADL=L ADR=R",
     `Copy: L=${factor(a)}*ADL${signed(b)}*ADR R=${factor(a)}*ADR${signed(b)}*ADL`,
+  ];
+}
+
+/**
+ * Reverb by convolution with a synthesised cathedral impulse response.
+ *
+ * Delayed taps were tried first and sounded, accurately, like "a small steel
+ * tunnel": a handful of discrete reflections comb-filter into a metallic pipe.
+ * A cathedral is thousands of reflections dense enough to smear into a tail,
+ * and a linear filter chain has no feedback path to build one, so convolution
+ * is the only route.
+ *
+ * The impulse response is generated, not recorded: a real hall's impulse
+ * response is someone's work, and this keeps AudioDeck MIT with nothing to
+ * attribute. scripts/make-reverb-ir.mjs writes it.
+ *
+ * Equalizer APO needs the response at the device's own sample rate and will
+ * not resample, so both common rates are shipped and chosen at runtime by its
+ * own expression syntax.
+ *
+ * The mix is a crossfade, not an addition. Writing `L=1*L+a*RVL` keeps the dry
+ * signal at full level and piles the wet on top, so the reverb slider doubled
+ * as a volume control. The dry share gives way as the wet comes in, and the
+ * response itself is energy-normalised so the wet path is unity gain.
+ *
+ * This is the one effect here with a real per-sample cost. Everything else is
+ * a biquad or a channel mix; a 3.6 second tail is genuine work.
+ */
+function renderReverb(amount: number): string[] {
+  if (amount <= 0) return [];
+  return [
+    // Convolve a copy, so the dry signal stays untouched and the slider is a
+    // wet/dry mix rather than an all-or-nothing switch.
+    "Copy: RVL=L RVR=R",
+    "Channel: RVL RVR",
+    ...IR_RATES.flatMap((rate, i) => [
+      `${i === 0 ? "If" : "ElseIf"}: sampleRate == ${rate}`,
+      `Convolution: ${irFileName(rate)}`,
+    ]),
+    "EndIf:",
+    "Channel: L R",
+    `Copy: L=${factor(1 - amount)}*L+${factor(amount)}*RVL ` +
+      `R=${factor(1 - amount)}*R+${factor(amount)}*RVR`,
   ];
 }
 

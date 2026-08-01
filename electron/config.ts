@@ -71,6 +71,10 @@ export interface EqProfile {
   clarity: number;
   /** Stereo width percentage; 100 leaves the signal untouched. */
   width: number;
+  /** Digital gain in dB. */
+  volumeBoost: number;
+  /** Reverb mix, 0 to 1. */
+  reverb: number;
 }
 
 export function defaultConfig(): AudioDeckConfig {
@@ -205,6 +209,8 @@ function eqRecord(value: unknown): Record<string, EqProfile> | undefined {
       bassBoost: finite(p.bassBoost, 0),
       clarity: finite(p.clarity, 0),
       width: finite(p.width, 100),
+      volumeBoost: finite(p.volumeBoost, 0),
+      reverb: finite(p.reverb, 0),
     };
   }
   return out;

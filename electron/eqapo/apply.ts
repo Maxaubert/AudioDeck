@@ -5,11 +5,16 @@
 //   - our own config is written whole, atomically, and is the only file we own;
 //   - config.txt gains exactly one line and is otherwise never rewritten.
 
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AUDIODECK_CONFIG, ensureIncludeLine, removeIncludeLine } from "./include.js";
-import { renderConfig } from "./render.js";
+import { IR_RATES, irFileName, renderConfig } from "./render.js";
 import type { DeviceSection } from "./render.js";
+
+export interface ImpulseResponses {
+  /** Absolute path of the generated response for a sample rate. */
+  sourcePath: (rate: number) => string;
+}
 
 export interface FileIo {
   /** File contents, or null when it does not exist. */
@@ -37,9 +42,28 @@ export async function applyProfiles(
   io: FileIo,
   configPath: string,
   sections: readonly DeviceSection[],
+  /** Omitted when nothing needs the reverb response, and in tests. */
+  impulses?: ImpulseResponses,
 ): Promise<ApplyResult> {
+  const config = renderConfig(sections);
+
+  // The response has to sit beside the config Equalizer APO reads, because
+  // Convolution resolves its path relative to that directory.
+  if (impulses !== undefined && config.includes("Convolution:")) {
+    for (const rate of IR_RATES) {
+      const target = path.join(configPath, irFileName(rate));
+      try {
+        await copyFile(impulses.sourcePath(rate), target);
+      } catch (err) {
+        // One missing rate is not fatal: the config picks by rate at runtime,
+        // and the other may still be the one this device needs.
+        console.error("[effects] could not place impulse response:", err);
+      }
+    }
+  }
+
   const configFile = path.join(configPath, AUDIODECK_CONFIG);
-  await io.write(configFile, renderConfig(sections));
+  await io.write(configFile, config);
 
   const mainFile = path.join(configPath, "config.txt");
   const existing = (await io.read(mainFile)) ?? "";
@@ -63,6 +87,9 @@ export async function removeProfiles(io: FileIo, configPath: string): Promise<vo
     if (stripped !== null) await io.write(mainFile, stripped);
   }
   await io.remove(path.join(configPath, AUDIODECK_CONFIG));
+  for (const rate of IR_RATES) {
+    await io.remove(path.join(configPath, irFileName(rate)));
+  }
 }
 
 /**

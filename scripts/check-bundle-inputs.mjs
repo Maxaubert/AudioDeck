@@ -27,6 +27,12 @@ const inputs = [
     file: path.join("vendor", "equalizerapo-setup.exe"),
     fix: "Fetch it first: powershell -File scripts/fetch-equalizerapo.ps1",
   },
+  {
+    // Generated rather than committed: deterministic, so a rebuild reproduces
+    // the same bytes.
+    file: path.join("assets", "ir", "audiodeck-cathedral-48000.wav"),
+    fix: "Generate them first: node scripts/make-reverb-ir.mjs",
+  },
 ];
 
 let ok = true;
