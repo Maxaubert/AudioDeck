@@ -4,13 +4,15 @@
 import { useState } from "react";
 import { useAppState } from "./useAppState.js";
 import { DeviceManagerView } from "./views/DeviceManagerView.js";
+import { StudioView } from "./views/StudioView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { WindowCaption } from "./components/WindowCaption.js";
 
-type ViewName = "devices" | "settings";
+type ViewName = "devices" | "studio" | "settings";
 
 const TABS: { name: ViewName; label: string }[] = [
   { name: "devices", label: "Devices" },
+  { name: "studio", label: "Studio" },
   { name: "settings", label: "Settings" },
 ];
 
@@ -53,6 +55,8 @@ export default function App() {
         <div className="loading">Reading your audio devices&hellip;</div>
       ) : view === "devices" ? (
         <DeviceManagerView state={state} actions={actions} />
+      ) : view === "studio" ? (
+        <StudioView state={state} actions={actions} />
       ) : (
         <SettingsView state={state} actions={actions} />
       )}

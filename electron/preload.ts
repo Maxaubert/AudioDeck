@@ -3,7 +3,7 @@
 
 import { contextBridge, ipcRenderer } from "electron";
 import { IPC } from "../shared/ipc.js";
-import type { AudioDeckApi } from "../shared/ipc.js";
+import type { AudioDeckApi, EqProfileView } from "../shared/ipc.js";
 import type { EndpointFlow } from "./audioctl.js";
 
 const api: AudioDeckApi = {
@@ -24,6 +24,12 @@ const api: AudioDeckApi = {
     ipcRenderer.invoke(IPC.renameDevice, id, name, suffix),
   setDeviceType: (id: string, typeKey: string) =>
     ipcRenderer.invoke(IPC.setDeviceType, id, typeKey),
+  getEffectsStatus: () => ipcRenderer.invoke(IPC.getEffectsStatus),
+  getEqProfile: (deviceId: string) => ipcRenderer.invoke(IPC.getEqProfile, deviceId),
+  setEqProfile: (deviceId: string, profile: EqProfileView) =>
+    ipcRenderer.invoke(IPC.setEqProfile, deviceId, profile),
+  installEffects: () => ipcRenderer.invoke(IPC.installEffects),
+  removeEffects: () => ipcRenderer.invoke(IPC.removeEffects),
   setPaused: (paused: boolean) => ipcRenderer.invoke(IPC.setPaused, paused),
   setAutostart: (enabled: boolean) => ipcRenderer.invoke(IPC.setAutostart, enabled),
   setPollInterval: (ms: number) => ipcRenderer.invoke(IPC.setPollInterval, ms),

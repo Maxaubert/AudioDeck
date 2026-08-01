@@ -1120,3 +1120,236 @@ label.setrow {
     transform: none;
   }
 }
+
+/* ---------- studio: equalizer and effects ---------- */
+
+.setup-panel {
+  padding: 26px 28px;
+  background: var(--sheet);
+  border: var(--rule) solid var(--ink);
+}
+
+.setup-lead {
+  margin: 0 0 12px;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.setup-detail {
+  margin: 0 0 22px;
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.setup-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.studio-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.studio-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.studio-picker .select {
+  width: 100%;
+}
+
+/* The curve sits on a sheet, framed like every other block in the app. */
+.eq-curve {
+  background: var(--sheet);
+  border: var(--rule) solid var(--ink);
+  padding: 14px 16px 10px;
+  margin-bottom: 10px;
+}
+
+.eq-curve.is-off {
+  background: var(--dead);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.1) 0 3px,
+    transparent 3px 11px
+  );
+}
+
+.eq-svg {
+  display: block;
+  width: 100%;
+  height: 260px;
+  overflow: visible;
+  touch-action: none;
+}
+
+.eq-grid {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-dasharray: 4 9;
+  opacity: 0.35;
+}
+
+.eq-zero {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.eq-limit {
+  stroke: var(--ink);
+  stroke-width: 2;
+  opacity: 0.25;
+}
+
+.eq-line {
+  fill: none;
+  stroke: var(--marker);
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+
+.eq-fill {
+  fill: var(--marker);
+  opacity: 0.18;
+}
+
+/* Hard-edged and filled, so a point reads as a control at a glance. */
+.eq-point {
+  fill: var(--marker);
+  stroke: var(--ink);
+  stroke-width: 4;
+  cursor: var(--cur-grab);
+}
+
+.eq-point:hover {
+  fill: var(--ink);
+}
+
+.eq-point:focus-visible {
+  outline: 4px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.eq-curve.is-off .eq-line,
+.eq-curve.is-off .eq-point {
+  stroke: var(--dead-ink);
+  fill: var(--dead-ink);
+}
+
+.eq-curve.is-off .eq-fill {
+  fill: var(--dead-ink);
+}
+
+.eq-scale {
+  position: relative;
+  height: 46px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+/* Each label is placed at its band's exact x, then centred on it. */
+.eq-scale li {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.eq-hz {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.eq-db {
+  font-family: var(--display);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-list {
+  border: var(--rule) solid var(--ink);
+  margin-bottom: 10px;
+}
+
+.fx {
+  display: grid;
+  grid-template-columns: 190px 1fr 104px;
+  align-items: center;
+  gap: 18px;
+  min-height: 72px;
+  padding: 0 22px;
+  background: var(--sheet);
+  border-bottom: 3px solid var(--ink);
+}
+
+.fx:last-child {
+  border-bottom: 0;
+}
+
+.fx.is-off {
+  background: var(--dead);
+  color: var(--dead-ink);
+}
+
+.fx-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fx-value {
+  font-family: var(--display);
+  font-size: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Square thumb on a flat rail: no rounded corners anywhere in this app. */
+.fx-range {
+  width: 100%;
+  height: 34px;
+  margin: 0;
+  background: transparent;
+  cursor: var(--cur-hand);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fx-range::-webkit-slider-runnable-track {
+  height: 10px;
+  background: var(--ink);
+}
+
+.fx-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 34px;
+  margin-top: -12px;
+  background: var(--marker);
+  border: 3px solid var(--ink);
+}
+
+.fx-range:disabled::-webkit-slider-runnable-track {
+  background: var(--dead-ink);
+}
+
+.fx-range:disabled::-webkit-slider-thumb {
+  background: var(--dead);
+}

@@ -15,6 +15,8 @@ import { createTray } from "./tray.js";
 import { loadConfig, saveConfig } from "./config.js";
 import { setAutostart } from "./autostart.js";
 import { registerIpc } from "./ipc.js";
+import { EffectsService } from "./eqapo/service.js";
+import { mockEffectsService } from "./mock-backend.js";
 import { WindowManager } from "./window.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { TrayHandle } from "./tray.js";
@@ -50,6 +52,11 @@ async function boot(): Promise<void> {
     },
   });
 
+  // Under the mock backend the effects service gets an in-memory install, so
+  // the Studio tab can be driven on any machine without Equalizer APO, and
+  // without a test writing into Program Files.
+  const effects = mockDevices ? mockEffectsService() : new EffectsService();
+
   const windows = new WindowManager();
 
   let tray: TrayHandle | null = null;
@@ -72,6 +79,7 @@ async function boot(): Promise<void> {
   registerIpc({
     audioctl,
     poller,
+    effects,
     getConfig: () => config,
     saveConfig: async (next) => {
       config = next;
@@ -90,6 +98,13 @@ async function boot(): Promise<void> {
     } catch (err) {
       console.error("[main] autostart sync failed:", err);
     }
+  }
+
+  // Re-assert the saved profiles on start. Equalizer APO may have been
+  // reinstalled, or its config cleared, since AudioDeck last ran; the profiles
+  // in AudioDeck's own config are the source of truth, not the file it writes.
+  if (!mockDevices) {
+    void effects.apply(config).catch((err) => console.error("[effects] initial apply:", err));
   }
 
   poller.start();

@@ -38,6 +38,10 @@ volumes, enabling and disabling endpoints, renaming) into a single tray app.
   and the endpoints Windows merely remembers hide one level further in.
 - **Honest about what it cannot set.** Hardware that owns its own volume (headset base stations,
   some TVs over HDMI) gets a stamp saying so instead of a fader that does nothing.
+- **Per-device equalizer.** A ten band curve you drag, plus bass boost, clarity and stereo width,
+  saved per device and applied whenever that device is in use. The processing is done by
+  [Equalizer APO](https://sourceforge.net/projects/equalizerapo/), which AudioDeck includes and can
+  set up during its own installer, so there is nothing extra to download.
 - Tray-resident with near-zero idle cost; the window is created on demand and destroyed on close.
 - Autostart with Windows (on by default, toggleable), 2 s poll interval (adjustable).
 
@@ -121,5 +125,12 @@ and contributors, licensed under the
 `headsetcontrol.exe` as a separate, unmodified process and does not link against it; its source is
 available at the upstream repository. The pinned binary (v4.0.0) is fetched at build time by
 `scripts/fetch-headsetcontrol.ps1`.
+
+Audio effects are processed by
+[Equalizer APO](https://sourceforge.net/projects/equalizerapo/) by Jonas Thedering, licensed under
+the [GNU GPL-3.0](https://sourceforge.net/p/equalizerapo/code/ci/master/tree/LICENSE.txt).
+AudioDeck writes a configuration file that Equalizer APO reads; it is not linked into the app, and
+AudioDeck never edits the rest of your configuration. Settings > Remove audio effects takes it back
+out and leaves the file exactly as it was.
 
 AudioDeck itself is [MIT licensed](package.json).

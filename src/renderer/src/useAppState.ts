@@ -79,6 +79,13 @@ export function useAppState(): AppStateHook {
       setAlias: wrap((id, alias) => api.setAlias(id, alias)),
       renameDevice: wrap((id, name, suffix) => api.renameDevice(id, name, suffix)),
       setDeviceType: wrap((id, typeKey) => api.setDeviceType(id, typeKey)),
+      // Effects reads are not wrapped: they are queries, so they must not
+      // trigger a state refresh or clear the action error on every poll.
+      getEffectsStatus: () => api.getEffectsStatus(),
+      getEqProfile: (deviceId) => api.getEqProfile(deviceId),
+      setEqProfile: wrap((deviceId, profile) => api.setEqProfile(deviceId, profile)),
+      installEffects: () => api.installEffects(),
+      removeEffects: wrap(() => api.removeEffects()),
       setPaused: wrap((paused) => api.setPaused(paused)),
       setAutostart: wrap((enabled) => api.setAutostart(enabled)),
       setPollInterval: wrap((ms) => api.setPollInterval(ms)),

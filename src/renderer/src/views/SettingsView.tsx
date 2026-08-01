@@ -105,6 +105,26 @@ export function SettingsView({ state, actions }: { state: AppState; actions: Aud
         </div>
       </div>
 
+      <SectionLabel title="Audio effects" note="Studio" />
+      <div className="setlist">
+        <div className="setrow">
+          <div className="setlabel">
+            <b>Remove audio effects</b>
+            <span>
+              Takes AudioDeck&rsquo;s equalizer settings out of the audio path and leaves your PC
+              as it was. Your curves are kept, so turning effects back on restores them.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => void actions.removeEffects()}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
       <SectionLabel title="What AudioDeck always does" note="Behaviour" />
       <div className="setlist">
         <div className="setrow">

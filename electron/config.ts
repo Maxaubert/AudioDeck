@@ -37,6 +37,13 @@ export interface AudioDeckConfig {
    * displays and virtual devices do this routinely).
    */
   customizations: Record<string, DeviceCustomization>;
+  /**
+   * Per-device equalizer and effect settings, endpoint ID to profile. Kept
+   * here rather than in Equalizer APO's own config so they survive it being
+   * reinstalled, and so they are backed up with everything else; the file it
+   * reads is a derived artefact, rewritten from these.
+   */
+  eq: Record<string, EqProfile>;
 }
 
 export interface DeviceCustomization {
@@ -55,6 +62,17 @@ export interface DeviceCustomization {
   fingerprint?: string;
 }
 
+/** Shape mirrored in eqapo/render.ts, which turns these into filter commands. */
+export interface EqProfile {
+  enabled: boolean;
+  /** Gain in dB per band, indexed against eqapo/render BANDS. */
+  bands: number[];
+  bassBoost: number;
+  clarity: number;
+  /** Stereo width percentage; 100 leaves the signal untouched. */
+  width: number;
+}
+
 export function defaultConfig(): AudioDeckConfig {
   return {
     schemaVersion: CONFIG_SCHEMA_VERSION,
@@ -68,6 +86,7 @@ export function defaultConfig(): AudioDeckConfig {
     excluded: { output: [], mic: [] },
     volumeLocked: [],
     customizations: {},
+    eq: {},
   };
 }
 
@@ -164,7 +183,35 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
     },
     volumeLocked: stringArray(partial.volumeLocked) ?? base.volumeLocked,
     customizations: customizationRecord(partial.customizations) ?? base.customizations,
+    eq: eqRecord(partial.eq) ?? base.eq,
   };
+}
+
+/**
+ * Profiles are sanitised on the way in as well as on the way out. A gain that
+ * arrives as a string or a NaN would otherwise reach the renderer, and the
+ * renderer's job is to describe what the user asked for, not to defend against
+ * a corrupt config file.
+ */
+function eqRecord(value: unknown): Record<string, EqProfile> | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const out: Record<string, EqProfile> = {};
+  for (const [id, raw] of Object.entries(value)) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const p = raw as Partial<EqProfile>;
+    out[id] = {
+      enabled: typeof p.enabled === "boolean" ? p.enabled : true,
+      bands: Array.isArray(p.bands) ? p.bands.map((g) => finite(g, 0)) : [],
+      bassBoost: finite(p.bassBoost, 0),
+      clarity: finite(p.clarity, 0),
+      width: finite(p.width, 100),
+    };
+  }
+  return out;
+}
+
+function finite(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function customizationRecord(value: unknown): Record<string, DeviceCustomization> | undefined {

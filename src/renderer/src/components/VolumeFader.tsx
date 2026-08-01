@@ -7,8 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import type { AudioDeckApi, DeviceView } from "../../../../shared/ipc.js";
 
 const SEGMENTS = 20;
-/** Wait this long after the last drag step before telling the daemon. */
-const COMMIT_DELAY_MS = 200;
+/** Wait this long after the last drag step before telling the daemon. Kept
+ *  short so the fader feels connected to the sound. */
+const COMMIT_DELAY_MS = 60;
 
 function Meter({ value }: { value: number }) {
   const lit = Math.round((value / 100) * SEGMENTS);
