@@ -4,7 +4,7 @@ import { Menu, Tray, nativeImage } from "electron";
 
 export interface TrayActions {
   openWindow: () => void;
-  setPaused: (paused: boolean) => void;
+  setPaused: (paused: boolean) => void | Promise<void>;
   quit: () => void;
 }
 
@@ -33,7 +33,7 @@ export function createTray(actions: TrayActions): TrayHandle {
       label: "Pause automation",
       type: "checkbox",
       checked: false,
-      click: (item) => actions.setPaused(item.checked),
+      click: (item) => void actions.setPaused(item.checked),
     },
     { type: "separator" },
     {

@@ -73,6 +73,11 @@ export interface AppState {
 /** The surface preload exposes as `window.audiodeck`. */
 export interface AudioDeckApi {
   getState(): Promise<AppState>;
+  /**
+   * The ranked rows as the user now has them. Ids the caller cannot see, such
+   * as endpoints Windows only remembers, keep their stored position; use
+   * removeFromPriority to take a device out.
+   */
   setPriority(flow: EndpointFlow, ids: string[]): Promise<void>;
   /** Append a device to a priority list (and un-exclude it). */
   addToPriority(flow: EndpointFlow, id: string): Promise<void>;

@@ -146,3 +146,45 @@ describe("detectEqApo", () => {
     expect(await detectEqApo({ queryRegistry: async () => partial })).toBeNull();
   });
 });
+
+describe("an unreadable config.txt", () => {
+  /** A filesystem where reading the user's file fails the way a lock does. */
+  function lockedIo(initial: Record<string, string>) {
+    const files = new Map(Object.entries(initial));
+    const io: FileIo = {
+      read: async (file) => {
+        if (file === MAIN) {
+          const err = new Error("EBUSY: resource busy or locked") as NodeJS.ErrnoException;
+          err.code = "EBUSY";
+          throw err;
+        }
+        return files.get(file) ?? null;
+      },
+      write: async (file, text) => void files.set(file, text),
+      remove: async (file) => void files.delete(file),
+    };
+    return { io, files };
+  }
+
+  it("is never mistaken for an empty one", async () => {
+    // The real read used to swallow every error and return null, and null is
+    // turned into "" here, so an antivirus scan or Peace holding the file open
+    // was enough to replace the user's whole config with one Include line. The
+    // write path retries hard enough to win that race.
+    const { io, files } = lockedIo({ [MAIN]: STOCK });
+    await expect(applyProfiles(io, CONFIG_DIR, [section("Speakers")])).rejects.toThrow(/EBUSY/);
+    expect(files.get(MAIN)).toBe(STOCK);
+  });
+
+  it("stops a removal rather than leaving their file pointing at ours", async () => {
+    // Stripping our Include and deleting the file it names have to happen
+    // together: doing the second without the first leaves Equalizer APO
+    // reading a line that names nothing.
+    const { io, files } = lockedIo({
+      [MAIN]: `${STOCK}Include: audiodeck.txt\n`,
+      [OURS]: "Device: Speakers\n",
+    });
+    await expect(removeProfiles(io, CONFIG_DIR)).rejects.toThrow(/EBUSY/);
+    expect(files.has(OURS)).toBe(true);
+  });
+});

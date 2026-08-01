@@ -193,3 +193,44 @@ export function decide(
 
   return { setDefaultTo: winner, engageOverride: false, releaseOverride: false };
 }
+
+/**
+ * Fold a reordered visible list back into the full stored order.
+ *
+ * The ranked list on screen hides devices Windows reports as `notpresent`, but
+ * the daemon stores one priority list for everything. Taking the visible ids as
+ * the whole new list deleted the rank of every device that happened to be
+ * unplugged when someone dragged a row, and a device that came back was
+ * re-seeded at the bottom.
+ *
+ * Hidden ids keep their absolute position, which is the only choice that stays
+ * put no matter how the visible rows are shuffled around them.
+ *
+ * This runs in the daemon rather than the renderer on purpose. The renderer's
+ * copy of the priority list is up to one poll old, so merging there could fold
+ * a drag into a list that no longer matches the one on disk, and lose whatever
+ * the daemon had added meanwhile. Here the stored list is the real one.
+ */
+export function mergeVisibleOrder(
+  stored: readonly string[],
+  visibleNext: readonly string[],
+): string[] {
+  const visible = new Set(visibleNext);
+  const out: string[] = [];
+  let next = 0;
+  for (const id of stored) {
+    if (visible.has(id)) {
+      // This slot belongs to the visible sequence; take whatever now sits here.
+      const taken = visibleNext[next++];
+      if (taken !== undefined) out.push(taken);
+    } else {
+      out.push(id);
+    }
+  }
+  // Anything visible that the stored list has never heard of goes on the end.
+  for (; next < visibleNext.length; next++) {
+    const id = visibleNext[next];
+    if (id !== undefined && !out.includes(id)) out.push(id);
+  }
+  return out;
+}

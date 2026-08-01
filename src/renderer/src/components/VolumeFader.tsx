@@ -31,14 +31,21 @@ export function VolumeFader({
 }) {
   const [local, setLocal] = useState(device.volume ?? 0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Whether the user has hold of this fader right now. Focus is not the same
+  // question: a range input keeps focus after a click, so testing focus meant
+  // the row stopped following the daemon for the rest of its life, and the
+  // debounced commit then wrote the stale value back over every media-key and
+  // Windows-mixer change, including while AudioDeck was not the focused app.
+  const holding = useRef(false);
   // Volume the user asked for that has not reached the daemon yet.
   const pending = useRef<number | null>(null);
   const commit = useRef<(v: number) => void>(() => {});
   commit.current = (v: number) => void actions.setVolume(device.id, v);
 
-  // Follow daemon updates unless the user is on the fader right now.
+  // Follow daemon updates unless the user is mid-gesture, or a change of theirs
+  // is still inside the debounce window and has not reached the daemon yet.
   useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
+    if (!holding.current && pending.current === null) {
       setLocal(device.volume ?? 0);
     }
   }, [device.volume]);
@@ -80,6 +87,13 @@ export function VolumeFader({
           value={local}
           aria-label={`${device.name} volume`}
           onChange={(e) => setLocal(Number(e.target.value))}
+          onPointerDown={() => (holding.current = true)}
+          onPointerUp={() => (holding.current = false)}
+          onPointerCancel={() => (holding.current = false)}
+          onKeyDown={() => (holding.current = true)}
+          onKeyUp={() => (holding.current = false)}
+          // A gesture that ended somewhere else must not leave the row deaf.
+          onBlur={() => (holding.current = false)}
         />
       </div>
       <span className={muted ? "volume-value is-muted" : "volume-value"}>{local}%</span>

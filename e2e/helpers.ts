@@ -11,11 +11,14 @@ import type { AudioDeckConfig } from "../electron/config.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/** The temp APPDATA root, for tests that need to look beside config.json. */
 export interface LaunchedApp {
   app: ElectronApplication;
   page: Page;
   /** The temp config.json this instance reads and writes. */
   configFile: string;
+  /** The directory holding it. */
+  configDir: string;
   close: () => Promise<void>;
 }
 
@@ -31,7 +34,7 @@ export async function launchApp(
    * a modal dialog, so leaving it to open would block every other test from
    * reaching the app behind it.
    */
-  seedConfig?: Record<string, unknown>,
+  seedConfig?: Record<string, unknown> | string,
   /** Extra environment, for exercising states the mock backend can fake. */
   extraEnv: Record<string, string> = {},
 ): Promise<LaunchedApp> {
@@ -39,7 +42,11 @@ export async function launchApp(
   await mkdir(path.join(appData, "AudioDeck"), { recursive: true });
   await writeFile(
     path.join(appData, "AudioDeck", "config.json"),
-    JSON.stringify({ guideSeen: true, ...seedConfig }, null, 2),
+    // A string is written verbatim, so a test can seed a file that does not
+    // parse. Anything else is merged over the defaults.
+    typeof seedConfig === "string"
+      ? seedConfig
+      : JSON.stringify({ guideSeen: true, ...seedConfig }, null, 2),
     "utf8",
   );
   const app = await _electron.launch({
@@ -62,6 +69,7 @@ export async function launchApp(
     app,
     page,
     configFile: path.join(appData, "AudioDeck", "config.json"),
+    configDir: path.join(appData, "AudioDeck"),
     close: async () => {
       await app.close();
       await rm(appData, { recursive: true, force: true });

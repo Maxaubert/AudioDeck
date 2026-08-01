@@ -4,7 +4,7 @@
 // window opens immediately. AUDIODECK_MOCK_DEVICES=1 swaps the spawn-based
 // backends for the in-memory mock backend.
 
-import { app } from "electron";
+import { app, dialog } from "electron";
 import { installFileLog } from "./filelog.js";
 import { Audioctl } from "./audioctl.js";
 import { audioctlExePath, headsetControlExePath } from "./binaries.js";
@@ -12,7 +12,7 @@ import { HeadsetControl } from "./headsetcontrol.js";
 import { MockAudioctl, MockHeadsetControl } from "./mock-backend.js";
 import { Poller } from "./poller.js";
 import { createTray } from "./tray.js";
-import { loadConfig, saveConfig } from "./config.js";
+import { defaultConfig, loadConfig, quarantineConfig, saveConfig } from "./config.js";
 import { setAutostart } from "./autostart.js";
 import { registerIpc } from "./ipc.js";
 import { EffectsService } from "./eqapo/service.js";
@@ -28,7 +28,57 @@ const mockDevices = process.env.AUDIODECK_MOCK_DEVICES === "1";
 if (!testMode && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  void boot();
+  // Anything that escapes boot has to end the process. Left unhandled, a
+  // failure part way through leaves a daemon holding the single-instance lock
+  // with no tray, no window and no poller, and every relaunch then quits at
+  // the check above and vanishes: the app looks uninstallable rather than
+  // broken, and there is nothing to click to find out why.
+  void boot().catch((err: unknown) => {
+    console.error("[main] startup failed:", err);
+    if (!testMode) {
+      dialog.showErrorBox(
+        "AudioDeck could not start",
+        `${err instanceof Error ? err.message : String(err)}
+
+Nothing has been changed. ` +
+          "Please report this with the details above.",
+      );
+    }
+    app.exit(1);
+  });
+}
+
+/**
+ * Read the config, and survive one that will not parse.
+ *
+ * loadConfig deliberately throws rather than discarding data it cannot read,
+ * and this is the caller it says decides what to do: set the bad file aside so
+ * it can be recovered by hand, start from defaults, and say so out loud. The
+ * alternative is the daemon dying before it has a tray, which is invisible.
+ */
+async function loadStartupConfig(): Promise<AudioDeckConfig> {
+  try {
+    return await loadConfig();
+  } catch (err) {
+    console.error("[config] unreadable, starting from defaults:", err);
+    const kept = await quarantineConfig();
+    if (!testMode) {
+      dialog.showErrorBox(
+        "AudioDeck could not read its settings",
+        `${err instanceof Error ? err.message : String(err)}
+
+` +
+          (kept === null
+            ? "Starting with default settings."
+            : `Your old settings file has been kept at:
+${kept}
+
+` +
+              "AudioDeck has started with default settings."),
+      );
+    }
+    return defaultConfig();
+  }
 }
 
 async function boot(): Promise<void> {
@@ -37,7 +87,7 @@ async function boot(): Promise<void> {
   if (app.isPackaged) installFileLog();
   await app.whenReady();
 
-  let config: AudioDeckConfig = await loadConfig();
+  let config: AudioDeckConfig = await loadStartupConfig();
 
   const audioctl = mockDevices ? new MockAudioctl() : new Audioctl({ exePath: audioctlExePath() });
   const poller = new Poller({
@@ -60,9 +110,25 @@ async function boot(): Promise<void> {
   const windows = new WindowManager();
 
   let tray: TrayHandle | null = null;
-  const setPaused = (paused: boolean): void => {
+
+  /** Hold or release automation without writing it down. Boot uses this. */
+  const applyPaused = (paused: boolean): void => {
     poller.setPaused(paused);
     tray?.setPausedChecked(paused);
+  };
+
+  /**
+   * The single writer of config.paused, so the tray and the Settings page
+   * cannot disagree. They did: only the IPC handler saved, so a pause from the
+   * tray was forgotten at restart, and an unpause from the tray after a pause
+   * from Settings left paused:true on disk, bringing every later launch up with
+   * automation dead and no obvious reason why.
+   */
+  const setPaused = async (paused: boolean): Promise<void> => {
+    applyPaused(paused);
+    if (config.paused === paused) return;
+    config = { ...config, paused };
+    await saveConfig(config);
   };
 
   if (!testMode) {
@@ -108,8 +174,9 @@ async function boot(): Promise<void> {
   }
 
   // Restore the held state before the first tick, so a paused AudioDeck does
-  // not switch a device on the way up.
-  if (config.paused) setPaused(true);
+  // not switch a device on the way up. Applied rather than set: this is reading
+  // the saved value back, not a new decision to write down.
+  if (config.paused) applyPaused(true);
 
   poller.start();
   console.log(`[main] AudioDeck daemon up, poll interval ${config.pollIntervalMs} ms`);

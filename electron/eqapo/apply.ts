@@ -66,6 +66,9 @@ export async function applyProfiles(
   await io.write(configFile, config);
 
   const mainFile = path.join(configPath, "config.txt");
+  // null here means Equalizer APO has no config.txt yet, which is a normal
+  // fresh install: starting from empty is correct. It must never mean "the
+  // read failed", or the user's own filters get replaced by our Include line.
   const existing = (await io.read(mainFile)) ?? "";
   const linked = ensureIncludeLine(existing);
   if (linked !== null) await io.write(mainFile, linked);
@@ -108,12 +111,30 @@ const WRITE_ATTEMPTS = 4;
 const RETRY_DELAY_MS = 40;
 
 export const realFileIo: FileIo = {
+  /**
+   * null means the file is genuinely not there, and nothing else.
+   *
+   * Swallowing every error and returning null made "I cannot read this" look
+   * identical to "this does not exist", and applyProfiles turns the latter into
+   * an empty string. A sharing violation from an antivirus scan or from Peace
+   * having the file open was therefore enough to replace the user's entire
+   * config.txt with a single Include line, and the write path retries hard
+   * enough to win that race. Same retry as write, for the same reason.
+   */
   read: async (file) => {
-    try {
-      return await readFile(file, "utf8");
-    } catch {
-      return null;
+    let last: unknown;
+    for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+      try {
+        return await readFile(file, "utf8");
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code === "ENOENT") return null;
+        last = err;
+        if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw err;
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
     }
+    throw last;
   },
   write: async (file, text) => {
     let last: unknown;

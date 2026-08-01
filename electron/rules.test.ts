@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { decide, diffEvents, pickWinner, pruneMissing, seedPriorityList } from "./rules.js";
+import { decide, diffEvents, pickWinner, pruneMissing, seedPriorityList,
+  mergeVisibleOrder,
+} from "./rules.js";
 import type { DeviceAvailability } from "./availability.js";
 import type { Endpoint, EndpointFlow, EndpointState } from "./audioctl.js";
 
@@ -363,5 +365,50 @@ describe("decide", () => {
     const availability = [avail("{headset}", true)];
     const events = [{ endpointId: "{headset}", flow: "render" as const, becameAvailable: true }];
     expect(decide(["{headset}"], availability, events, "{headset}", false)).toEqual(noop);
+  });
+});
+
+describe("mergeVisibleOrder", () => {
+  it("keeps a hidden id in its slot while the visible ones move around it", () => {
+    // B is unplugged, so the ranked list on screen is [A, C, D]. Dragging D to
+    // the front used to send exactly that as the whole priority list, and B
+    // lost its rank for good.
+    expect(mergeVisibleOrder(["A", "B", "C", "D"], ["D", "A", "C"])).toEqual([
+      "D",
+      "B",
+      "A",
+      "C",
+    ]);
+  });
+
+  it("is the identity when nothing is hidden and nothing moved", () => {
+    expect(mergeVisibleOrder(["A", "B", "C"], ["A", "B", "C"])).toEqual(["A", "B", "C"]);
+  });
+
+  it("reorders normally when every id is visible", () => {
+    expect(mergeVisibleOrder(["A", "B", "C"], ["C", "B", "A"])).toEqual(["C", "B", "A"]);
+  });
+
+  it("keeps a hidden id that sits first", () => {
+    expect(mergeVisibleOrder(["G", "A", "B"], ["B", "A"])).toEqual(["G", "B", "A"]);
+  });
+
+  it("keeps a hidden id that sits last", () => {
+    expect(mergeVisibleOrder(["A", "B", "G"], ["B", "A"])).toEqual(["B", "A", "G"]);
+  });
+
+  it("appends an id the stored list has never seen", () => {
+    // The daemon can add a device between the render and the drop.
+    expect(mergeVisibleOrder(["A", "B"], ["B", "A", "NEW"])).toEqual(["B", "A", "NEW"]);
+  });
+
+  it("never loses or duplicates an id", () => {
+    const stored = ["A", "B", "C", "D", "E"];
+    const out = mergeVisibleOrder(stored, ["E", "C", "A"]);
+    expect([...out].sort()).toEqual([...stored].sort());
+  });
+
+  it("survives an empty visible list, which is a list of only hidden devices", () => {
+    expect(mergeVisibleOrder(["A", "B"], [])).toEqual(["A", "B"]);
   });
 });
