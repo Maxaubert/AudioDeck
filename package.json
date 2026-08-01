@@ -8,6 +8,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:guide": "node scripts/dev-guide.mjs",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

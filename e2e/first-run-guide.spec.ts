@@ -82,3 +82,19 @@ test("Settings can bring it back", async () => {
     "Rank your devices once",
   );
 });
+
+test("AUDIODECK_GUIDE=1 reopens it every launch and never writes config", async () => {
+  // The flag exists so the guide can be worked on with hot reload; a dismissal
+  // that persisted would mean clearing config between every attempt.
+  ctx = await launchApp({ guideSeen: true }, { AUDIODECK_GUIDE: "1" });
+  await expect(ctx.page.locator("dialog.guide")).toBeVisible();
+  await ctx.page.getByRole("button", { name: "Skip" }).click();
+  await expect(ctx.page.locator("dialog.guide")).toBeHidden();
+
+  // Still true on disk: the flag must not touch the real settings.
+  await expect.poll(async () => (await readConfigFile(ctx!.configFile)).guideSeen).toBe(true);
+
+  await ctx.close();
+  ctx = await launchApp({ guideSeen: true }, { AUDIODECK_GUIDE: "1" });
+  await expect(ctx.page.locator("dialog.guide")).toBeVisible();
+});

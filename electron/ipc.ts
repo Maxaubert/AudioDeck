@@ -16,6 +16,13 @@ import type { AudioDeckConfig } from "./config.js";
 import type { Poller, PollSnapshot } from "./poller.js";
 import type { AppState, DeviceView } from "../shared/ipc.js";
 
+/**
+ * AUDIODECK_GUIDE=1: reopen the first-run guide on every launch and throw the
+ * dismissal away, so it can be worked on with `npm run dev` without resetting
+ * config or reinstalling between attempts. `npm run dev:guide` sets it.
+ */
+const guideAlways = process.env.AUDIODECK_GUIDE === "1";
+
 export interface IpcDeps {
   audioctl: AudioControl;
   poller: Poller;
@@ -62,7 +69,7 @@ export function registerIpc(deps: IpcDeps): void {
       paused: poller.isPaused(),
       autostart: config.autostart,
       pollIntervalMs: config.pollIntervalMs,
-      guideSeen: config.guideSeen,
+      guideSeen: guideAlways ? false : config.guideSeen,
       appVersion: app.getVersion(),
     };
   });
@@ -278,6 +285,9 @@ export function registerIpc(deps: IpcDeps): void {
   });
 
   ipcMain.handle(IPC.setGuideSeen, async (_e, seen: boolean) => {
+    // Under the flag the dismissal is deliberately dropped, so a reload brings
+    // the guide straight back and the real config is never written.
+    if (guideAlways) return;
     await deps.saveConfig({ ...deps.getConfig(), guideSeen: seen });
   });
 
