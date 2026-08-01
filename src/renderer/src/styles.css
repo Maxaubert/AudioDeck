@@ -335,15 +335,32 @@ select {
 /* ---------- banners ---------- */
 
 .error-banner,
-.paused-banner {
+.paused-banner,
+.contested-banner {
   flex: none;
   padding: 14px 22px;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   border-bottom: var(--rule) solid var(--ink);
 }
+
+/* Louder than the pause banner: a pause is something you chose, this is
+   something that happened to you and needs a decision. Set in sentence case,
+   unlike every other banner, because it is a sentence: it carries a device
+   name and two instructions, and shouting a paragraph is unreadable. */
+.contested-banner {
+  background: var(--red);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+}
+
+.contested-banner b {
+  font-weight: 800;
+}
+
 
 .error-banner {
   background: var(--red);
@@ -353,6 +370,7 @@ select {
 .paused-banner {
   background: var(--ink);
   color: var(--marker);
+  text-transform: uppercase;
 }
 
 .loading {

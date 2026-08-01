@@ -106,8 +106,39 @@ export class MockAudioctl implements AudioControl {
 
   private endpoints: Endpoint[] = fixtureEndpoints();
 
+  /** Whether the stand-in contender currently has its endpoint up. */
+  private contenderPresent = false;
+
   async list(): Promise<Endpoint[]> {
+    this.runContender();
     return this.endpoints.map((e) => ({ ...e }));
+  }
+
+  /**
+   * AUDIODECK_MOCK_CONTENDER=<id> stands in for a program like Virtual Desktop.
+   *
+   * Taking the default back is only half of what makes that case bite. The
+   * other half is that such a program creates and tears down its endpoint as it
+   * takes and releases the audio, and every appearance is an availability event
+   * that releases AudioDeck's manual-override hold. Without the churn the hold
+   * engages on the first steal and the fight simply never starts, which is why
+   * a mock that only stole the default proved nothing.
+   */
+  private runContender(): void {
+    const id = process.env.AUDIODECK_MOCK_CONTENDER;
+    if (id === undefined || id === "") return;
+    const thief = this.endpoints.find((e) => e.id === id);
+    if (thief === undefined) return;
+
+    this.contenderPresent = !this.contenderPresent;
+    thief.state = this.contenderPresent ? "active" : "unplugged";
+    if (this.contenderPresent) {
+      for (const e of this.endpoints) {
+        if (e.flow !== thief.flow) continue;
+        e.isDefault = e.id === id;
+        e.isDefaultComms = e.id === id;
+      }
+    }
   }
 
   async setDefault(id: string): Promise<void> {

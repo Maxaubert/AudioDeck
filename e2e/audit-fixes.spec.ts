@@ -112,3 +112,39 @@ test("pausing from either surface leaves the same thing on disk", async () => {
   await expect.poll(async () => (await readConfigFile(configFile)).paused).toBe(false);
   await expect(page.locator(".paused-banner")).toHaveCount(0);
 });
+
+test("a program that keeps taking the default makes AudioDeck stand down", async () => {
+  // The reported symptom: with a Quest ranked low, Virtual Desktop pulled the
+  // default to the headset while AudioDeck pulled it back, so audio played for
+  // about two seconds, cut, came back, and repeated at the poll interval.
+  // AUDIODECK_MOCK_CONTENDER makes the mock backend behave the same way.
+  ctx = await launchApp(
+    { pollIntervalMs: 500 },
+    { AUDIODECK_MOCK_CONTENDER: "mock-out-tv" },
+  );
+  const { page } = ctx;
+
+  // Rank the TV last, so AudioDeck wants something else and has to fight for it.
+  const stored = await page.evaluate(async () => (await window.audiodeck.getState()).outputPriority);
+  const reordered = [...stored.filter((id) => id !== "mock-out-tv"), "mock-out-tv"];
+  await page.evaluate(async (ids: string[]) => {
+    await window.audiodeck.setPriority("render", ids);
+  }, reordered);
+
+  const banner = page.locator(".contested-banner");
+  await expect(banner).toBeVisible({ timeout: 20_000 });
+  await expect(banner).toContainText(/keeps taking your sound back/);
+
+  // And it really stops, rather than announcing it and carrying on.
+  await page.waitForTimeout(2500);
+  const stillContested = await page.evaluate(
+    async () => (await window.audiodeck.getState()).contested.length,
+  );
+  expect(stillContested).toBe(1);
+});
+
+test("nothing is reported as contested when nothing is fighting", async () => {
+  ctx = await launchApp({ pollIntervalMs: 500 });
+  await ctx.page.waitForTimeout(2000);
+  await expect(ctx.page.locator(".contested-banner")).toHaveCount(0);
+});

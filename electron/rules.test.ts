@@ -412,3 +412,48 @@ describe("mergeVisibleOrder", () => {
     expect(mergeVisibleOrder(["A", "B"], [])).toEqual(["A", "B"]);
   });
 });
+
+describe("decide, when another program keeps winning", () => {
+  const avail = (id: string, available: boolean): DeviceAvailability => ({
+    endpoint: {
+      id,
+      name: id,
+      flow: "render",
+      state: available ? "active" : "unplugged",
+      isDefault: false,
+      isDefaultComms: false,
+      formFactor: null,
+      association: null,
+      volume: null,
+      mute: null,
+    },
+    available,
+    reason: available ? "endpoint-active" : "endpoint-inactive",
+  });
+
+  it("stops asserting while a flow is contested", () => {
+    const decision = decide(["A", "B"], [avail("A", true), avail("B", true)], [], "B", false, true, true);
+    expect(decision.setDefaultTo).toBeNull();
+  });
+
+  it("holds even through an availability event", () => {
+    // This is the whole point. The manual-override hold is released by any
+    // event, and the programs this defends against create and tear down their
+    // endpoint as they take the audio, so they produce an event nearly every
+    // cycle: a hold that events could clear would clear on the very ticks it
+    // exists for.
+    const events = [{ endpointId: "B", flow: "render" as const, becameAvailable: true }];
+    const decision = decide(["A", "B"], [avail("A", true), avail("B", true)], events, "B", false, true, true);
+    expect(decision.setDefaultTo).toBeNull();
+    expect(decision.releaseOverride).toBe(false);
+  });
+
+  it("goes back to applying the ranking once the hold is cleared", () => {
+    // defaultMoved false: the default is where it was, so this is our own
+    // set-default not having stuck rather than someone choosing B, and the
+    // rules re-apply the winner. With defaultMoved true the manual-override
+    // hold engages first, which is separate and correct.
+    const decision = decide(["A", "B"], [avail("A", true), avail("B", true)], [], "B", false, false, false);
+    expect(decision.setDefaultTo).toBe("A");
+  });
+});

@@ -68,6 +68,10 @@ export function registerIpc(deps: IpcDeps): void {
       micPriority: config.micPriority,
       override: { ...config.override },
       paused: poller.isPaused(),
+      contested: poller.contested().map((c) => ({
+        ...c,
+        deviceName: devices.find((d) => d.id === c.deviceId)?.name ?? "Another program",
+      })),
       autostart: config.autostart,
       pollIntervalMs: config.pollIntervalMs,
       guideSeen: guideAlways ? false : config.guideSeen,
@@ -78,6 +82,7 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.setPriority, async (_e, flow: EndpointFlow, ids: string[]) => {
     const key = flow === "capture" ? "micPriority" : "outputPriority";
     const cleaned = Array.isArray(ids) ? ids.filter((id) => typeof id === "string") : [];
+    poller.clearContention();
     const config = deps.getConfig();
     // The renderer sends the rows it can see, which is not the whole list: the
     // ranked view hides endpoints Windows only remembers. Removing a device is
@@ -89,6 +94,7 @@ export function registerIpc(deps: IpcDeps): void {
 
   ipcMain.handle(IPC.addToPriority, async (_e, flow: EndpointFlow, id: string) => {
     if (typeof id !== "string" || id === "") return;
+    poller.clearContention();
     const config = deps.getConfig();
     const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
     const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
@@ -106,6 +112,7 @@ export function registerIpc(deps: IpcDeps): void {
 
   ipcMain.handle(IPC.removeFromPriority, async (_e, flow: EndpointFlow, id: string) => {
     if (typeof id !== "string" || id === "") return;
+    poller.clearContention();
     const config = deps.getConfig();
     const priorityKey = flow === "capture" ? ("micPriority" as const) : ("outputPriority" as const);
     const excludedKey = flow === "capture" ? ("mic" as const) : ("output" as const);
@@ -124,6 +131,9 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.setDefault, async (_e, id: string) => {
     // A user-chosen default is a manual override; the rules engine sees the
     // deviation on the next tick and engages the hold (design: behavior rules).
+    // It also counts as a fresh instruction, so a flow AudioDeck gave up on
+    // gets another attempt.
+    poller.clearContention();
     await audioctl.setDefault(id);
     await poller.refreshNow();
   });
