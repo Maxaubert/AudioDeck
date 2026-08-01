@@ -16,6 +16,7 @@ import { loadConfig, saveConfig } from "./config.js";
 import { setAutostart } from "./autostart.js";
 import { registerIpc } from "./ipc.js";
 import { EffectsService } from "./eqapo/service.js";
+import { mockEffectsService } from "./mock-backend.js";
 import { WindowManager } from "./window.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { TrayHandle } from "./tray.js";
@@ -51,7 +52,10 @@ async function boot(): Promise<void> {
     },
   });
 
-  const effects = new EffectsService();
+  // Under the mock backend the effects service gets an in-memory install, so
+  // the Studio tab can be driven on any machine without Equalizer APO, and
+  // without a test writing into Program Files.
+  const effects = mockDevices ? mockEffectsService() : new EffectsService();
 
   const windows = new WindowManager();
 

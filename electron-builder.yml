@@ -30,6 +30,9 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+  # Adds the audio-effects page and runs Equalizer APO's setup from inside our
+  # own wizard, so the user never opens a second installer.
+  include: build/installer.nsh
   artifactName: ${productName}-Setup-${version}.${ext}
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}

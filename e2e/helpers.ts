@@ -27,6 +27,8 @@ export interface LaunchedApp {
 export async function launchApp(
   /** Partial config written before launch; missing fields take their defaults. */
   seedConfig?: Record<string, unknown>,
+  /** Extra environment, for exercising states the mock backend can fake. */
+  extraEnv: Record<string, string> = {},
 ): Promise<LaunchedApp> {
   const appData = await mkdtemp(path.join(os.tmpdir(), "audiodeck-e2e-"));
   if (seedConfig !== undefined) {
@@ -48,6 +50,7 @@ export async function launchApp(
       // flashing up and away that many times make the machine unusable.
       AUDIODECK_HIDDEN_WINDOW: "1",
       APPDATA: appData,
+      ...extraEnv,
     },
   });
   const page = await app.firstWindow();

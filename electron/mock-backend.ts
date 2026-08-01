@@ -5,6 +5,7 @@
 
 import type { AudioControl, Endpoint } from "./audioctl.js";
 import type { HeadsetQuerier, HeadsetSnapshot } from "./headsetcontrol.js";
+import { EffectsService } from "./eqapo/service.js";
 
 function fixtureEndpoints(): Endpoint[] {
   return [
@@ -189,3 +190,27 @@ export class MockHeadsetControl implements HeadsetQuerier {
   }
 }
 
+
+/**
+ * An EffectsService backed by an in-memory filesystem and a pretend install.
+ *
+ * The Studio tab can then be driven on any machine, with no Equalizer APO and
+ * without a test writing into Program Files. Set AUDIODECK_EFFECTS_ABSENT=1 to
+ * make it report "not installed" instead, which is how the setup panel gets
+ * tested.
+ */
+export function mockEffectsService(): EffectsService {
+  const files = new Map<string, string>();
+  const install =
+    process.env.AUDIODECK_EFFECTS_ABSENT === "1"
+      ? null
+      : { installPath: "C:\Mock\EqualizerAPO", configPath: "C:\Mock\EqualizerAPO\config" };
+  return new EffectsService({
+    detect: async () => install,
+    io: {
+      read: async (file) => files.get(file) ?? null,
+      write: async (file, text) => void files.set(file, text),
+      remove: async (file) => void files.delete(file),
+    },
+  });
+}
