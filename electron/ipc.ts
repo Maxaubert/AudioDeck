@@ -4,6 +4,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { deviceTypeByKey } from "../shared/deviceTypes.js";
 import { evaluateAvailability } from "./availability.js";
+import { mergeVisibleOrder } from "./rules.js";
 import { dedupeEndpoints } from "./dedupe.js";
 import { restartShellHost } from "./reapply.js";
 import { flatEqProfile } from "./eqapo/service.js";
@@ -30,7 +31,7 @@ export interface IpcDeps {
   getConfig: () => AudioDeckConfig;
   saveConfig: (config: AudioDeckConfig) => Promise<void>;
   /** Toggle automation pause; main keeps poller and tray checkbox in sync. */
-  setPaused: (paused: boolean) => void;
+  setPaused: (paused: boolean) => Promise<void>;
   /** Apply the autostart flag to the HKCU Run key. */
   applyAutostart: (enabled: boolean) => Promise<void>;
 }
@@ -77,7 +78,12 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.setPriority, async (_e, flow: EndpointFlow, ids: string[]) => {
     const key = flow === "capture" ? "micPriority" : "outputPriority";
     const cleaned = Array.isArray(ids) ? ids.filter((id) => typeof id === "string") : [];
-    await deps.saveConfig({ ...deps.getConfig(), [key]: cleaned });
+    const config = deps.getConfig();
+    // The renderer sends the rows it can see, which is not the whole list: the
+    // ranked view hides endpoints Windows only remembers. Removing a device is
+    // removeFromPriority's job, so an id missing from this call never means
+    // "drop it".
+    await deps.saveConfig({ ...config, [key]: mergeVisibleOrder(config[key], cleaned) });
     await poller.refreshNow();
   });
 
@@ -292,8 +298,9 @@ export function registerIpc(deps: IpcDeps): void {
   });
 
   ipcMain.handle(IPC.setPaused, async (_e, paused: boolean) => {
-    deps.setPaused(paused);
-    await deps.saveConfig({ ...deps.getConfig(), paused });
+    // Persistence lives in the one setPaused in main, so this page and the
+    // tray menu cannot end up writing different things.
+    await deps.setPaused(paused);
   });
 
   ipcMain.handle(IPC.setAutostart, async (_e, enabled: boolean) => {

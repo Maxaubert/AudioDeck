@@ -1,6 +1,6 @@
 // Load/save AudioDeck's JSON config with atomic writes. No other module touches disk config.
 
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const CONFIG_SCHEMA_VERSION = 1;
@@ -132,6 +132,30 @@ export async function loadConfig(file: string = configPath()): Promise<AudioDeck
     throw err;
   }
   return migrateConfig(JSON.parse(raw));
+}
+
+/**
+ * Move a config file that will not parse out of the way, and report where it
+ * went. Never deleted: it is the user's data, and a config that fails to parse
+ * is usually one bad character away from everything they set up.
+ */
+export async function quarantineConfig(file: string = configPath()): Promise<string | null> {
+  // Stamped from the file's own mtime rather than the clock, so re-running
+  // against the same broken file does not pile up copies.
+  let stamp = "broken";
+  try {
+    stamp = String(Math.round((await stat(file)).mtimeMs));
+  } catch {
+    // Keep the fallback name; the rename below is what actually matters.
+  }
+  const target = `${file}.${stamp}.bad`;
+  try {
+    await rename(file, target);
+    return target;
+  } catch (err) {
+    console.error("[config] could not set the unreadable config aside:", err);
+    return null;
+  }
 }
 
 /** In-flight write per target file, so concurrent saves serialize in order. */
