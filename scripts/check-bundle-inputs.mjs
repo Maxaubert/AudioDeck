@@ -33,6 +33,19 @@ const inputs = [
     file: path.join("assets", "ir", "audiodeck-cathedral-48000.wav"),
     fix: "Generate them first: node scripts/make-reverb-ir.mjs",
   },
+  {
+    // Missing this does not fail the build, it silently ships the stock
+    // Electron icon, which is how AudioDeck went its first four versions
+    // without an icon of its own.
+    file: path.join("build", "icon.ico"),
+    fix: "Generate it first: node design/make-icon.mjs",
+  },
+  {
+    // GDI cannot read the woff2 the app uses, so the installer carries
+    // TrueType copies of the same faces.
+    file: path.join("build", "fonts", "anton-400.ttf"),
+    fix: "Fetch them first: node scripts/fetch-fonts.mjs",
+  },
 ];
 
 let ok = true;

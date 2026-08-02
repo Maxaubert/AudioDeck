@@ -1,8 +1,14 @@
 /* Shared stock for the installer mockups.
    Everything here is lifted from src/renderer/src/styles.css so the installer
    and the app are cut from the same sheet. Frames are drawn at the real
-   installer size (640x460) rather than scaled up, so what is on screen is what
-   NSIS would have to render. */
+   installer size (720x520) rather than scaled up, so what is on screen is what
+   NSIS would have to render.
+
+   The size is set by the app's own accessibility floor rather than by taste:
+   styles.css requires body text >= 17px and every interactive target >= 44px
+   for a low-vision user, and an installer that breaks the app's own rule is not
+   acceptable. The window grew to fit the type rather than the type shrinking to
+   fit the window. */
 
 @font-face {
   font-family: "Anton";
@@ -72,15 +78,15 @@ body {
 /* ---------- the installer window itself ---------- */
 
 .win {
-  width: 640px;
-  height: 460px;
+  width: 720px;
+  height: 520px;
   display: flex;
   flex-direction: column;
   background: var(--paper);
   color: var(--ink);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.45;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
@@ -89,18 +95,18 @@ body {
    bar. NSIS can drop WS_CAPTION and take the drag itself. */
 .cap {
   flex: none;
-  height: 30px;
+  height: 34px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-left: 14px;
+  padding-left: 16px;
   background: #000;
   border-bottom: 2px solid #2b2b22;
   --stencil-bg: #000;
 }
 
 .cap-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -238,30 +244,31 @@ body {
 
 .lede {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.45;
   max-width: 46ch;
 }
 
 .fine {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--dead-ink);
 }
 
-/* ---------- controls ---------- */
+/* ---------- controls ----------
+   44px minimum on every target, per the app's rule. */
 
 .btn {
-  min-height: 40px;
-  padding: 0 18px;
+  min-height: 44px;
+  padding: 0 20px;
   background: transparent;
   color: var(--ink);
   border: 3px solid var(--ink);
   font-family: var(--ui);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -289,10 +296,10 @@ body {
   flex: 1;
   min-width: 0;
   border: 0;
-  padding: 0 12px;
-  min-height: 40px;
+  padding: 0 14px;
+  min-height: 44px;
   font-family: var(--ui);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   background: transparent;
   color: var(--ink);
@@ -301,11 +308,12 @@ body {
 .field button {
   border: 0;
   border-left: 3px solid var(--ink);
-  padding: 0 14px;
+  min-height: 44px;
+  padding: 0 16px;
   background: var(--ink);
   color: var(--paper);
   font-family: var(--ui);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -313,14 +321,15 @@ body {
 
 .check {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
 }
 
 .box {
   flex: 0 0 auto;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border: 3px solid var(--ink);
   background: var(--sheet);
   display: grid;
@@ -333,8 +342,8 @@ body {
 
 .box.on::after {
   content: "";
-  width: 13px;
-  height: 7px;
+  width: 15px;
+  height: 8px;
   border-left: 4px solid var(--ink);
   border-bottom: 4px solid var(--ink);
   transform: rotate(-45deg) translate(1px, -2px);
@@ -380,19 +389,19 @@ body {
 .prow {
   display: flex;
   align-items: stretch;
-  height: 30px;
+  height: 38px;
   background: var(--sheet);
 }
 
 .prow .n {
-  flex: 0 0 32px;
+  flex: 0 0 40px;
   display: grid;
   place-items: center;
   background: var(--ink);
   color: var(--paper);
   font-family: var(--display);
   font-weight: 400;
-  font-size: 19px;
+  font-size: 23px;
   line-height: 1;
 }
 
@@ -402,17 +411,17 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-left: 10px;
+  padding-left: 12px;
 }
 
 .prow .who b {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .prow .who span {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -420,12 +429,12 @@ body {
 }
 
 .prow .meter {
-  flex: 0 0 116px;
+  flex: 0 0 140px;
   align-self: center;
   display: flex;
   gap: 2px;
-  height: 15px;
-  margin-right: 10px;
+  height: 18px;
+  margin-right: 12px;
 }
 
 .prow .meter i {
@@ -459,8 +468,8 @@ body {
 
 .prow .away {
   align-self: center;
-  margin-right: 10px;
-  font-size: 10px;
+  margin-right: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -473,8 +482,8 @@ body {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
+  gap: 12px;
+  padding: 16px 28px;
   border-top: var(--rule) solid var(--ink);
 }
 

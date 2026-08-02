@@ -14,17 +14,17 @@
 .split { flex: 1; display: flex; min-height: 0; }
 
 .spine {
-  flex: 0 0 196px;
+  flex: 0 0 218px;
   background: var(--ink);
   border-right: var(--rule) solid var(--marker);
-  padding: 20px 18px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   --stencil-bg: #000;
 }
 
 .spine .brand { flex-direction: column; align-items: flex-start; gap: 14px; }
-.spine .brand-word { font-size: 34px; }
+.spine .brand-word { font-size: 38px; }
 
 .steps { margin-top: auto; display: flex; flex-direction: column; }
 
@@ -32,8 +32,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 0;
-  font-size: 12px;
+  padding: 9px 0;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -43,9 +43,9 @@
 .step b {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 17px;
+  font-size: 19px;
   letter-spacing: 0.02em;
-  min-width: 22px;
+  min-width: 26px;
 }
 
 .step.now { color: var(--marker); }
@@ -55,19 +55,19 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 26px 24px 0;
+  padding: 30px 28px 0;
   min-width: 0;
 }
 
-.body-a .h { font-size: 33px; }
-.body-a .strip { margin: auto -24px 0; }
+.body-a .h { font-size: 40px; }
+.body-a .strip { margin: auto -28px 0; }
 
 /* folder: the two numbers that decide whether this is going to work */
 .meas {
   display: flex;
   gap: 26px;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -77,7 +77,7 @@
 .meas b {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 17px;
+  font-size: 19px;
   letter-spacing: 0.02em;
   color: var(--ink);
 }
@@ -85,10 +85,10 @@
 /* installing: the meter is the app's volume readout, and the figure is set in
    ink rather than amber because amber type on paper is nowhere near legible */
 .pct {
-  margin-top: 18px;
+  margin-top: 20px;
   font-family: var(--display);
   font-weight: 400;
-  font-size: 52px;
+  font-size: 62px;
   line-height: 1;
   letter-spacing: 0.01em;
 }
@@ -98,8 +98,8 @@
   margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--dead-ink);
@@ -111,8 +111,8 @@
 .log span:nth-child(4) { opacity: 0.8; }
 
 .now-doing {
-  margin: 8px 0 0;
-  font-size: 13px;
+  margin: 10px 0 0;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -124,17 +124,17 @@
 .tray {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 38px;
-  padding: 0 12px;
+  gap: 12px;
+  height: 44px;
+  padding: 0 14px;
   background: var(--ink);
   color: #9d9a8f;
 }
 
 .tray-icon {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   border: 2px solid var(--paper);
   transform: rotate(-3deg);
@@ -144,10 +144,10 @@
 
 .tray-icon i {
   position: absolute;
-  left: 8px;
-  top: 4px;
-  width: 3px;
-  height: 12px;
+  left: 9px;
+  top: 5px;
+  width: 4px;
+  height: 14px;
   background: var(--marker);
   transform: skew(-11deg);
 }
@@ -155,7 +155,7 @@
 .tray-say {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--marker);
@@ -164,14 +164,14 @@
 .tray-rest { flex: 1; }
 
 .tray-clock {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 </style>
 </head>
 <body>
-<p class="caption-note">A &middot; Sleeve &mdash; black spine, paper page. 640 &times; 460, actual size.</p>
+<p class="caption-note">A &middot; Sleeve &mdash; black spine, paper page. 720 &times; 520, actual size.</p>
 <div class="sheetgrid">
 
   <!-- welcome -->
@@ -195,7 +195,7 @@
       </div>
       <div class="body-a">
         <h1 class="h">Your audio<br>devices,<br>ranked.</h1>
-        <p class="lede" style="margin:12px 0 14px;font-size:15px">
+        <p class="lede" style="margin:14px 0 18px">
           It picks the best one that is plugged in, and takes it back the
           moment it returns.
         </p>
@@ -247,7 +247,7 @@
       </div>
       <div class="body-a">
         <h1 class="h">Where it goes</h1>
-        <p class="lede" style="margin:12px 0 16px;font-size:15px">
+        <p class="lede" style="margin:14px 0 18px">
           It installs under your own account, so nothing here needs an
           administrator.
         </p>
@@ -289,15 +289,15 @@
         </div>
       </div>
       <div class="body-a">
-        <h1 class="h" style="font-size:34px">Audio effects</h1>
-        <p class="lede" style="margin-top:14px;font-size:15px">
+        <h1 class="h">Audio effects</h1>
+        <p class="lede" style="margin:14px 0 0">
           AudioDeck can equalise each device separately. The processing is done
           by Equalizer APO, bundled here, so there is nothing to download.
         </p>
         <div class="check" style="margin-top:18px">
           <span class="box on"></span>
           <div>
-            <div style="font-family:var(--display);font-size:20px;text-transform:uppercase;line-height:1">Set up audio effects</div>
+            <div style="font-family:var(--display);font-size:23px;text-transform:uppercase;line-height:1">Set up audio effects</div>
             <div class="fine" style="margin-top:5px">Asks for administrator once</div>
           </div>
         </div>
@@ -380,7 +380,7 @@
       </div>
       <div class="body-a">
         <h1 class="h">Ready.</h1>
-        <p class="lede" style="margin:12px 0 16px;font-size:15px">
+        <p class="lede" style="margin:14px 0 18px">
           AudioDeck sits in the tray, next to the clock. Open it whenever you
           want to change the order.
         </p>
@@ -394,7 +394,7 @@
         </div>
         <div class="check" style="margin-top:16px">
           <span class="box on"></span>
-          <div style="font-family:var(--display);font-size:20px;text-transform:uppercase;line-height:1">Open AudioDeck now</div>
+          <div style="font-family:var(--display);font-size:23px;text-transform:uppercase;line-height:1">Open AudioDeck now</div>
         </div>
         <div class="strip">
           <span class="fine">0.1.0</span>
