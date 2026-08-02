@@ -93,7 +93,7 @@ Function AudioDeckWelcomeCreate
     ${AD_S_RIGHT} "NOT PLUGGED IN"
   Pop $0
 
-  !insertmacro AdStrip "${VERSION}  .  NO ADMINISTRATOR"
+  !insertmacro AdStrip "${VERSION}"
   ${AdButtonOutlined} $AdBtnCancel 462 458 108 44 ${AD_DEADINK} AdOnCancel "CANCEL"
   ${AdButton} $AdBtnNext 582 458 110 44 ${AD_ONMARKER} ${AD_MARKER} AdOnNext "CONTINUE"
 
@@ -115,11 +115,17 @@ Function AudioDeckFolderCreate
   ; An EDIT honours WM_CTLCOLOREDIT, unlike a button, so the field can be
   ; painted. The rule around it is a plate behind, since an edit has no border
   ; of its own worth keeping.
+  ; Three layers, because a single-line EDIT gives no way to place its text: it
+  ; always paints at the top of its client area, and EM_SETRECT is documented as
+  ; multiline-only so it is ignored here. Sizing the control to fill the plate
+  ; leaves the path sitting high; sizing it to the type instead leaves a fat
+  ; black frame around it.
+  ;
+  ; So the plate is the 3px rule, a sheet fills the inside of it, and the edit
+  ; is the height of one line floating in the middle of that sheet. The border
+  ; is thin and the path sits where it should.
   ${AdRect} 246 158 440 46 ${AD_INK}
-  ; A single-line EDIT paints its text at the top of its client area rather
-  ; than centring it, so a 40px-tall field looks misaligned however the plate
-  ; around it is placed. The field is sized to the type and centred in the
-  ; plate instead.
+  ${AdRect} 249 161 320 40 ${AD_SHEET}
   ${AdPx} $1 252
   ${AdPx} $2 169
   ${AdPx} $3 314
