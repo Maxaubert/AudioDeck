@@ -79,6 +79,18 @@ ManifestDPIAware true
       ClearErrors
     ${EndIf}
   ${EndIf}
+
+  # Move off the progress page once the work is done.
+  #
+  # MUI's instfiles page finishes by enabling Next and waiting to be clicked.
+  # The kit hides the native buttons, and nothing was drawn to replace them on
+  # this page, so a completed install sat at a full bar with no way forward: the
+  # files were all in place and the window looked hung.
+  #
+  # SetAutoClose is the mechanism NSIS actually provides for this. Posting
+  # WM_COMMAND instead does nothing: the Next button is still disabled while the
+  # section runs, and the queued click is discarded rather than deferred.
+  SetAutoClose true
 !macroend
 
 !else

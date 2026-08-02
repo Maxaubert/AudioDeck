@@ -60,6 +60,15 @@
 !define AD_DRAWN "${WS_VISIBLE}|${WS_CHILD}|${SS_NOTIFY}|${SS_CENTER}|${SS_CENTERIMAGE}"
 !define AD_PLATE "${WS_VISIBLE}|${WS_CHILD}|${SS_CENTERIMAGE}"
 
+; Window styles as single numbers, for the controls built with CreateWindowExW.
+; System::Call needs an integer, and !define /math takes exactly one operator,
+; so a three-way OR cannot be folded by the preprocessor and is written out.
+; WS_VISIBLE|WS_CHILD is 0x50000000; the low bits are the SS_* alignment.
+!define AD_S_TOP    0x50000000
+!define AD_S_MID    0x50000200
+!define AD_S_CENTER 0x50000201
+!define AD_S_RIGHT  0x50000202
+
 Var AdDlg
 Var AdDpi
 Var AdFontH1      ; Anton 40px, page headline
@@ -205,13 +214,22 @@ Var AdBtnCancel
   System::Call "user32::SetWindowPos(p $AdDlg, p 0, i 0, i 0, i r6, i r7, i ${AD_SWP_NOZORDER})"
 !macroend
 
-/** A flat rectangle of colour: the rules, plates and meter ticks. */
+/**
+ * A flat rectangle of colour: the rules, plates and meter ticks.
+ *
+ * Created with CreateWindowExW rather than nsDialogs::CreateControl so it works
+ * on any dialog, not only one nsDialogs made. That matters for the progress
+ * page, which belongs to MUI: nsDialogs has no dialog behind it there, and
+ * calling CreateControl painted the whole screen black. NSIS's own window
+ * procedure still answers WM_CTLCOLORSTATIC for these, so SetCtlColors applies.
+ */
 !macro AdRect x y w h colour
   ${AdPx} $R0 ${x}
   ${AdPx} $R1 ${y}
   ${AdPx} $R2 ${w}
   ${AdPx} $R3 ${h}
-  nsDialogs::CreateControl STATIC ${AD_PLATE} 0 $R0 $R1 $R2 $R3 ""
+  System::Call "user32::CreateWindowExW(i 0, w 'STATIC', w '', \
+    i ${AD_S_MID}, i $R0, i $R1, i $R2, i $R3, p $AdDlg, p 0, p 0, p 0) p .s"
   Pop $R4
   SetCtlColors $R4 ${colour} ${colour}
 !macroend
@@ -223,7 +241,8 @@ Var AdBtnCancel
   ${AdPx} $R1 ${y}
   ${AdPx} $R2 ${w}
   ${AdPx} $R3 ${h}
-  nsDialogs::CreateControl STATIC "${WS_VISIBLE}|${WS_CHILD}|${style}" 0 $R0 $R1 $R2 $R3 "${text}"
+  System::Call "user32::CreateWindowExW(i 0, w 'STATIC', w '${text}', \
+    i ${style}, i $R0, i $R1, i $R2, i $R3, p $AdDlg, p 0, p 0, p 0) p .s"
   Pop $R4
   SendMessage $R4 ${WM_SETFONT} ${font} 1
   SetCtlColors $R4 ${ink} ${back}
@@ -248,6 +267,32 @@ Var AdBtnCancel
   ${NSD_OnClick} ${var} ${onclick}
 !macroend
 !define AdButton "!insertmacro AdButton"
+
+/**
+ * A drawn checkbox: a rule with a clickable face inside it.
+ *
+ * Amber face means ticked, white means not. There is no check glyph: neither
+ * Anton nor Archivo carries one, NSIS has no unicode escape to borrow one from
+ * Segoe UI Symbol, and a literal X in a ticked box reads as "no". A filled amber
+ * plate is how the app already marks something live, so the installer says it
+ * the same way.
+ */
+!macro AdCheck var x y onclick
+  ${AdRect} ${x} ${y} 34 34 ${AD_INK}
+  !define /math AD_CK_X ${x} + 3
+  !define /math AD_CK_Y ${y} + 3
+  ${AdPx} $R0 ${AD_CK_X}
+  ${AdPx} $R1 ${AD_CK_Y}
+  ${AdPx} $R2 28
+  ${AdPx} $R3 28
+  nsDialogs::CreateControl STATIC ${AD_DRAWN} 0 $R0 $R1 $R2 $R3 ""
+  Pop ${var}
+  SetCtlColors ${var} ${AD_MARKER} ${AD_MARKER}
+  ${NSD_OnClick} ${var} ${onclick}
+  !undef AD_CK_X
+  !undef AD_CK_Y
+!macroend
+!define AdCheck "!insertmacro AdCheck"
 
 /**
  * The secondary action: a 3px rule with paper inside, drawn as a plate with the
@@ -325,9 +370,9 @@ Var AdBtnCancel
   ; ignore the font's internal leading. Anton has a lot of it, so a plain
   ; top-aligned static drops the glyphs to the bottom of the box and clips them
   ; there however tall the box is made.
-  ${AdText} 20 78 180 54 $AdFontWord ${AD_PAPER} ${AD_INK} ${SS_CENTERIMAGE} "AUDIO"
+  ${AdText} 20 78 180 54 $AdFontWord ${AD_PAPER} ${AD_INK} ${AD_S_MID} "AUDIO"
   Pop $0
-  ${AdText} 20 126 180 54 $AdFontWord ${AD_MARKER} ${AD_INK} ${SS_CENTERIMAGE} "DECK"
+  ${AdText} 20 126 180 54 $AdFontWord ${AD_MARKER} ${AD_INK} ${AD_S_MID} "DECK"
   Pop $0
 
   !insertmacro AdStep 1 296 "01" "WELCOME" ${step}
@@ -349,9 +394,9 @@ Var AdBtnCancel
     !define /redef AD_STEP_INK ${AD_DIM}
   !endif
   ; numeral in the display face, label in the UI face, as the app sets them
-  ${AdText} 20 ${y} 30 26 $AdFontStepN ${AD_STEP_INK} ${AD_INK} ${SS_CENTERIMAGE} "${numeral}"
+  ${AdText} 20 ${y} 30 26 $AdFontStepN ${AD_STEP_INK} ${AD_INK} ${AD_S_MID} "${numeral}"
   Pop $0
-  ${AdText} 54 ${y} 150 26 $AdFontStep ${AD_STEP_INK} ${AD_INK} ${SS_CENTERIMAGE} "${text}"
+  ${AdText} 54 ${y} 150 26 $AdFontStep ${AD_STEP_INK} ${AD_INK} ${AD_S_MID} "${text}"
   Pop $0
 !macroend
 
@@ -360,7 +405,7 @@ Var AdBtnCancel
   ${AdRect} ${AD_SPINE_W} 438 502 ${AD_RULE} ${AD_INK}
   ; 200 wide, not 260: the secondary button starts at 462 and the note was
   ; running underneath it.
-  ${AdText} 246 462 200 40 $AdFontFine ${AD_DEADINK} ${AD_PAPER} ${SS_CENTERIMAGE} "${note}"
+  ${AdText} 246 462 200 40 $AdFontFine ${AD_DEADINK} ${AD_PAPER} ${AD_S_MID} "${note}"
   Pop $0
 !macroend
 

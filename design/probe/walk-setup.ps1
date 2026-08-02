@@ -12,7 +12,9 @@
 param(
   [string]$Exe = "C:\Users\Admin\Documents\Claude\Github\AudioDeck\dist\AudioDeck-Setup-0.1.0.exe",
   [string]$OutDir = "C:\Users\Admin\Documents\Claude\Github\AudioDeck\design\shots",
-  [int]$Steps = 2
+  [int]$Steps = 2,
+  # Which step lands on the progress page, which advances itself.
+  [int]$InstallStep = 99
 )
 
 $ErrorActionPreference = "Stop"
@@ -81,10 +83,16 @@ try {
     Start-Sleep -Milliseconds 1500
   }
 
-  $names = @("1-welcome", "2-folder", "3-effects", "4-installing")
+  # Numbered rather than named: the effects page skips itself when Equalizer APO
+  # is already present, so which screen is third depends on the machine.
+  $names = @("1", "2", "3", "4", "5")
   for ($s = 0; $s -le $Steps; $s++) {
     Shoot $names[$s]
-    if ($s -lt $Steps) { Advance }
+    if ($s -lt $Steps) {
+      # The progress page advances itself when the section finishes, so once it
+      # is on screen the walk waits rather than pressing anything.
+      if ($s -eq $InstallStep) { Start-Sleep -Seconds 40 } else { Advance }
+    }
   }
 }
 finally {
