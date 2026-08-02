@@ -80,6 +80,7 @@ Var AdFontBody    ; Archivo 600 17px
 Var AdFontLabel   ; Archivo 800 15px, buttons
 Var AdFontStep    ; Archivo 800 13px, the step list
 Var AdFontFine    ; Archivo 800 13px, fine print
+Var AdFontTick    ; Marlett, whose "a" is the check mark
 Var AdBtnNext
 Var AdBtnBack
 Var AdBtnCancel
@@ -122,6 +123,11 @@ Var AdBtnCancel
   CreateFont $AdFontLabel "Archivo" 11 800
   CreateFont $AdFontStep  "Archivo" 10 800
   CreateFont $AdFontFine  "Archivo" 10 800
+  ; Marlett ships with every Windows and is what the OS draws its own checkbox
+  ; ticks from: the letter "a" is the check mark. Using it keeps the source pure
+  ; ASCII, which matters because makensis reads an included file as the ANSI
+  ; code page and a pasted glyph would arrive as mojibake.
+  CreateFont $AdFontTick  "Marlett" 13 400
 !macroend
 
 /** Size the window to the design and centre it. */
@@ -271,11 +277,10 @@ Var AdBtnCancel
 /**
  * A drawn checkbox: a rule with a clickable face inside it.
  *
- * Amber face means ticked, white means not. There is no check glyph: neither
- * Anton nor Archivo carries one, NSIS has no unicode escape to borrow one from
- * Segoe UI Symbol, and a literal X in a ticked box reads as "no". A filled amber
- * plate is how the app already marks something live, so the installer says it
- * the same way.
+ * Ticked is an amber plate with a black check on it; unticked is white stock
+ * with the check painted white so it disappears. Repainting rather than
+ * swapping the text keeps the control identity stable, and SetCtlColors can be
+ * re-run on a live handle.
  */
 !macro AdCheck var x y onclick
   ${AdRect} ${x} ${y} 34 34 ${AD_INK}
@@ -285,9 +290,10 @@ Var AdBtnCancel
   ${AdPx} $R1 ${AD_CK_Y}
   ${AdPx} $R2 28
   ${AdPx} $R3 28
-  nsDialogs::CreateControl STATIC ${AD_DRAWN} 0 $R0 $R1 $R2 $R3 ""
+  nsDialogs::CreateControl STATIC ${AD_DRAWN} 0 $R0 $R1 $R2 $R3 "a"
   Pop ${var}
-  SetCtlColors ${var} ${AD_MARKER} ${AD_MARKER}
+  SendMessage ${var} ${WM_SETFONT} $AdFontTick 1
+  SetCtlColors ${var} ${AD_INK} ${AD_MARKER}
   ${NSD_OnClick} ${var} ${onclick}
   !undef AD_CK_X
   !undef AD_CK_Y

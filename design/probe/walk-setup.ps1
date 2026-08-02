@@ -14,7 +14,10 @@ param(
   [string]$OutDir = "C:\Users\Admin\Documents\Claude\Github\AudioDeck\design\shots",
   [int]$Steps = 2,
   # Which step lands on the progress page, which advances itself.
-  [int]$InstallStep = 99
+  [int]$InstallStep = 99,
+  # How long to let the install run. 365 MB takes well over a minute here once
+  # a virus scanner is looking at every file.
+  [int]$InstallWaitSeconds = 180
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,7 +94,7 @@ try {
     if ($s -lt $Steps) {
       # The progress page advances itself when the section finishes, so once it
       # is on screen the walk waits rather than pressing anything.
-      if ($s -eq $InstallStep) { Start-Sleep -Seconds 40 } else { Advance }
+      if ($s -eq $InstallStep) { Start-Sleep -Seconds $InstallWaitSeconds } else { Advance }
     }
   }
 }

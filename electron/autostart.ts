@@ -9,9 +9,23 @@ const execFileAsync = promisify(execFile);
 const RUN_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const VALUE_NAME = "AudioDeck";
 
+/**
+ * Marks a launch as Windows starting AudioDeck rather than someone opening it.
+ *
+ * Only that case should go straight to the tray. Opening the app by hand and
+ * getting no window looks like it failed to start, which is exactly how it read
+ * after an install.
+ */
+export const STARTUP_FLAG = "--startup";
+
+/** Whether this process was launched by the Run key rather than by a person. */
+export function startedByWindows(): boolean {
+  return process.argv.includes(STARTUP_FLAG);
+}
+
 /** The command the Run key launches: this executable, quoted against spaces. */
 function launchCommand(): string {
-  return `"${process.execPath}"`;
+  return `"${process.execPath}" ${STARTUP_FLAG}`;
 }
 
 export async function isAutostartEnabled(): Promise<boolean> {

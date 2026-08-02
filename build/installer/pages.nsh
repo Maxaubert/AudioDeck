@@ -240,7 +240,7 @@ Function AdOnToggleEffects
     SetCtlColors $AdEffectsBox ${AD_SHEET} ${AD_SHEET}
   ${Else}
     StrCpy $AdEffectsWanted 1
-    SetCtlColors $AdEffectsBox ${AD_MARKER} ${AD_MARKER}
+    SetCtlColors $AdEffectsBox ${AD_INK} ${AD_MARKER}
   ${EndIf}
   System::Call "user32::InvalidateRect(p $AdEffectsBox, p 0, i 1)"
 FunctionEnd
@@ -316,27 +316,20 @@ Function AudioDeckFinishCreate
   !insertmacro AdBeginPage
   !insertmacro AdSpine 4
 
-  ${AdText} 246 26 450 56 $AdFontH1 ${AD_INK} ${AD_PAPER} ${AD_S_MID} "READY."
+  ${AdText} 246 26 450 56 $AdFontH1 ${AD_INK} ${AD_PAPER} ${AD_S_MID} "INSTALL FINISHED"
   Pop $0
   ${AdText} 246 92 440 80 $AdFontBody ${AD_INK} ${AD_PAPER} ${AD_S_TOP} \
     "AudioDeck sits in the tray, next to the clock. Windows hides new tray icons \
 at first, so click the arrow there and drag it out."
   Pop $0
 
-  ; a scrap of taskbar, because the tray is exactly where people fail to look
-  ${AdRect} 246 196 440 48 ${AD_INK}
-  ${AdRect} 258 206 28 28 ${AD_MARKER}
-  ${AdRect} 262 210 6 20 ${AD_INK}
-  ${AdRect} 272 214 6 16 ${AD_INK}
-  ${AdText} 300 196 200 48 $AdFontLabel ${AD_MARKER} ${AD_INK} ${AD_S_MID} "LOOK HERE"
-  Pop $0
-  ${AdText} 560 196 114 48 $AdFontFine ${AD_CAPTXT} ${AD_INK} \
-    ${AD_S_RIGHT} "03:46"
-  Pop $0
+  ; A mock taskbar strip used to sit here, pointing at where the tray icon
+  ; lands. It read as a caption on the icon rather than as an instruction, and
+  ; the sentence above already says where to look, so it is gone.
 
   StrCpy $AdRunWanted 1
-  ${AdCheck} $AdRunBox 246 268 AdOnToggleRun
-  ${AdText} 294 268 390 34 $AdFontLabel ${AD_INK} ${AD_PAPER} ${AD_S_MID} \
+  ${AdCheck} $AdRunBox 246 200 AdOnToggleRun
+  ${AdText} 294 200 390 34 $AdFontLabel ${AD_INK} ${AD_PAPER} ${AD_S_MID} \
     "OPEN AUDIODECK NOW"
   Pop $0
 
@@ -353,7 +346,7 @@ Function AdOnToggleRun
     SetCtlColors $AdRunBox ${AD_SHEET} ${AD_SHEET}
   ${Else}
     StrCpy $AdRunWanted 1
-    SetCtlColors $AdRunBox ${AD_MARKER} ${AD_MARKER}
+    SetCtlColors $AdRunBox ${AD_INK} ${AD_MARKER}
   ${EndIf}
   System::Call "user32::InvalidateRect(p $AdRunBox, p 0, i 1)"
 FunctionEnd

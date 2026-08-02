@@ -13,7 +13,7 @@ import { MockAudioctl, MockHeadsetControl } from "./mock-backend.js";
 import { Poller } from "./poller.js";
 import { createTray } from "./tray.js";
 import { defaultConfig, loadConfig, quarantineConfig, saveConfig } from "./config.js";
-import { setAutostart } from "./autostart.js";
+import { setAutostart, startedByWindows } from "./autostart.js";
 import { registerIpc } from "./ipc.js";
 import { EffectsService } from "./eqapo/service.js";
 import { mockEffectsService } from "./mock-backend.js";
@@ -181,7 +181,14 @@ async function boot(): Promise<void> {
   poller.start();
   console.log(`[main] AudioDeck daemon up, poll interval ${config.pollIntervalMs} ms`);
 
-  if (testMode) windows.open();
+  // Starting AudioDeck by hand means someone wants to look at it, so the window
+  // opens. Going straight to the tray is only right when Windows started it,
+  // which is why the Run key passes STARTUP_FLAG and nothing else does.
+  //
+  // A Run key written by an older build has no flag on it, so the first login
+  // after upgrading opens the window once. The key is rewritten just above, so
+  // it corrects itself and is not worth special-casing.
+  if (!startedByWindows()) windows.open();
 
   app.on("before-quit", () => poller.stop());
 }
