@@ -38,3 +38,27 @@ for (const block of css.split("@font-face").slice(1)) {
 
 writeFileSync(path.join(outDir, "..", "fonts.css"), localCss, "utf8");
 console.log(`wrote ${seen.size} woff2 files and fonts.css`);
+
+// The installer needs the same two faces, but GDI cannot read woff2 and NSIS
+// has no shaping engine of its own. Google's API serves TrueType to a user
+// agent that predates woff2, so the installer's copies come from exactly the
+// same source as the app's and cannot drift from them.
+const ttfDir = path.join(root, "build", "fonts");
+mkdirSync(ttfDir, { recursive: true });
+
+const TTF_API =
+  "https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600;800&display=swap";
+const ttfCss = await (await fetch(TTF_API, { headers: { "User-Agent": "Mozilla/5.0" } })).text();
+
+let ttfCount = 0;
+for (const block of ttfCss.split("@font-face").slice(1)) {
+  const url = /url\((https:[^)]+\.ttf)\)/.exec(block)?.[1];
+  if (url === undefined) continue;
+  const family = /font-family:\s*'([^']+)'/.exec(block)?.[1] ?? "font";
+  const weight = /font-weight:\s*(\d+)/.exec(block)?.[1] ?? "400";
+  const file = `${family.toLowerCase().replace(/\s+/g, "-")}-${weight}.ttf`;
+  writeFileSync(path.join(ttfDir, file), Buffer.from(await (await fetch(url)).arrayBuffer()));
+  ttfCount += 1;
+}
+
+console.log(`wrote ${ttfCount} ttf files to build/fonts for the installer`);
