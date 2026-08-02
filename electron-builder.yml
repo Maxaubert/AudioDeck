@@ -40,9 +40,13 @@ nsis:
   uninstallerIcon: build/icon.ico
   oneClick: false
   perMachine: false
-  allowToChangeInstallationDirectory: true
-  # Adds the audio-effects page and runs Equalizer APO's setup from inside our
-  # own wizard, so the user never opens a second installer.
+  # The stock MUI directory page cannot be restyled as far as the design goes,
+  # so it is switched off and build/installer/pages.nsh draws its own, keeping
+  # the same $INSTDIR sanitising electron-builder's page did.
+  allowToChangeInstallationDirectory: false
+  # Draws the whole flow in AudioDeck's own design system, and runs Equalizer
+  # APO's setup from inside our own wizard so the user never opens a second
+  # installer. See docs/specs/2026-08-02-installer-design.md.
   include: build/installer.nsh
   artifactName: ${productName}-Setup-${version}.${ext}
 portable:

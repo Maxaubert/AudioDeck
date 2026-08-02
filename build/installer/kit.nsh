@@ -358,7 +358,9 @@ Var AdBtnCancel
 /** The action strip: a heavy rule, then the buttons hard right. */
 !macro AdStrip note
   ${AdRect} ${AD_SPINE_W} 438 502 ${AD_RULE} ${AD_INK}
-  ${AdText} 246 462 260 40 $AdFontFine ${AD_DEADINK} ${AD_PAPER} ${SS_CENTERIMAGE} "${note}"
+  ; 200 wide, not 260: the secondary button starts at 462 and the note was
+  ; running underneath it.
+  ${AdText} 246 462 200 40 $AdFontFine ${AD_DEADINK} ${AD_PAPER} ${SS_CENTERIMAGE} "${note}"
   Pop $0
 !macroend
 
