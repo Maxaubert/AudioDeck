@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Installer B - Marquee</title>
+<link rel="stylesheet" href="inst-kit.css">
+<style>
+/* B. MARQUEE
+   The literal continuation of the app: the same black topbar, the same amber
+   rule under it, the same folder tabs. Opening the installer looks like
+   opening AudioDeck, so the first thing a new user learns is the shape of the
+   thing they just installed. The tabs are read-only here; they mark progress
+   rather than invite a click. */
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 16px 0 0;
+  background: var(--ink);
+  border-bottom: 7px solid var(--marker);
+  --stencil-bg: #000;
+}
+
+.topbar .brand {
+  padding: 10px 20px 10px 16px;
+  align-self: stretch;
+  border-right: var(--rule) solid var(--marker);
+}
+
+.topbar .brand-word { font-size: 24px; }
+
+.tabs { display: flex; align-items: flex-end; padding-left: 16px; }
+
+.tab {
+  height: 34px;
+  padding: 0 18px;
+  margin-right: -9px;
+  display: flex;
+  align-items: center;
+  background: #2b2b22;
+  color: #7d7b70;
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 100%, 0 100%);
+}
+
+.tab.done { color: var(--paper); }
+
+.tab.now {
+  height: 46px;
+  z-index: 4;
+  background: var(--marker);
+  color: var(--ink);
+}
+
+.body-b {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px 0;
+  min-height: 0;
+}
+
+.body-b .h { font-size: 38px; }
+.body-b .strip { margin: auto -26px 0; }
+
+/* section rule, straight off the Devices view */
+.sect {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+}
+
+.sect h2 {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 5px 14px 7px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1;
+  text-transform: uppercase;
+  --stencil-bg: #000;
+}
+
+.sect .bar { flex: 1; height: 5px; background: var(--ink); }
+
+.sect .count {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+<p class="caption-note">B &middot; Marquee &mdash; the app's own topbar and folder tabs. 640 &times; 460, actual size.</p>
+<div class="sheetgrid">
+
+  <!-- welcome -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><i></i></div>
+        <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab now">Welcome</div>
+        <div class="tab">Folder</div>
+        <div class="tab">Effects</div>
+        <div class="tab">Install</div>
+      </div>
+    </div>
+    <div class="body-b">
+      <h1 class="h">Your audio<br>devices, ranked.</h1>
+      <p class="lede" style="margin:12px 0 14px;max-width:52ch">
+        It picks the best one that is plugged in, and takes it back the moment
+        it returns.
+      </p>
+      <div class="preview">
+        <div class="prow live">
+          <span class="n">1</span>
+          <span class="who"><b>Steelseries</b><span>Arctis Nova Pro</span></span>
+          <span class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div class="prow">
+          <span class="n">2</span>
+          <span class="who"><b>LG</b><span>NVIDIA High Definition Audio</span></span>
+          <span class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div class="prow off">
+          <span class="n">3</span>
+          <span class="who"><b>Meta</b><span>Quest</span></span>
+          <span class="away">Not plugged in</span>
+        </div>
+      </div>
+      <div class="strip">
+        <span class="fine">0.1.0 &middot; installs for you only, no administrator</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-accent">Install</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- effects -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><i></i></div>
+        <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab done">Welcome</div>
+        <div class="tab done">Folder</div>
+        <div class="tab now">Effects</div>
+        <div class="tab">Install</div>
+      </div>
+    </div>
+    <div class="body-b">
+      <div class="sect">
+        <h2>Effects</h2>
+        <span class="bar"></span>
+        <span class="count">Optional</span>
+      </div>
+      <p class="lede" style="font-size:15px">
+        AudioDeck can equalise each device separately. The processing is done by
+        Equalizer APO, bundled here, so there is nothing to download.
+      </p>
+      <div class="check" style="margin-top:18px">
+        <span class="box on"></span>
+        <div>
+          <div style="font-family:var(--display);font-size:21px;text-transform:uppercase;line-height:1">Set up audio effects</div>
+          <div class="fine" style="margin-top:5px">Asks for administrator once &middot; may need a restart</div>
+        </div>
+      </div>
+      <div class="strip">
+        <span class="fine">GPL-3 &middot; Jonas Thedering</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost">Back</button>
+        <button class="btn btn-accent">Install</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
