@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Installer A - Sleeve</title>
+<link rel="stylesheet" href="inst-kit.css">
+<style>
+/* A. SLEEVE
+   The window is split like a record sleeve: a black spine down the left
+   carrying the brand and the step count, paper on the right carrying the
+   words. The spine never moves between screens, so the flow reads as one
+   object being turned rather than five dialogs in a row. */
+
+.split { flex: 1; display: flex; min-height: 0; }
+
+.spine {
+  flex: 0 0 196px;
+  background: var(--ink);
+  border-right: var(--rule) solid var(--marker);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  --stencil-bg: #000;
+}
+
+.spine .brand { flex-direction: column; align-items: flex-start; gap: 14px; }
+.spine .brand-word { font-size: 34px; }
+
+.steps { margin-top: auto; display: flex; flex-direction: column; }
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f6d63;
+}
+
+.step b {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  min-width: 22px;
+}
+
+.step.now { color: var(--marker); }
+.step.done { color: var(--paper); }
+
+.body-a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 24px 0;
+  min-width: 0;
+}
+
+.body-a .h { font-size: 33px; }
+.body-a .strip { margin: auto -24px 0; }
+
+/* folder: the two numbers that decide whether this is going to work */
+.meas {
+  display: flex;
+  gap: 26px;
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dead-ink);
+}
+
+.meas b {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+/* installing: the meter is the app's volume readout, and the figure is set in
+   ink rather than amber because amber type on paper is nowhere near legible */
+.pct {
+  margin-top: 18px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* the running detail, oldest fading back into the stock */
+.log {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--dead-ink);
+}
+
+.log span:nth-child(1) { opacity: 0.3; }
+.log span:nth-child(2) { opacity: 0.45; }
+.log span:nth-child(3) { opacity: 0.62; }
+.log span:nth-child(4) { opacity: 0.8; }
+
+.now-doing {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* done: a scrap of taskbar, so the last screen points at the tray instead of
+   describing where it is */
+.tray {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--ink);
+  color: #9d9a8f;
+}
+
+.tray-icon {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 2px solid var(--paper);
+  transform: rotate(-3deg);
+  outline: 3px solid var(--marker);
+  outline-offset: 3px;
+}
+
+.tray-icon i {
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  width: 3px;
+  height: 12px;
+  background: var(--marker);
+  transform: skew(-11deg);
+}
+
+.tray-say {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marker);
+}
+
+.tray-rest { flex: 1; }
+
+.tray-clock {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+</style>
+</head>
+<body>
+<p class="caption-note">A &middot; Sleeve &mdash; black spine, paper page. 640 &times; 460, actual size.</p>
+<div class="sheetgrid">
+
+  <!-- welcome -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="split">
+      <div class="spine">
+        <div class="brand">
+          <div class="brand-mark"><i></i></div>
+          <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        </div>
+        <div class="steps">
+          <div class="step now"><b>01</b> Welcome</div>
+          <div class="step"><b>02</b> Folder</div>
+          <div class="step"><b>03</b> Effects</div>
+          <div class="step"><b>04</b> Install</div>
+        </div>
+      </div>
+      <div class="body-a">
+        <h1 class="h">Your audio<br>devices,<br>ranked.</h1>
+        <p class="lede" style="margin:12px 0 14px;font-size:15px">
+          It picks the best one that is plugged in, and takes it back the
+          moment it returns.
+        </p>
+        <div class="preview">
+          <div class="prow live">
+            <span class="n">1</span>
+            <span class="who"><b>Steelseries</b><span>Arctis Nova Pro</span></span>
+            <span class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+          <div class="prow">
+            <span class="n">2</span>
+            <span class="who"><b>LG</b><span>NVIDIA High Definition Audio</span></span>
+            <span class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+          <div class="prow off">
+            <span class="n">3</span>
+            <span class="who"><b>Meta</b><span>Quest</span></span>
+            <span class="away">Not plugged in</span>
+          </div>
+        </div>
+        <div class="strip">
+          <span class="fine">0.1.0 &middot; no admin</span>
+          <span class="spacer"></span>
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-accent">Install</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- folder -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="split">
+      <div class="spine">
+        <div class="brand">
+          <div class="brand-mark"><i></i></div>
+          <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        </div>
+        <div class="steps">
+          <div class="step done"><b>01</b> Welcome</div>
+          <div class="step now"><b>02</b> Folder</div>
+          <div class="step"><b>03</b> Effects</div>
+          <div class="step"><b>04</b> Install</div>
+        </div>
+      </div>
+      <div class="body-a">
+        <h1 class="h">Where it goes</h1>
+        <p class="lede" style="margin:12px 0 16px;font-size:15px">
+          It installs under your own account, so nothing here needs an
+          administrator.
+        </p>
+        <div class="field">
+          <input value="C:\Users\Max\AppData\Local\Programs\AudioDeck" readonly>
+          <button>Browse</button>
+        </div>
+        <div class="meas">
+          <span><b>184 MB</b> needed</span>
+          <span><b>412 GB</b> free on C:</span>
+        </div>
+        <div class="strip">
+          <span class="fine">0.1.0</span>
+          <span class="spacer"></span>
+          <button class="btn btn-ghost">Back</button>
+          <button class="btn btn-accent">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- effects -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="split">
+      <div class="spine">
+        <div class="brand">
+          <div class="brand-mark"><i></i></div>
+          <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        </div>
+        <div class="steps">
+          <div class="step done"><b>01</b> Welcome</div>
+          <div class="step done"><b>02</b> Folder</div>
+          <div class="step now"><b>03</b> Effects</div>
+          <div class="step"><b>04</b> Install</div>
+        </div>
+      </div>
+      <div class="body-a">
+        <h1 class="h" style="font-size:34px">Audio effects</h1>
+        <p class="lede" style="margin-top:14px;font-size:15px">
+          AudioDeck can equalise each device separately. The processing is done
+          by Equalizer APO, bundled here, so there is nothing to download.
+        </p>
+        <div class="check" style="margin-top:18px">
+          <span class="box on"></span>
+          <div>
+            <div style="font-family:var(--display);font-size:20px;text-transform:uppercase;line-height:1">Set up audio effects</div>
+            <div class="fine" style="margin-top:5px">Asks for administrator once</div>
+          </div>
+        </div>
+        <div class="strip">
+          <span class="fine">GPL-3</span>
+          <span class="spacer"></span>
+          <button class="btn btn-ghost">Back</button>
+          <button class="btn btn-accent">Install</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- installing -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="split">
+      <div class="spine">
+        <div class="brand">
+          <div class="brand-mark"><i></i></div>
+          <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        </div>
+        <div class="steps">
+          <div class="step done"><b>01</b> Welcome</div>
+          <div class="step done"><b>02</b> Folder</div>
+          <div class="step done"><b>03</b> Effects</div>
+          <div class="step now"><b>04</b> Install</div>
+        </div>
+      </div>
+      <div class="body-a">
+        <h1 class="h">Installing</h1>
+        <div class="pct">62%</div>
+        <div class="ticks" style="margin-top:2px">
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <!-- NSIS prints these anyway, so the page fills with something true
+             rather than with nothing. History fades back into the stock; the
+             line being worked on is the one set in ink. -->
+        <div class="log">
+          <span>Extracting audiodeck.asar</span>
+          <span>Writing audioctl.exe</span>
+          <span>Writing headsetcontrol.exe</span>
+          <span>Copying impulse responses</span>
+        </div>
+        <p class="now-doing">Setting up audio effects</p>
+        <div class="strip">
+          <span class="fine">Do not close this window</span>
+          <span class="spacer"></span>
+          <button class="btn btn-ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- done -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="split">
+      <div class="spine">
+        <div class="brand">
+          <div class="brand-mark"><i></i></div>
+          <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        </div>
+        <div class="steps">
+          <div class="step done"><b>01</b> Welcome</div>
+          <div class="step done"><b>02</b> Folder</div>
+          <div class="step done"><b>03</b> Effects</div>
+          <div class="step done"><b>04</b> Install</div>
+        </div>
+      </div>
+      <div class="body-a">
+        <h1 class="h">Ready.</h1>
+        <p class="lede" style="margin:12px 0 16px;font-size:15px">
+          AudioDeck sits in the tray, next to the clock. Open it whenever you
+          want to change the order.
+        </p>
+        <!-- the tray is where it lives and where people fail to find it, so the
+             last screen points at the spot rather than describing it -->
+        <div class="tray">
+          <span class="tray-icon"><i></i></span>
+          <span class="tray-say">Look here</span>
+          <span class="tray-rest"></span>
+          <span class="tray-clock">03:46</span>
+        </div>
+        <div class="check" style="margin-top:16px">
+          <span class="box on"></span>
+          <div style="font-family:var(--display);font-size:20px;text-transform:uppercase;line-height:1">Open AudioDeck now</div>
+        </div>
+        <div class="strip">
+          <span class="fine">0.1.0</span>
+          <span class="spacer"></span>
+          <button class="btn btn-accent">Finish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

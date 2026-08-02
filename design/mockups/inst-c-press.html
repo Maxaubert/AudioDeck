@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Installer C - Press sheet</title>
+<link rel="stylesheet" href="inst-kit.css">
+<style>
+/* C. PRESS SHEET
+   No black furniture at all. The whole window is one sheet of stock: a heavy
+   rule at the top, the wordmark set as ink rather than reversed out, a huge
+   step numeral bled off the left edge, and type doing all the work. The least
+   wizard-shaped of the three, and the only one where the amber is used purely
+   as ink. */
+
+.sheet {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0 26px;
+  border-top: var(--rule) solid var(--ink);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* The numeral is set oversize and trimmed by the window edge, the way a press
+   sheet is cut through the image. It sits bottom right, off the end of the
+   flush-left text block, so it never fouls a line of copy. */
+.numeral {
+  position: absolute;
+  z-index: 0;
+  right: -30px;
+  bottom: 78px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 170px;
+  line-height: 0.7;
+  letter-spacing: -0.04em;
+  color: var(--marker);
+  pointer-events: none;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 0 12px;
+  border-bottom: 3px solid var(--ink);
+  --stencil-bg: var(--paper);
+}
+
+.masthead .brand-word {
+  color: var(--ink);
+  font-size: 21px;
+  line-height: 1;
+  display: flex;
+  gap: 5px;
+}
+
+.masthead .brand-word .stencil,
+.masthead .brand-word .brand-deck { display: inline-block; }
+/* set as ink here rather than reversed out, so both words need the ink colour
+   the kit only gives DECK */
+.masthead .brand-word .stencil,
+.masthead .brand-word .brand-deck { color: var(--ink); }
+.masthead .brand-word .stencil::before { top: 6px; height: 2.5px; }
+.masthead .brand-word .stencil::after { top: 14px; height: 2.5px; }
+
+.masthead .of {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dead-ink);
+}
+
+.sheet .masthead,
+.sheet .content { position: relative; z-index: 1; }
+.sheet .content { padding-top: 26px; }
+.sheet .h { font-size: 46px; }
+
+/* the strip carries its own stock, or the trimmed numeral reads straight
+   through it and lands on the buttons */
+.sheet .strip {
+  margin: auto -26px 0;
+  position: relative;
+  z-index: 1;
+  background: var(--paper);
+}
+</style>
+</head>
+<body>
+<p class="caption-note">C &middot; Press sheet &mdash; all stock, no furniture, trimmed numeral. 640 &times; 460, actual size.</p>
+<div class="sheetgrid">
+
+  <!-- welcome -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="sheet">
+      <div class="numeral">01</div>
+      <div class="masthead">
+        <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        <span class="of">Step one of four</span>
+      </div>
+      <div class="content" style="padding-top:20px">
+        <h1 class="h" style="font-size:50px;line-height:0.94">Your audio<br>devices,<br>ranked.</h1>
+        <p class="lede" style="margin-top:16px;max-width:32ch;font-size:15px">
+          It picks the best one that is plugged in, and takes it back the moment
+          it returns.
+        </p>
+      </div>
+      <div class="strip">
+        <span class="fine">0.1.0 &middot; no administrator</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-accent">Install</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- effects -->
+  <div class="win">
+    <div class="cap">
+      <span class="cap-title"><span class="stencil">Audio</span>Deck setup</span>
+      <span class="cap-x">&#10005;</span>
+    </div>
+    <div class="sheet">
+      <div class="numeral">03</div>
+      <div class="masthead">
+        <div class="brand-word"><span class="stencil">Audio</span><span class="brand-deck">Deck</span></div>
+        <span class="of">Step three of four</span>
+      </div>
+      <div class="content">
+        <h1 class="h" style="font-size:38px">Audio effects</h1>
+        <p class="lede" style="margin-top:14px;max-width:38ch;font-size:15px">
+          AudioDeck can equalise each device separately. Equalizer APO does the
+          processing and is bundled here, so there is nothing to download.
+        </p>
+        <div class="check" style="margin-top:20px">
+          <span class="box on"></span>
+          <div>
+            <div style="font-family:var(--display);font-size:21px;text-transform:uppercase;line-height:1">Set up audio effects</div>
+            <div class="fine" style="margin-top:5px">Asks for administrator once</div>
+          </div>
+        </div>
+      </div>
+      <div class="strip">
+        <span class="fine">GPL-3 &middot; Jonas Thedering</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost">Back</button>
+        <button class="btn btn-accent">Install</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

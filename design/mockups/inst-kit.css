@@ -1,0 +1,483 @@
+/* Shared stock for the installer mockups.
+   Everything here is lifted from src/renderer/src/styles.css so the installer
+   and the app are cut from the same sheet. Frames are drawn at the real
+   installer size (640x460) rather than scaled up, so what is on screen is what
+   NSIS would have to render. */
+
+@font-face {
+  font-family: "Anton";
+  src: url("../../src/renderer/src/assets/fonts/anton-3.woff2") format("woff2");
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("../../src/renderer/src/assets/fonts/archivo-6.woff2") format("woff2");
+  font-weight: 600;
+  font-display: block;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("../../src/renderer/src/assets/fonts/archivo-6.woff2") format("woff2");
+  font-weight: 800;
+  font-display: block;
+}
+
+:root {
+  --ink: #000000;
+  --paper: #f2f0ea;
+  --sheet: #ffffff;
+  --dead: #e3e0d8;
+  --dead-ink: #46463f;
+  --marker: #ffb454;
+  --red: #b3000c;
+  --rule: 6px;
+  --display: "Anton", "Arial Narrow", Impact, sans-serif;
+  --ui: "Archivo", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 40px;
+  background: #16160f;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.05) 0 2px,
+    transparent 2px 9px
+  );
+  font-family: var(--ui);
+  color: #e3e0d8;
+}
+
+.caption-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8f8c80;
+}
+
+.sheetgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 44px 40px;
+  align-items: flex-start;
+}
+
+/* ---------- the installer window itself ---------- */
+
+.win {
+  width: 640px;
+  height: 460px;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+/* Our own caption, the way the app draws one, rather than the stock Windows
+   bar. NSIS can drop WS_CAPTION and take the drag itself. */
+.cap {
+  flex: none;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 14px;
+  background: #000;
+  border-bottom: 2px solid #2b2b22;
+  --stencil-bg: #000;
+}
+
+.cap-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9d9a8f;
+  display: flex;
+  gap: 4px;
+}
+
+.cap-x {
+  margin-left: auto;
+  width: 44px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #9d9a8f;
+  font-size: 14px;
+}
+
+/* ---------- brand ---------- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  --stencil-bg: #000;
+}
+
+.brand-mark {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 4px solid var(--paper);
+  transform: rotate(-3deg);
+}
+
+.brand-mark::before,
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 6px;
+  background: var(--marker);
+  transform: skew(-11deg);
+}
+
+.brand-mark::before {
+  left: 7px;
+}
+
+.brand-mark::after {
+  right: 7px;
+  top: 19px;
+  bottom: auto;
+  height: 17px;
+}
+
+.brand-mark i {
+  position: absolute;
+  left: 18px;
+  top: 10px;
+  width: 6px;
+  height: 24px;
+  background: var(--paper);
+  transform: skew(-11deg);
+}
+
+.brand-word {
+  font-family: var(--display);
+  font-size: 27px;
+  line-height: 0.88;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--paper);
+  font-weight: 400;
+}
+
+.brand-word .brand-deck {
+  display: block;
+  color: var(--marker);
+}
+
+.brand-word .stencil {
+  display: block;
+  color: var(--paper);
+}
+
+/* The bridges are the surrounding stock showing through the letterforms, so
+   they take the background colour and never the ink. */
+.stencil {
+  position: relative;
+}
+
+.stencil::before,
+.stencil::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  background: var(--stencil-bg, #000);
+  pointer-events: none;
+}
+
+.brand-word .stencil::before {
+  top: 8px;
+  height: 3px;
+}
+
+.brand-word .stencil::after {
+  top: 18px;
+  height: 3px;
+}
+
+.cap-title .stencil::before {
+  top: 3px;
+  height: 1.5px;
+}
+
+.cap-title .stencil::after {
+  top: 8px;
+  height: 1.5px;
+}
+
+/* ---------- type ---------- */
+
+.h {
+  font-family: var(--display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.lede {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+  max-width: 46ch;
+}
+
+.fine {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dead-ink);
+}
+
+/* ---------- controls ---------- */
+
+.btn {
+  min-height: 40px;
+  padding: 0 18px;
+  background: transparent;
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btn-accent {
+  border-color: var(--marker);
+  background: var(--marker);
+  color: #6b3c00;
+}
+
+.btn-ghost {
+  border-color: var(--dead-ink);
+  color: var(--dead-ink);
+}
+
+.field {
+  display: flex;
+  align-items: stretch;
+  border: 3px solid var(--ink);
+  background: var(--sheet);
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0 12px;
+  min-height: 40px;
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 700;
+  background: transparent;
+  color: var(--ink);
+}
+
+.field button {
+  border: 0;
+  border-left: 3px solid var(--ink);
+  padding: 0 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.box {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--ink);
+  background: var(--sheet);
+  display: grid;
+  place-items: center;
+}
+
+.box.on {
+  background: var(--marker);
+}
+
+.box.on::after {
+  content: "";
+  width: 13px;
+  height: 7px;
+  border-left: 4px solid var(--ink);
+  border-bottom: 4px solid var(--ink);
+  transform: rotate(-45deg) translate(1px, -2px);
+}
+
+/* The progress readout borrows the app's volume meter: discrete ticks, not a
+   smooth themed bar. It is the one place the installer can show life. */
+.ticks {
+  display: flex;
+  gap: 3px;
+  height: 30px;
+}
+
+.ticks i {
+  flex: 1;
+  background: var(--dead);
+}
+
+.ticks i.on {
+  background: var(--marker);
+}
+
+.ticks.ink i.on {
+  background: var(--ink);
+}
+
+/* ---------- ranked-device preview ----------
+   The welcome screen was mostly empty stock, and an installer describing a
+   ranking tool may as well show one. These are the Devices rows in miniature:
+   rank block, name, meter, and the hatched fill the app uses for hardware that
+   is not plugged in. It is a picture of the product, drawn in the product's
+   own parts, so nothing new had to be invented for it. */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 3px solid var(--ink);
+  padding: 4px;
+  background: var(--sheet);
+}
+
+.prow {
+  display: flex;
+  align-items: stretch;
+  height: 30px;
+  background: var(--sheet);
+}
+
+.prow .n {
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.prow .who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}
+
+.prow .who b {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.prow .who span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dead-ink);
+}
+
+.prow .meter {
+  flex: 0 0 116px;
+  align-self: center;
+  display: flex;
+  gap: 2px;
+  height: 15px;
+  margin-right: 10px;
+}
+
+.prow .meter i {
+  flex: 1;
+  background: var(--ink);
+}
+
+/* rank 1, holding the audio: the row inverts, the way it does in the app */
+.prow.live {
+  background: var(--ink);
+  color: var(--marker);
+}
+
+.prow.live .n { color: var(--marker); }
+.prow.live .who span { color: var(--marker); }
+.prow.live .meter i { background: var(--marker); }
+
+/* not plugged in: hatched dead stock, no meter to read */
+.prow.off {
+  background: var(--dead);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.09) 0 3px,
+    transparent 3px 8px
+  );
+  color: var(--dead-ink);
+}
+
+.prow.off .n { background: #55554c; }
+.prow.off .who span { color: var(--dead-ink); }
+
+.prow .away {
+  align-self: center;
+  margin-right: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- the action strip ---------- */
+
+.strip {
+  margin-top: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: var(--rule) solid var(--ink);
+}
+
+.strip .spacer {
+  margin-left: auto;
+}
