@@ -10,6 +10,7 @@ internal static class Program
     private const string Usage =
         "usage: audioctl <command>\n" +
         "  list                     all render and capture endpoints, JSON\n" +
+        "  sessions                 audio sessions on the default output, JSON\n" +
         "  set-default <id>         make endpoint the default for all roles\n" +
         "  set-volume <id> <0-100>  set endpoint master volume\n" +
         "  mute <id> | unmute <id>  set endpoint mute state\n" +
@@ -25,6 +26,7 @@ internal static class Program
             return args switch
             {
                 ["list"] => ListCommand.Run(),
+                ["sessions"] => SessionsCommand.Run(),
                 ["set-default", var id] => SetDefaultCommand.Run(id),
                 ["set-volume", var id, var level] => VolumeCommand.RunSetVolume(id, level),
                 ["mute", var id] => VolumeCommand.RunSetMute(id, mute: true),
