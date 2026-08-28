@@ -38,5 +38,22 @@ internal readonly unsafe struct DeviceEnumerator : IDisposable
         return device.GetId();
     }
 
+    // Slot 4 again, but keeping the IMMDevice: audio sessions are activated on
+    // the device itself, not looked up by id.
+    public bool TryGetDefaultEndpoint(DataFlow flow, int role, out Device device)
+    {
+        IntPtr devicePtr;
+        int hr = ((delegate* unmanaged<IntPtr, int, int, IntPtr*, int>)ComRuntime.Slot(_ptr, 4))(
+            _ptr, (int)flow, role, &devicePtr);
+        if (hr == HrNotFound)
+        {
+            device = default;
+            return false;
+        }
+        ComRuntime.Check(hr, "IMMDeviceEnumerator.GetDefaultAudioEndpoint");
+        device = new Device(devicePtr);
+        return true;
+    }
+
     public void Dispose() => ComRuntime.Release(_ptr);
 }

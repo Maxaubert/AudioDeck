@@ -96,6 +96,39 @@ VT_UI4 carries the value in the union at offset 8.
 PROPVARIANT must be marshalled as 24 bytes on x64 (vt at 0, data union at 8); a 16-byte
 struct crashes on the SetValue path.
 
+## Session layer (Mixer tab)
+
+Per-app audio sessions on an endpoint, added 2026-08-28 for the Mixer tab. Absolute
+vtable slots include IUnknown (0-2) as everywhere else in these notes.
+
+- IID IAudioSessionManager2: `77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F`, activated from
+  the default render `IMMDevice` (`Activate`, clsCtx 1). IAudioSessionManager occupies
+  slots 3-4 (GetAudioSessionControl, GetSimpleAudioVolume); IAudioSessionManager2
+  continues from slot 5:
+  - slot 5: `GetSessionEnumerator(out IAudioSessionEnumerator)`
+- IID IAudioSessionEnumerator: `E2F5BB11-0570-40CA-ACDD-3AA01277DEE8`
+  - slot 3: `GetCount(out int)`
+  - slot 4: `GetSession(int index, out IAudioSessionControl)`
+- IID IAudioSessionControl: `F4B1A599-7266-4319-A8CA-E70ACB11E8CD`, slots 3-11:
+  - slot 3: `GetState(out AudioSessionState)` - 0 inactive, 1 active, 2 expired
+  - slot 4: `GetDisplayName(out LPWSTR)` - CoTaskMem; usually empty, apps rarely set it
+- IID IAudioSessionControl2: `BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D`, QI'd off
+  IAudioSessionControl; its own methods continue at slot 12:
+  - slot 12: `GetSessionIdentifier(out LPWSTR)`
+  - slot 13: `GetSessionInstanceIdentifier(out LPWSTR)` - unique per live session, the
+    handle the set commands match on
+  - slot 14: `GetProcessId(out uint)` - AUDCLNT_S_NO_SINGLE_PROCESS is a success code
+    (cross-process session); the pid is still the best available answer
+  - slot 15: `IsSystemSoundsSession()` - returns S_OK (0) for yes, S_FALSE (1) for no,
+    NOT an out param
+  - slot 16: `SetDuckingPreference(BOOL)`
+- IID ISimpleAudioVolume: `87CE5498-68D6-44E5-9215-6DA47EF883D8`, also QI'd off
+  IAudioSessionControl (the same per-session volume the Windows volume mixer uses):
+  - slot 3: `SetMasterVolume(float level, Guid* eventContext)`
+  - slot 4: `GetMasterVolume(out float)`
+  - slot 5: `SetMute(BOOL, Guid* eventContext)`
+  - slot 6: `GetMute(out BOOL)`
+
 ## HeadsetControl
 
 `vendor/headsetcontrol.exe -o json` (v4.0.0): `devices[].battery.status` is
