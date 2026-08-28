@@ -1028,6 +1028,136 @@ input[type="number"] {
   flex: 0 1 220px;
 }
 
+/* ---------- mixer ---------- */
+
+/* Master + per-app rows in the device-row language: same heavy rules, same
+   84px rhythm, same meter and percentage cells. The master row is the default
+   output, so it takes the same black-and-marker plate as the default device
+   row on the Devices tab; app rows are ink on sheet. */
+
+.mixer-row {
+  --bg: var(--sheet);
+  --fg: var(--ink);
+  display: grid;
+  grid-template-columns: 28px minmax(150px, 1fr) minmax(180px, 2fr) 86px 72px;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  padding: 0 18px 0 22px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.mixer-master {
+  --bg: #000;
+  --fg: var(--marker);
+  grid-template-columns: minmax(150px, 1fr) minmax(180px, 2fr) 86px 72px;
+  /* The 22px edge plus the icon slot and its gap, so the master's name and
+     fader sit exactly over the app columns below. */
+  padding-left: 62px;
+  border: var(--rule) solid var(--ink);
+}
+
+.mixer-apps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--rule) solid var(--ink);
+  border-left: var(--rule) solid var(--ink);
+  border-right: var(--rule) solid var(--ink);
+}
+
+.mixer-app {
+  border-bottom: var(--rule) solid var(--ink);
+}
+
+/* Not clickable rows, so no nudge: the quiet whitening the settings rows use. */
+.mixer-app:hover {
+  background: #fff;
+}
+
+.mixer-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.app-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  justify-self: center;
+}
+
+.app-icon-glyph {
+  color: var(--fg);
+  opacity: 0.75;
+}
+
+/* An app that has gone quiet keeps its row (Windows does the same) but
+   recedes; the fader stays full-strength because it is still a live control. */
+.mixer-app[data-active="false"] .mixer-name {
+  opacity: 0.6;
+}
+
+.mixer-app[data-active="false"] .app-icon {
+  opacity: 0.55;
+}
+
+/* Same grammar as every button in the app: 3px frame, hover inverts, pressed
+   state fills. The glyph carries mute/unmute; the name lives in aria-label. */
+.mixer-mute {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--fg);
+  border: 3px solid var(--fg);
+  cursor: var(--cur-hand);
+  transition:
+    background 100ms linear,
+    color 100ms linear;
+}
+
+.mixer-mute:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.mixer-mute:active {
+  transform: scale(0.97);
+}
+
+.mixer-mute[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.mixer-mute svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.mixer-empty {
+  margin: 0;
+  padding: 16px 0;
+  font-weight: 700;
+  color: var(--dead-ink);
+}
+
+/* Inside the view this is a block, not the shell strip: frame it like one. */
+.mixer-view .error-banner {
+  margin-bottom: 18px;
+  border: 3px solid var(--ink);
+}
+
 /* ---------- settings page ---------- */
 
 .setlist {
