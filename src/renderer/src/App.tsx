@@ -4,16 +4,18 @@
 import { useState } from "react";
 import { useAppState } from "./useAppState.js";
 import { DeviceManagerView } from "./views/DeviceManagerView.js";
+import { MixerView } from "./views/MixerView.js";
 import { StudioView } from "./views/StudioView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { WindowCaption } from "./components/WindowCaption.js";
 import { splitDeviceName } from "../../../shared/deviceName.js";
 import { FirstRunGuide } from "./components/FirstRunGuide.js";
 
-type ViewName = "devices" | "studio" | "settings";
+type ViewName = "devices" | "mixer" | "studio" | "settings";
 
 const TABS: { name: ViewName; label: string }[] = [
   { name: "devices", label: "Devices" },
+  { name: "mixer", label: "Mixer" },
   { name: "studio", label: "Studio" },
   { name: "settings", label: "Settings" },
 ];
@@ -70,6 +72,8 @@ export default function App() {
         <div className="loading">Reading your audio devices&hellip;</div>
       ) : view === "devices" ? (
         <DeviceManagerView state={state} actions={actions} />
+      ) : view === "mixer" ? (
+        <MixerView state={state} actions={actions} />
       ) : view === "studio" ? (
         <StudioView state={state} actions={actions} />
       ) : (

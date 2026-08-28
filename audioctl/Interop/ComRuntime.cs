@@ -48,4 +48,29 @@ internal static unsafe class ComRuntime
     {
         if (hr < 0) throw new InvalidOperationException($"{what} failed with HRESULT 0x{hr:X8}");
     }
+
+    // QueryInterface (slot 0). False on E_NOINTERFACE; itf is zero then.
+    public static bool TryQuery(IntPtr unknown, in Guid iid, out IntPtr itf)
+    {
+        fixed (Guid* piid = &iid)
+        {
+            IntPtr result;
+            int hr = ((delegate* unmanaged<IntPtr, Guid*, IntPtr*, int>)Slot(unknown, 0))(unknown, piid, &result);
+            itf = hr < 0 ? IntPtr.Zero : result;
+            return hr >= 0;
+        }
+    }
+
+    // Read-and-free for the CoTaskMem LPWSTRs COM getters hand back.
+    public static string ReadTaskMemString(IntPtr raw)
+    {
+        try
+        {
+            return Marshal.PtrToStringUni(raw) ?? string.Empty;
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(raw);
+        }
+    }
 }

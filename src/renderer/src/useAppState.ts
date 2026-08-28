@@ -76,6 +76,13 @@ export function useAppState(): AppStateHook {
       setVolume: wrap((id, level) => api.setVolume(id, level)),
       setMute: wrap((id, mute) => api.setMute(id, mute)),
       setEndpointEnabled: wrap((id, enabled) => api.setEndpointEnabled(id, enabled)),
+      // Mixer calls are queries plus actions the MixerView refreshes itself,
+      // so they are not wrapped: wrapping would trigger a full AppState
+      // refresh for no reader.
+      getMixer: () => api.getMixer(),
+      setAppVolume: (ids, level) => api.setAppVolume(ids, level),
+      setAppMute: (ids, mute) => api.setAppMute(ids, mute),
+      getAppIcon: (exePath) => api.getAppIcon(exePath),
       setAlias: wrap((id, alias) => api.setAlias(id, alias)),
       renameDevice: wrap((id, name, suffix) => api.renameDevice(id, name, suffix)),
       setDeviceType: wrap((id, typeKey) => api.setDeviceType(id, typeKey)),

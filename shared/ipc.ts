@@ -29,6 +29,30 @@ export interface DeviceView {
   availabilityReason: AvailabilityReason;
 }
 
+/** One Mixer row: an app's grouped sessions on the default output. */
+export interface MixerAppView {
+  /** Stable row key: "system", the exe path lowercased, or "pid:<pid>". */
+  key: string;
+  name: string;
+  /** For icon lookup; null for system sounds and unreadable processes. */
+  exePath: string | null;
+  isSystemSounds: boolean;
+  /** 0-100; the loudest member session (they normally agree). */
+  volume: number;
+  /** True only when every member session is muted. */
+  mute: boolean;
+  /** True while any member session is actively playing. */
+  active: boolean;
+  /** Session instance ids a write fans out to. */
+  sessionIds: string[];
+}
+
+/** The Mixer tab's poll payload; separate from AppState so the daemon never
+ *  gathers sessions while the window is closed. */
+export interface MixerState {
+  apps: MixerAppView[];
+}
+
 /** Per-device equalizer and effect settings, as the renderer edits them. */
 export interface EqProfileView {
   enabled: boolean;
@@ -100,6 +124,13 @@ export interface AudioDeckApi {
   setVolume(id: string, level: number): Promise<void>;
   setMute(id: string, mute: boolean): Promise<void>;
   setEndpointEnabled(id: string, enabled: boolean): Promise<void>;
+  /** Apps with audio sessions on the default output, grouped for the Mixer tab. */
+  getMixer(): Promise<MixerState>;
+  /** Set every named session's volume in one helper spawn. */
+  setAppVolume(sessionIds: string[], level: number): Promise<void>;
+  setAppMute(sessionIds: string[], mute: boolean): Promise<void>;
+  /** PNG data URL of the app's icon; null when it cannot be extracted. */
+  getAppIcon(exePath: string): Promise<string | null>;
   setAlias(id: string, alias: string | null): Promise<void>;
   /**
    * Rename the endpoint in Windows itself (audio picker, Settings, all apps).
@@ -143,6 +174,10 @@ export const IPC = {
   setVolume: "audiodeck:set-volume",
   setMute: "audiodeck:set-mute",
   setEndpointEnabled: "audiodeck:set-endpoint-enabled",
+  getMixer: "audiodeck:get-mixer",
+  setAppVolume: "audiodeck:set-app-volume",
+  setAppMute: "audiodeck:set-app-mute",
+  getAppIcon: "audiodeck:get-app-icon",
   setAlias: "audiodeck:set-alias",
   renameDevice: "audiodeck:rename-device",
   setDeviceType: "audiodeck:set-device-type",

@@ -38,6 +38,8 @@ volumes, enabling and disabling endpoints, renaming) into a single tray app.
   and the endpoints Windows merely remembers hide one level further in.
 - **Honest about what it cannot set.** Hardware that owns its own volume (headset base stations,
   some TVs over HDMI) gets a stamp saying so instead of a fader that does nothing.
+- **Mixer.** Per-app volume and mute for the current output, synced live with the Windows volume
+  mixer, with app icons.
 - **Per-device equalizer.** A ten band curve you drag, plus bass boost, clarity and stereo width,
   saved per device and applied whenever that device is in use. The processing is done by
   [Equalizer APO](https://sourceforge.net/projects/equalizerapo/), which AudioDeck includes and can
