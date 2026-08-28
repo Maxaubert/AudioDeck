@@ -1,0 +1,26 @@
+# CI gate: typecheck + unit on every PR and every push to main.
+# No e2e (needs real windows and local binaries; it stays the local PR gate)
+# and no packaging (release.yml owns that). The repo has no lint script.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

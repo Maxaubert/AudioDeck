@@ -1,0 +1,135 @@
+# Auto-release on every push to main.
+# - Reads the version from package.json.
+# - REFUSES to run if release v<version> already exists: bump the version in the PR.
+# - Builds audioctl (NativeAOT, trimmed fallback), fetches the pinned vendor
+#   helpers, packages the installer via `npm run dist`, and publishes
+#   v<version> with GitHub-generated notes.
+# - Signs via SignPath when SIGNPATH_API_TOKEN is configured; until the repo is
+#   enrolled the signing steps are no-ops and the release notes say unsigned.
+# Docs-only pushes are skipped by paths-ignore.
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = node -p "require('./package.json').version"
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Refuse to overwrite an existing release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v${{ steps.ver.outputs.version }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Error "Release $tag already exists. Bump the version in package.json (patch for a fix, minor for a feature) and push again."
+            exit 1
+          }
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Fetch vendor helpers
+        shell: pwsh
+        run: |
+          pwsh -File scripts/fetch-headsetcontrol.ps1
+          pwsh -File scripts/fetch-equalizerapo.ps1
+
+      # Same publish contract as a local build: the exe must land under
+      # bin/x64/... (Platform=x64), which is where check-bundle-inputs.mjs and
+      # electron-builder.yml expect it. NativeAOT first; the csproj's documented
+      # trimmed single-file publish is the fallback if the runner's AOT
+      # toolchain misbehaves. Both modes work: the interop is raw vtable calls.
+      - name: Publish audioctl
+        shell: pwsh
+        working-directory: audioctl
+        run: |
+          dotnet publish -c Release -p:Platform=x64 -p:PublishAot=true
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "NativeAOT publish failed; falling back to trimmed single-file publish."
+            dotnet publish -c Release -p:Platform=x64 -p:PublishTrimmed=true -p:PublishSingleFile=true
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+          if (-not (Test-Path "bin/x64/Release/net8.0/win-x64/publish/audioctl.exe")) {
+            Write-Error "audioctl.exe did not land at the path the bundle expects."
+            exit 1
+          }
+
+      # Runs make-reverb-ir, check-bundle-inputs, electron-vite build, and
+      # electron-builder. No code-signing certificate exists on the runner;
+      # auto-discovery is off so the build cannot half-sign with a stray cert.
+      - name: Package installer
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      # Optional: SignPath Foundation (free for open-source). Enrol the repo
+      # first, then add the SIGNPATH_API_TOKEN secret and the SIGNPATH_ORG_ID /
+      # SIGNPATH_PROJECT vars. Verify the action inputs against
+      # https://about.signpath.io/documentation when wiring it up.
+      - name: Upload unsigned installer
+        if: env.SIGNPATH_API_TOKEN != ''
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: dist/*-Setup-*.exe
+      - name: Sign with SignPath
+        if: env.SIGNPATH_API_TOKEN != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORG_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT }}
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v${{ steps.ver.outputs.version }}"
+          $setup = (Get-ChildItem dist/*-Setup-*.exe | Select-Object -First 1).FullName
+          $portable = (Get-ChildItem dist/*-Portable-*.exe | Select-Object -First 1).FullName
+          gh release create $tag $setup $portable --title $tag --generate-notes --latest
+          if ($env:SIGNPATH_API_TOKEN -eq "") {
+            $body = gh release view $tag --json body -q .body
+            gh release edit $tag --notes "$body`n`nThis installer is unsigned; SmartScreen will warn on first run."
+          }

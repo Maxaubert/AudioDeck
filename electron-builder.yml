@@ -48,6 +48,8 @@ nsis:
   # APO's setup from inside our own wizard so the user never opens a second
   # installer. See docs/specs/2026-08-02-installer-design.md.
   include: build/installer.nsh
-  artifactName: ${productName}-Setup-${version}.${ext}
+  # The x64 in the name is the standing artifact convention (App-Setup-x64-
+  # <version>.exe); release.yml and the CLAUDE.md install line both rely on it.
+  artifactName: ${productName}-Setup-x64-${version}.${ext}
 portable:
-  artifactName: ${productName}-Portable-${version}.${ext}
+  artifactName: ${productName}-Portable-x64-${version}.${ext}
