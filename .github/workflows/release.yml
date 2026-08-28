@@ -131,7 +131,12 @@ jobs:
           $tag = "v${{ steps.ver.outputs.version }}"
           $setup = (Get-ChildItem dist/*-Setup-*.exe | Select-Object -First 1).FullName
           $portable = (Get-ChildItem dist/*-Portable-*.exe | Select-Object -First 1).FullName
-          gh release create $tag $setup $portable --title $tag --generate-notes --latest
+          # Explicit baseline: the newest previous v* tag (v0.0.0 sits on the
+          # first commit), so generated notes never diff against the
+          # vendor-cache release that shares this repo.
+          git fetch --tags --quiet
+          $prev = (git tag -l 'v*' --sort=-v:refname | Where-Object { $_ -ne $tag } | Select-Object -First 1)
+          gh release create $tag $setup $portable --title $tag --generate-notes --notes-start-tag $prev --latest
           if ($env:SIGNPATH_API_TOKEN -eq "") {
             $body = gh release view $tag --json body -q .body
             gh release edit $tag --notes "$body`n`nThis installer is unsigned; SmartScreen will warn on first run."

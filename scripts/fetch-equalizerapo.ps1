@@ -14,11 +14,14 @@ $ErrorActionPreference = "Stop"
 
 $Version = "1.4.2"
 $FileName = "EqualizerAPO-x64-$Version.exe"
-# The project/files/ page serves a mirror-selection page rather than the file,
-# and any single mirror (master.dl included) sometimes serves that page too.
-# Tried in order; the MZ and checksum gates below decide what counts as a
-# successful download, so a bad mirror just falls through to the next.
+# First choice is our own vendor-cache release: SourceForge serves interstitial
+# pages instead of the file in waves, and reliably so to CI runner IPs. The
+# cached copy is the byte-identical GPL-3 installer; the checksum below gates
+# every source equally, so where the bytes come from carries no trust. The
+# SourceForge mirrors stay as fallbacks; the MZ and checksum gates decide what
+# counts as a successful download, so a bad source just falls through.
 $AssetUrls = @(
+    "https://github.com/Maxaubert/AudioDeck/releases/download/vendor-eqapo-1.4.2/$FileName",
     ("https://master.dl.sourceforge.net/project/equalizerapo/$Version/$FileName" + "?viasf=1"),
     "https://downloads.sourceforge.net/project/equalizerapo/$Version/$FileName"
 )
