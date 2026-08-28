@@ -28,12 +28,24 @@ test("muting an app round-trips through the backend", async () => {
   await close();
 });
 
+/**
+ * Leave the Mixer and come back. Remounting throws away every fader's
+ * optimistic local value, so what renders afterwards can only have come from
+ * the backend; asserting right after the keypress would pass on the
+ * optimistic render even with the whole write path broken.
+ */
+async function remountMixer(page: import("@playwright/test").Page): Promise<void> {
+  await page.getByRole("button", { name: "Devices" }).click();
+  await page.getByRole("button", { name: "Mixer" }).click();
+}
+
 test("keyboard volume change lands and reads back", async () => {
   const { page, close } = await launchApp();
   await page.getByRole("button", { name: "Mixer" }).click();
   const slider = page.getByRole("slider", { name: "Spotify volume" });
   await slider.focus();
   await page.keyboard.press("ArrowRight");
+  await remountMixer(page);
   await expect(page.locator(".mixer-app", { hasText: "Spotify" })).toContainText("46%");
   await close();
 });
@@ -44,8 +56,9 @@ test("grouped volume writes hit every session of the app", async () => {
   const slider = page.getByRole("slider", { name: "Google Chrome volume" });
   await slider.focus();
   await page.keyboard.press("ArrowLeft");
-  // Group volume is the max of both mock sessions; if only one had been
-  // written, the shown value would snap back to 80 on the next poll.
+  await remountMixer(page);
+  // Group volume is the max of both mock sessions, so 79% can only render if
+  // the write reached both; a single-session write would still read back 80%.
   await expect(page.locator(".mixer-app", { hasText: "Google Chrome" })).toContainText("79%");
   await close();
 });

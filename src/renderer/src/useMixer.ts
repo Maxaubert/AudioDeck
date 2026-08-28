@@ -19,7 +19,11 @@ export interface MixerHook {
 
 export function useMixer(): MixerHook {
   const [apps, setApps] = useState<MixerAppView[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Kept apart, as in useAppState: an action error (a set on a session that
+  // just died) must stay visible until the user acts again, or the 1 s poll
+  // wipes it before it can be read.
+  const [pollError, setPollError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const alive = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -27,11 +31,11 @@ export function useMixer(): MixerHook {
       const next = await api.getMixer();
       if (!alive.current) return;
       setApps(next.apps);
-      setError(null);
+      setPollError(null);
     } catch (err) {
       // Keep the last rows on a failed poll; a stale mixer beats a blank one.
       if (!alive.current) return;
-      setError(err instanceof Error ? err.message : String(err));
+      setPollError(err instanceof Error ? err.message : String(err));
     }
   }, []);
 
@@ -49,9 +53,9 @@ export function useMixer(): MixerHook {
     (fn: () => Promise<void>) => async () => {
       try {
         await fn();
-        setError(null);
+        setActionError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setActionError(err instanceof Error ? err.message : String(err));
       }
       await refresh();
     },
@@ -60,7 +64,7 @@ export function useMixer(): MixerHook {
 
   return {
     apps,
-    error,
+    error: actionError ?? pollError,
     setAppVolume: (ids, level) => act(() => api.setAppVolume(ids, level))(),
     setAppMute: (ids, mute) => act(() => api.setAppMute(ids, mute))(),
   };
