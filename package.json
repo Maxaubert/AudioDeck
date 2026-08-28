@@ -1,6 +1,6 @@
 {
   "name": "audiodeck",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tray-resident Windows audio manager: priority auto-switch, volume mixer, device manager",
   "type": "module",
   "author": "Max",
