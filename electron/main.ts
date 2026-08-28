@@ -4,8 +4,10 @@
 // window opens immediately. AUDIODECK_MOCK_DEVICES=1 swaps the spawn-based
 // backends for the in-memory mock backend.
 
+import path from "node:path";
 import { app, dialog } from "electron";
 import { installFileLog } from "./filelog.js";
+import { AppIconCache } from "./icons.js";
 import { Audioctl } from "./audioctl.js";
 import { audioctlExePath, headsetControlExePath } from "./binaries.js";
 import { HeadsetControl } from "./headsetcontrol.js";
@@ -146,6 +148,7 @@ async function boot(): Promise<void> {
     audioctl,
     poller,
     effects,
+    icons: new AppIconCache({ audioctl, cacheDir: path.join(app.getPath("userData"), "icon-cache") }),
     getConfig: () => config,
     saveConfig: async (next) => {
       config = next;

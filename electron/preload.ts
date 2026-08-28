@@ -19,6 +19,12 @@ const api: AudioDeckApi = {
   setMute: (id: string, mute: boolean) => ipcRenderer.invoke(IPC.setMute, id, mute),
   setEndpointEnabled: (id: string, enabled: boolean) =>
     ipcRenderer.invoke(IPC.setEndpointEnabled, id, enabled),
+  getMixer: () => ipcRenderer.invoke(IPC.getMixer),
+  setAppVolume: (sessionIds: string[], level: number) =>
+    ipcRenderer.invoke(IPC.setAppVolume, sessionIds, level),
+  setAppMute: (sessionIds: string[], mute: boolean) =>
+    ipcRenderer.invoke(IPC.setAppMute, sessionIds, mute),
+  getAppIcon: (exePath: string) => ipcRenderer.invoke(IPC.getAppIcon, exePath),
   setAlias: (id: string, alias: string | null) => ipcRenderer.invoke(IPC.setAlias, id, alias),
   renameDevice: (id: string, name: string, suffix?: string) =>
     ipcRenderer.invoke(IPC.renameDevice, id, name, suffix),

@@ -47,6 +47,12 @@ export interface MixerAppView {
   sessionIds: string[];
 }
 
+/** The Mixer tab's poll payload; separate from AppState so the daemon never
+ *  gathers sessions while the window is closed. */
+export interface MixerState {
+  apps: MixerAppView[];
+}
+
 /** Per-device equalizer and effect settings, as the renderer edits them. */
 export interface EqProfileView {
   enabled: boolean;
@@ -118,6 +124,13 @@ export interface AudioDeckApi {
   setVolume(id: string, level: number): Promise<void>;
   setMute(id: string, mute: boolean): Promise<void>;
   setEndpointEnabled(id: string, enabled: boolean): Promise<void>;
+  /** Apps with audio sessions on the default output, grouped for the Mixer tab. */
+  getMixer(): Promise<MixerState>;
+  /** Set every named session's volume in one helper spawn. */
+  setAppVolume(sessionIds: string[], level: number): Promise<void>;
+  setAppMute(sessionIds: string[], mute: boolean): Promise<void>;
+  /** PNG data URL of the app's icon; null when it cannot be extracted. */
+  getAppIcon(exePath: string): Promise<string | null>;
   setAlias(id: string, alias: string | null): Promise<void>;
   /**
    * Rename the endpoint in Windows itself (audio picker, Settings, all apps).
@@ -161,6 +174,10 @@ export const IPC = {
   setVolume: "audiodeck:set-volume",
   setMute: "audiodeck:set-mute",
   setEndpointEnabled: "audiodeck:set-endpoint-enabled",
+  getMixer: "audiodeck:get-mixer",
+  setAppVolume: "audiodeck:set-app-volume",
+  setAppMute: "audiodeck:set-app-mute",
+  getAppIcon: "audiodeck:get-app-icon",
   setAlias: "audiodeck:set-alias",
   renameDevice: "audiodeck:rename-device",
   setDeviceType: "audiodeck:set-device-type",

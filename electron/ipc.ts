@@ -7,12 +7,14 @@ import { evaluateAvailability } from "./availability.js";
 import { mergeVisibleOrder } from "./rules.js";
 import { dedupeEndpoints } from "./dedupe.js";
 import { restartShellHost } from "./reapply.js";
+import { groupSessions } from "./mixer.js";
 import { flatEqProfile } from "./eqapo/service.js";
 import { runEqualizerApoSetup } from "./eqapo/install.js";
 import { IPC } from "../shared/ipc.js";
 import type { EffectsService } from "./eqapo/service.js";
-import type { EffectsStatusView, EqProfileView } from "../shared/ipc.js";
+import type { EffectsStatusView, EqProfileView, MixerState } from "../shared/ipc.js";
 import type { AudioControl, EndpointFlow } from "./audioctl.js";
+import type { AppIconCache } from "./icons.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { Poller, PollSnapshot } from "./poller.js";
 import type { AppState, DeviceView } from "../shared/ipc.js";
@@ -28,6 +30,7 @@ export interface IpcDeps {
   audioctl: AudioControl;
   poller: Poller;
   effects: EffectsService;
+  icons: AppIconCache;
   getConfig: () => AudioDeckConfig;
   saveConfig: (config: AudioDeckConfig) => Promise<void>;
   /** Toggle automation pause; main keeps poller and tray checkbox in sync. */
@@ -165,6 +168,35 @@ export function registerIpc(deps: IpcDeps): void {
     if (enabled) await audioctl.enable(id);
     else await audioctl.disable(id);
     await poller.refreshNow();
+  });
+
+  // Exe paths the last sessions poll actually reported. getAppIcon serves only
+  // these, so the renderer cannot probe arbitrary files for icons.
+  const iconableExes = new Set<string>();
+
+  ipcMain.handle(IPC.getMixer, async (): Promise<MixerState> => {
+    const sessions = await audioctl.sessions();
+    for (const s of sessions) {
+      if (s.exePath !== null) iconableExes.add(s.exePath.toLowerCase());
+    }
+    return { apps: groupSessions(sessions) };
+  });
+
+  ipcMain.handle(IPC.setAppVolume, async (_e, sessionIds: string[], level: number) => {
+    const ids = Array.isArray(sessionIds) ? sessionIds.filter((id) => typeof id === "string") : [];
+    if (ids.length === 0 || typeof level !== "number" || !Number.isFinite(level)) return;
+    await audioctl.setAppVolume(ids, Math.min(100, Math.max(0, Math.round(level))));
+  });
+
+  ipcMain.handle(IPC.setAppMute, async (_e, sessionIds: string[], mute: boolean) => {
+    const ids = Array.isArray(sessionIds) ? sessionIds.filter((id) => typeof id === "string") : [];
+    if (ids.length === 0) return;
+    await audioctl.setAppMute(ids, mute === true);
+  });
+
+  ipcMain.handle(IPC.getAppIcon, async (_e, exePath: string): Promise<string | null> => {
+    if (typeof exePath !== "string" || !iconableExes.has(exePath.toLowerCase())) return null;
+    return deps.icons.dataUrl(exePath);
   });
 
   ipcMain.handle(IPC.setAlias, async (_e, id: string, alias: string | null) => {
