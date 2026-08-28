@@ -29,6 +29,24 @@ export interface DeviceView {
   availabilityReason: AvailabilityReason;
 }
 
+/** One Mixer row: an app's grouped sessions on the default output. */
+export interface MixerAppView {
+  /** Stable row key: "system", the exe path lowercased, or "pid:<pid>". */
+  key: string;
+  name: string;
+  /** For icon lookup; null for system sounds and unreadable processes. */
+  exePath: string | null;
+  isSystemSounds: boolean;
+  /** 0-100; the loudest member session (they normally agree). */
+  volume: number;
+  /** True only when every member session is muted. */
+  mute: boolean;
+  /** True while any member session is actively playing. */
+  active: boolean;
+  /** Session instance ids a write fans out to. */
+  sessionIds: string[];
+}
+
 /** Per-device equalizer and effect settings, as the renderer edits them. */
 export interface EqProfileView {
   enabled: boolean;
