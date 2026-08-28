@@ -3,7 +3,7 @@
 // same AudioControl / HeadsetQuerier surfaces as the real spawn wrappers and
 // mutates its endpoint fixtures so UI actions round-trip believably.
 
-import type { AudioControl, Endpoint } from "./audioctl.js";
+import type { AppSession, AudioControl, Endpoint } from "./audioctl.js";
 import type { HeadsetQuerier, HeadsetSnapshot } from "./headsetcontrol.js";
 import { EffectsService } from "./eqapo/service.js";
 
@@ -91,6 +91,53 @@ function fixtureEndpoints(): Endpoint[] {
       formFactor: 4,
       association: "{1}.USB\\VID_046D&PID_085E&MI_02\\a&33221100&0&0002",
       volume: 65,
+      mute: false,
+    },
+  ];
+}
+
+// Two Chrome sessions on one exe prove the Mixer's grouping; the mock has no
+// icons on purpose, so e2e exercises the fallback glyphs.
+function fixtureSessions(): AppSession[] {
+  return [
+    {
+      id: "mock-sess-system",
+      pid: 0,
+      exePath: null,
+      name: "System sounds",
+      state: "inactive",
+      isSystemSounds: true,
+      volume: 60,
+      mute: false,
+    },
+    {
+      id: "mock-sess-chrome-1",
+      pid: 4242,
+      exePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      name: "Google Chrome",
+      state: "active",
+      isSystemSounds: false,
+      volume: 80,
+      mute: false,
+    },
+    {
+      id: "mock-sess-chrome-2",
+      pid: 4243,
+      exePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      name: "Google Chrome",
+      state: "inactive",
+      isSystemSounds: false,
+      volume: 80,
+      mute: false,
+    },
+    {
+      id: "mock-sess-spotify",
+      pid: 5150,
+      exePath: "C:\\Users\\Mock\\AppData\\Roaming\\Spotify\\Spotify.exe",
+      name: "Spotify",
+      state: "active",
+      isSystemSounds: false,
+      volume: 45,
       mute: false,
     },
   ];
@@ -191,6 +238,36 @@ export class MockAudioctl implements AudioControl {
     const current = /\(([^)]*)\)\s*$/.exec(e.name);
     const kept = suffix ?? (current === null ? null : current[1]);
     e.name = kept === null || kept === undefined ? name : `${name} (${kept})`;
+  }
+
+  private appSessions: AppSession[] = fixtureSessions();
+
+  async sessions(): Promise<AppSession[]> {
+    return this.appSessions.map((s) => ({ ...s }));
+  }
+
+  async setAppVolume(sessionIds: string[], level: number): Promise<void> {
+    let matched = 0;
+    for (const s of this.appSessions) {
+      if (!sessionIds.includes(s.id)) continue;
+      s.volume = level;
+      matched++;
+    }
+    if (matched === 0) throw new Error("no matching audio session");
+  }
+
+  async setAppMute(sessionIds: string[], mute: boolean): Promise<void> {
+    let matched = 0;
+    for (const s of this.appSessions) {
+      if (!sessionIds.includes(s.id)) continue;
+      s.mute = mute;
+      matched++;
+    }
+    if (matched === 0) throw new Error("no matching audio session");
+  }
+
+  async appIcon(): Promise<void> {
+    throw new Error("mock backend has no icons");
   }
 
   private get(id: string): Endpoint {

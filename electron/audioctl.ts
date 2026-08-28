@@ -26,6 +26,24 @@ export interface Endpoint {
   mute: boolean | null;
 }
 
+export type AppSessionState = "active" | "inactive";
+
+/**
+ * One WASAPI audio session on the default output, one row of `audioctl
+ * sessions`. `id` is the session instance identifier the set commands match on.
+ */
+export interface AppSession {
+  id: string;
+  pid: number;
+  exePath: string | null;
+  name: string;
+  state: AppSessionState;
+  isSystemSounds: boolean;
+  /** 0-100 */
+  volume: number;
+  mute: boolean;
+}
+
 /**
  * The audio-control surface the daemon consumes. Audioctl implements it by
  * spawning audioctl.exe; the e2e mock backend implements it in memory.
@@ -45,6 +63,13 @@ export interface AudioControl {
   rename(id: string, name: string, suffix?: string): Promise<void>;
   /** Change the device kind: flyout glyph (form factor) + classic icon. */
   setType(id: string, formFactor: number, iconPath: string): Promise<void>;
+  /** Audio sessions on the default output, one per playing app instance. */
+  sessions(): Promise<AppSession[]>;
+  /** Set every named session's volume; one spawn keeps a grouped write atomic. */
+  setAppVolume(sessionIds: string[], level: number): Promise<void>;
+  setAppMute(sessionIds: string[], mute: boolean): Promise<void>;
+  /** Extract exePath's shell icon to a PNG at outPath, size px square source. */
+  appIcon(exePath: string, outPath: string, size: number): Promise<void>;
 }
 
 export class AudioctlError extends Error {
@@ -134,6 +159,31 @@ export class Audioctl implements AudioControl {
 
   async setType(id: string, formFactor: number, iconPath: string): Promise<void> {
     await this.run(["set-type", id, String(formFactor), iconPath]);
+  }
+
+  async sessions(): Promise<AppSession[]> {
+    const result = await this.run(["sessions"]);
+    if (!Array.isArray(result)) {
+      throw new AudioctlError("audioctl sessions did not return a JSON array", ["sessions"], 0, "");
+    }
+    return result as AppSession[];
+  }
+
+  async setAppVolume(sessionIds: string[], level: number): Promise<void> {
+    if (!Number.isInteger(level) || level < 0 || level > 100) {
+      throw new RangeError(`volume must be an integer 0-100, got ${level}`);
+    }
+    if (sessionIds.length === 0) throw new RangeError("at least one session id is required");
+    await this.run(["set-app-volume", String(level), ...sessionIds]);
+  }
+
+  async setAppMute(sessionIds: string[], mute: boolean): Promise<void> {
+    if (sessionIds.length === 0) throw new RangeError("at least one session id is required");
+    await this.run([mute ? "mute-app" : "unmute-app", ...sessionIds]);
+  }
+
+  async appIcon(exePath: string, outPath: string, size: number): Promise<void> {
+    await this.run(["app-icon", exePath, outPath, String(size)]);
   }
 
   /**
