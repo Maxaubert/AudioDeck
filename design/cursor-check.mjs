@@ -7,13 +7,22 @@
 
 import { _electron as electron } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const appData = await mkdtemp(path.join(os.tmpdir(), "audiodeck-cursor-"));
+
+// A fresh APPDATA means a first run, and the first-run guide is a modal that
+// swallows every pointer event this script is here to probe. Mark it seen.
+await mkdir(path.join(appData, "AudioDeck"), { recursive: true });
+await writeFile(
+  path.join(appData, "AudioDeck", "config.json"),
+  JSON.stringify({ schemaVersion: 2, guideSeen: true }, null, 2),
+  "utf8",
+);
 
 const app = await electron.launch({
   args: ["."],

@@ -22,16 +22,31 @@
 
   /* The theme extends to the pointer itself. SVG rather than PNG because
      Chromium rasterises an SVG cursor at the display scale, while a PNG is
-     taken at 1x and looks small and soft on a scaled display. Chromium
-     silently refuses anything over 128px, so these are 32px. Each keeps its
-     keyword as a fallback, so a refused image degrades to the system cursor
-     rather than to nothing. The numbers are the hotspot. */
-  --cur-arrow: url("./assets/cursors/arrow.svg") 3 2, default;
-  --cur-hand: url("./assets/cursors/hand.svg") 12 3, pointer;
-  --cur-beam: url("./assets/cursors/beam.svg") 16 16, text;
-  --cur-grab: url("./assets/cursors/grab.svg") 16 16, grab;
-  --cur-grabbing: url("./assets/cursors/grabbing.svg") 16 16, grabbing;
-  --cur-help: url("./assets/cursors/help.svg") 3 2, help;
+     taken at 1x and looks small and soft on a scaled display.
+
+     48px, not the 32px these started at: at 32 they measured the same as a
+     Windows cursor on paper and still read as noticeably smaller on screen,
+     because the glyph sits well inside its box while the system's fills it.
+
+     The ceiling is Chromium's, which silently refuses a cursor over 128
+     DEVICE pixels; the device size is this number times the display scale, so
+     48px holds up to 266% and this machine runs at 225%. Going further would
+     start dropping the theme on higher-DPI displays, where each keyword
+     fallback below would quietly take over. The numbers are the hotspot,
+     scaled with the art.
+
+     Grab and grabbing anchor at the knuckle line (22 12), not the box
+     center: arrow and hand anchor at their tip, so a center-anchored grab
+     drew its art ~20px higher the moment the cursor switched, which read as
+     the pointer jumping. Both hand files share the same palm coordinates, so
+     the shared anchor also keeps the palm still while the fingers fold on
+     press. Beam stays centered; that is where an I-beam points. */
+  --cur-arrow: url("./assets/cursors/arrow.svg") 5 3, default;
+  --cur-hand: url("./assets/cursors/hand.svg") 18 5, pointer;
+  --cur-beam: url("./assets/cursors/beam.svg") 24 24, text;
+  --cur-grab: url("./assets/cursors/grab.svg") 22 12, grab;
+  --cur-grabbing: url("./assets/cursors/grabbing.svg") 22 12, grabbing;
+  --cur-help: url("./assets/cursors/help.svg") 5 3, help;
 }
 
 html {
