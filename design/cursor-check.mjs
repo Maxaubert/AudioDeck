@@ -43,12 +43,49 @@ await page.waitForTimeout(1500);
 await app.evaluate(({ BrowserWindow }) => {
   const win = BrowserWindow.getAllWindows()[0];
   globalThis.__cursors = [];
-  win.webContents.on("cursor-changed", (_e, type, image, scale, size) => {
+  win.webContents.on("cursor-changed", (_e, type, image, scale, size, hotspot) => {
+    // Alpha bounding boxes of the accepted bitmap: the whole glyph, plus the
+    // topmost slice of it (fingertip / arrow apex), so the geometry checks
+    // below compare hotspots against the drawn art, not the declared numbers.
+    let art = null;
+    let tip = null;
+    if (image !== undefined && image !== null && !image.isEmpty()) {
+      const { width: w, height: h } = image.getSize();
+      const px = image.toBitmap(); // BGRA
+      let minX = w;
+      let minY = h;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++)
+          if (px[(y * w + x) * 4 + 3] > 8) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+      if (maxX >= 0) {
+        art = { minX, minY, maxX, maxY };
+        let tMin = w;
+        let tMax = -1;
+        const tCut = minY + Math.max(2, Math.round((maxY - minY) * 0.08));
+        for (let y = minY; y <= tCut; y++)
+          for (let x = 0; x < w; x++)
+            if (px[(y * w + x) * 4 + 3] > 8) {
+              if (x < tMin) tMin = x;
+              if (x > tMax) tMax = x;
+            }
+        tip = { minX: tMin, maxX: tMax };
+      }
+    }
     globalThis.__cursors.push({
       type,
       url: image === undefined || image === null || image.isEmpty() ? null : image.toDataURL(),
       size: size === undefined ? null : `${size.width}x${size.height}`,
       scale: scale ?? null,
+      hotspot: hotspot === undefined ? null : { x: hotspot.x, y: hotspot.y },
+      art,
+      tip,
     });
   });
 });
@@ -85,7 +122,7 @@ async function at(label, locator, dx = 0.5, dy = 0.5, refLocator = null) {
     `${custom ? "OK  " : "FAIL"} ${label.padEnd(22)} type=${seen?.type ?? "none"} ` +
       `size=${seen?.size ?? "-"} scale=${seen?.scale ?? "-"} print=${print}`,
   );
-  results.push({ label, custom, print });
+  results.push({ label, custom, print, seen });
   return print;
 }
 
@@ -130,15 +167,92 @@ await at("lock stamp (help)", arctis.locator(".vol-lock"));
     `${custom ? "OK  " : "FAIL"} ${"row held (grabbing)".padEnd(22)} ` +
       `type=${seen?.type ?? "none"} size=${seen?.size ?? "-"} print=${print}`,
   );
-  results.push({ label: "row held (grabbing)", custom, print });
+  results.push({ label: "row held (grabbing)", custom, print, seen });
   await page.mouse.up();
+}
+
+// Geometry: hotspots against the drawn art, in CSS px (device px / scale).
+// Anchor conventions, which screen magnification centered on the pointer makes
+// visible: arrow and help at the tip apex, hand at the fingertip, beam at the
+// art center, grab and grabbing at one shared center-of-hand. The two hands
+// must also read as the same hand, so their drawn sizes have to match.
+console.log("");
+const geometryFailures = [];
+const check = (label, ok, detail) => {
+  console.log(`${ok ? "OK  " : "FAIL"} ${label.padEnd(30)} ${detail}`);
+  if (!ok) geometryFailures.push(label);
+};
+const by = (label) => {
+  const r = results.find((x) => x.label === label);
+  return r?.custom && r.seen?.art && r.seen?.hotspot ? r : null;
+};
+const css = (r) => {
+  const s = r.seen.scale || 1;
+  const { hotspot, art, tip } = r.seen;
+  return {
+    hx: hotspot.x / s,
+    hy: hotspot.y / s,
+    y0: art.minY / s,
+    cx: (art.minX + art.maxX) / 2 / s,
+    cy: (art.minY + art.maxY) / 2 / s,
+    tipX: (tip.minX + tip.maxX) / 2 / s,
+    w: (art.maxX - art.minX) / s,
+    h: (art.maxY - art.minY) / s,
+  };
+};
+const near = (a, b) => Math.abs(a - b) <= 2;
+const fmt = (c) => `hotspot=(${c.hx.toFixed(1)},${c.hy.toFixed(1)})`;
+
+const gHand = by("button (hand)");
+const gGrab = by("row (grab)");
+const gGrabbing = by("row held (grabbing)");
+const tipChecks = [
+  ["hand hotspot at fingertip", gHand],
+  ["arrow hotspot at tip apex", by("page background")],
+  ["help hotspot at tip apex", by("lock stamp (help)")],
+];
+for (const [label, r] of tipChecks) {
+  if (r === null) check(label, false, "no geometry captured");
+  else {
+    const c = css(r);
+    check(label, near(c.hx, c.tipX) && near(c.hy, c.y0), `${fmt(c)} tip=(${c.tipX.toFixed(1)},${c.y0.toFixed(1)})`);
+  }
+}
+const centerChecks = [
+  ["beam hotspot at art center", by("rename field (beam)")],
+  ["grab hotspot at hand center", gGrab],
+];
+for (const [label, r] of centerChecks) {
+  if (r === null) check(label, false, "no geometry captured");
+  else {
+    const c = css(r);
+    check(label, near(c.hx, c.cx) && near(c.hy, c.cy), `${fmt(c)} center=(${c.cx.toFixed(1)},${c.cy.toFixed(1)})`);
+  }
+}
+if (gGrabbing === null || gGrab === null) check("grabbing shares grab anchor", false, "no geometry captured");
+else {
+  const a = gGrab.seen.hotspot;
+  const b = gGrabbing.seen.hotspot;
+  check("grabbing shares grab anchor", a.x === b.x && a.y === b.y, `grab=(${a.x},${a.y}) grabbing=(${b.x},${b.y})`);
+}
+if (gGrab === null || gHand === null) check("grab sized like pointer hand", false, "no geometry captured");
+else {
+  const g = css(gGrab);
+  const h = css(gHand);
+  const ratioOk = (a, b) => a / b >= 0.9 && a / b <= 1.15;
+  check(
+    "grab sized like pointer hand",
+    ratioOk(g.w, h.w) && ratioOk(g.h, h.h),
+    `grab=${g.w.toFixed(1)}x${g.h.toFixed(1)} hand=${h.w.toFixed(1)}x${h.h.toFixed(1)}`,
+  );
 }
 
 const failed = results.filter((r) => !r.custom);
 const prints = new Set(results.filter((r) => r.custom).map((r) => r.print));
 console.log(`\n${results.length} probed, ${prints.size} distinct cursor images`);
 if (failed.length > 0) console.log("NOT THEMED:", failed.map((r) => r.label).join(", "));
+if (geometryFailures.length > 0) console.log("BAD GEOMETRY:", geometryFailures.join(", "));
 
 await app.close();
 await rm(appData, { recursive: true, force: true });
-process.exit(failed.length === 0 && prints.size >= 4 ? 0 : 1);
+process.exit(failed.length === 0 && geometryFailures.length === 0 && prints.size >= 4 ? 0 : 1);

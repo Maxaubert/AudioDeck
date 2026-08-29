@@ -32,21 +32,25 @@
      DEVICE pixels; the device size is this number times the display scale, so
      48px holds up to 266% and this machine runs at 225%. Going further would
      start dropping the theme on higher-DPI displays, where each keyword
-     fallback below would quietly take over. The numbers are the hotspot,
-     scaled with the art.
+     fallback below would quietly take over.
 
-     Grab and grabbing anchor at the knuckle line (22 12), not the box
-     center: arrow and hand anchor at their tip, so a center-anchored grab
-     drew its art ~20px higher the moment the cursor switched, which read as
-     the pointer jumping. Both hand files share the same palm coordinates, so
-     the shared anchor also keeps the palm still while the fingers fold on
-     press. Beam stays centered; that is where an I-beam points. */
-  --cur-arrow: url("./assets/cursors/arrow.svg") 5 3, default;
-  --cur-hand: url("./assets/cursors/hand.svg") 18 5, pointer;
+     The numbers are the hotspot, on the DRAWN ink (stroke included), not the
+     path coordinates: arrow and help at the tip apex, hand at the fingertip,
+     beam and both grab hands at the center of their art. Screen magnification
+     centers the view on the hotspot, so an anchor outside its glyph's natural
+     point reads as the cursor sitting off-center; that is also why grab left
+     its earlier knuckle anchor, which parked the pointer position above the
+     hand. The arrow-to-grab handoff therefore shifts the art up around the
+     point, exactly as the system cursors do. Grab and grabbing share one
+     anchor and identical palm coordinates, so pressing folds the fingers
+     without the hand moving. design/cursor-check.mjs verifies all of this
+     against the rendered bitmaps. */
+  --cur-arrow: url("./assets/cursors/arrow.svg") 5 1, default;
+  --cur-hand: url("./assets/cursors/hand.svg") 18 3, pointer;
   --cur-beam: url("./assets/cursors/beam.svg") 24 24, text;
-  --cur-grab: url("./assets/cursors/grab.svg") 22 12, grab;
-  --cur-grabbing: url("./assets/cursors/grabbing.svg") 22 12, grabbing;
-  --cur-help: url("./assets/cursors/help.svg") 5 3, help;
+  --cur-grab: url("./assets/cursors/grab.svg") 24 24, grab;
+  --cur-grabbing: url("./assets/cursors/grabbing.svg") 24 24, grabbing;
+  --cur-help: url("./assets/cursors/help.svg") 5 1, help;
 }
 
 html {

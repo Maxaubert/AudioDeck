@@ -1,5 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g transform="scale(1.5)">
+  <!-- 1.8, not the 1.5 the other glyphs use: this hand is drawn smaller than
+       the pointer hand (16x20 units vs 18x24), so at a shared scale it reads
+       as a different, smaller hand. The translate centers the art in the box;
+       grabbing.svg must keep the identical transform. -->
+  <g transform="translate(-3 -6.6) scale(1.8)">
     <path d="M8 10 H11 V15 H12 V7 H15 V15 H16 V7 H19 V15 H20 V10 H23 V27 H7 V15 H8 Z"
           fill="#ffb454" stroke="#000" stroke-width="2.4" stroke-linejoin="miter"/>
   </g>

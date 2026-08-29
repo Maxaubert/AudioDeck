@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g transform="scale(1.5)">
-    <!-- The same hand closed: identical palm width and left edge to grab.svg,
-         with the fingers folded down to knuckles. -->
+  <g transform="translate(-3 -6.6) scale(1.8)">
+    <!-- The same hand closed: identical palm width, left edge and transform
+         to grab.svg, with the fingers folded down to knuckles. -->
     <path d="M7 14 H10 V11 H13 V14 H16 V11 H19 V14 H23 V27 H7 Z"
           fill="#ffb454" stroke="#000" stroke-width="2.4" stroke-linejoin="miter"/>
   </g>
