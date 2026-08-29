@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 48 48">
   <!-- 1.8, not the 1.5 the other glyphs use: this hand is drawn smaller than
        the pointer hand (16x20 units vs 18x24), so at a shared scale it reads
        as a different, smaller hand. The translate centers the art in the box;

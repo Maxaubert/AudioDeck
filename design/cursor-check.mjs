@@ -235,6 +235,17 @@ else {
   const b = gGrabbing.seen.hotspot;
   check("grabbing shares grab anchor", a.x === b.x && a.y === b.y, `grab=(${a.x},${a.y}) grabbing=(${b.x},${b.y})`);
 }
+// The Windows full-screen Magnifier draws cursors larger than the system
+// cursor frame (64 device px on this machine) shifted away from the real
+// pointer position; see the comment block in styles.css. Chromium reports the
+// device size it rasterised, so oversized cursors fail here before a
+// magnifier user has to find them.
+for (const r of results) {
+  if (!r.custom || !r.seen?.size) continue;
+  const [w, h] = r.seen.size.split("x").map(Number);
+  if (w > 64 || h > 64) check(`magnifier-safe size (${r.label})`, false, `device ${r.seen.size} exceeds 64px frame`);
+}
+
 if (gGrab === null || gHand === null) check("grab sized like pointer hand", false, "no geometry captured");
 else {
   const g = css(gGrab);

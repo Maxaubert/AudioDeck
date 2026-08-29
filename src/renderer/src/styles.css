@@ -24,33 +24,33 @@
      Chromium rasterises an SVG cursor at the display scale, while a PNG is
      taken at 1x and looks small and soft on a scaled display.
 
-     48px, not the 32px these started at: at 32 they measured the same as a
-     Windows cursor on paper and still read as noticeably smaller on screen,
-     because the glyph sits well inside its box while the system's fills it.
+     The size ceiling is NOT Chromium's 128-device-px refusal: it is the
+     Windows full-screen Magnifier, which draws cursors larger than the
+     system cursor frame (64 device px here) visibly shifted up-left of the
+     real pointer position, and the more so the larger the hotspot values.
+     Measured on this machine with an A/B ring test (2026-08-29): a
+     center-anchored 24px ring and the built-in grab sat centered under
+     magnification, a 32px one already drifted, and the previous 48px set
+     was unusable to the magnifier user no matter where its hotspots sat,
+     even though GetIconInfo showed hotspot and art in perfect agreement.
+     Hence 28px: 63 device px at this machine's 225%, just under the 64px
+     frame. Do not grow these again without re-running that test.
 
-     The ceiling is Chromium's, which silently refuses a cursor over 128
-     DEVICE pixels; the device size is this number times the display scale, so
-     48px holds up to 266% and this machine runs at 225%. Going further would
-     start dropping the theme on higher-DPI displays, where each keyword
-     fallback below would quietly take over.
-
-     The numbers are the hotspot, on the DRAWN ink (stroke included), not the
-     path coordinates: arrow and help at the tip apex, hand at the fingertip,
-     beam and both grab hands at the center of their art. Screen magnification
-     centers the view on the hotspot, so an anchor outside its glyph's natural
-     point reads as the cursor sitting off-center; that is also why grab left
-     its earlier knuckle anchor, which parked the pointer position above the
-     hand. The arrow-to-grab handoff therefore shifts the art up around the
-     point, exactly as the system cursors do. Grab and grabbing share one
-     anchor and identical palm coordinates, so pressing folds the fingers
-     without the hand moving. design/cursor-check.mjs verifies all of this
-     against the rendered bitmaps. */
-  --cur-arrow: url("./assets/cursors/arrow.svg") 5 1, default;
-  --cur-hand: url("./assets/cursors/hand.svg") 18 3, pointer;
-  --cur-beam: url("./assets/cursors/beam.svg") 24 24, text;
-  --cur-grab: url("./assets/cursors/grab.svg") 24 24, grab;
-  --cur-grabbing: url("./assets/cursors/grabbing.svg") 24 24, grabbing;
-  --cur-help: url("./assets/cursors/help.svg") 5 1, help;
+     The SVGs keep their 48-unit viewBox; only the intrinsic width/height
+     set the CSS size, so the hotspots below live in 28px space. They sit
+     on the DRAWN ink (stroke included), not the path coordinates: arrow
+     and help at the tip apex, hand at the fingertip, beam and both grab
+     hands at the center of their art, which is what screen magnification
+     centers the view on. Grab and grabbing share one anchor and identical
+     palm coordinates, so pressing folds the fingers without the hand
+     moving. design/cursor-check.mjs verifies all of this against the
+     rendered bitmaps, including the 64-device-px budget. */
+  --cur-arrow: url("./assets/cursors/arrow.svg") 3 1, default;
+  --cur-hand: url("./assets/cursors/hand.svg") 10 2, pointer;
+  --cur-beam: url("./assets/cursors/beam.svg") 14 14, text;
+  --cur-grab: url("./assets/cursors/grab.svg") 14 14, grab;
+  --cur-grabbing: url("./assets/cursors/grabbing.svg") 14 14, grabbing;
+  --cur-help: url("./assets/cursors/help.svg") 3 1, help;
 }
 
 html {

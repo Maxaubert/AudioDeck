@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 48 48">
   <g transform="scale(1.5)">
     <path d="M10 4 h12 v3.5 h-4 v17 h4 v3.5 h-12 v-3.5 h4 v-17 h-4 z"
           fill="#ffb454" stroke="#000" stroke-width="2.4" stroke-linejoin="miter"/>
