@@ -69,6 +69,7 @@ function carriesSettings(config: AudioDeckConfig, id: string): boolean {
     config.excluded.mic.includes(id) ||
     config.volumeLocked.includes(id) ||
     config.hiddenDevices.includes(id) ||
+    config.rankNames[id] !== undefined ||
     config.eq[id] !== undefined
   );
 }
@@ -112,6 +113,9 @@ function rekey(config: AudioDeckConfig, oldId: string, newId: string): AudioDeck
   // An EQ curve belongs to the physical device, so it follows the endpoint the
   // driver recreated. Without this a re-enumerated HDMI output comes back flat
   // and the user's tuning is silently lost.
+  const rankNames = { ...config.rankNames };
+  delete rankNames[oldId];
+
   const eq = { ...config.eq };
   const movedEq = eq[oldId];
   delete eq[oldId];
@@ -121,6 +125,7 @@ function rekey(config: AudioDeckConfig, oldId: string, newId: string): AudioDeck
     ...config,
     customizations,
     aliases,
+    rankNames,
     eq,
     outputPriority: replaceRank(config.outputPriority, oldId, newId),
     micPriority: replaceRank(config.micPriority, oldId, newId),

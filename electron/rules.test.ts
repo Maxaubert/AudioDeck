@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decide, diffEvents, pickWinner, pruneMissing, seedPriorityList,
+import { decide, diffEvents, pickWinner, pruneMissing, rebindRanks, seedPriorityList,
   mergeVisibleOrder,
 } from "./rules.js";
 import type { DeviceAvailability } from "./availability.js";
@@ -455,5 +455,68 @@ describe("decide, when another program keeps winning", () => {
     // hold engages first, which is separate and correct.
     const decision = decide(["A", "B"], [avail("A", true), avail("B", true)], [], "B", false, false, false);
     expect(decision.setDefaultTo).toBe("A");
+  });
+});
+
+describe("rebindRanks", () => {
+  const names = { "{old-a}": "Speakers", "{old-b}": "Headset", "{old-c}": "TV" };
+
+  it("puts a re-identified device back in its old slot", () => {
+    const endpoints = [
+      endpoint("{new-c}", { name: "TV" }),
+      endpoint("{new-a}", { name: "Speakers" }),
+      endpoint("{new-b}", { name: "Headset" }),
+    ];
+    const result = rebindRanks(["{old-a}", "{old-b}", "{old-c}"], endpoints, "render", names, []);
+    expect(result.priority).toEqual(["{new-a}", "{new-b}", "{new-c}"]);
+    expect(result.moved).toEqual({
+      "{old-a}": "{new-a}",
+      "{old-b}": "{new-b}",
+      "{old-c}": "{new-c}",
+    });
+  });
+
+  it("leaves a ranked id alone while Windows still lists it", () => {
+    const endpoints = [
+      endpoint("{old-a}", { name: "Speakers", state: "unplugged" }),
+      endpoint("{new-a}", { name: "Speakers" }),
+    ];
+    expect(rebindRanks(["{old-a}"], endpoints, "render", names, []).priority).toEqual(["{old-a}"]);
+  });
+
+  it("does not guess between identical twins", () => {
+    const endpoints = [
+      endpoint("{x}", { name: "Speakers" }),
+      endpoint("{y}", { name: "Speakers" }),
+    ];
+    expect(rebindRanks(["{old-a}"], endpoints, "render", names, []).priority).toEqual(["{old-a}"]);
+  });
+
+  it("never claims an id that is already ranked or excluded", () => {
+    const endpoints = [endpoint("{new-a}", { name: "Speakers" })];
+    expect(
+      rebindRanks(["{old-a}", "{new-a}"], endpoints, "render", names, []).priority,
+    ).toEqual(["{old-a}", "{new-a}"]);
+    expect(rebindRanks(["{old-a}"], endpoints, "render", names, ["{new-a}"]).priority).toEqual([
+      "{old-a}",
+    ]);
+  });
+});
+
+describe("pruneMissing, when most of the list vanishes at once", () => {
+  it("holds every rank instead of pruning a mass disappearance", () => {
+    const ticks = new Map<string, number>();
+    const list = ["{a}", "{b}", "{c}"];
+    for (let i = 0; i < 500; i++) {
+      expect(pruneMissing(list, new Set(["{c}"]), ticks, 90)).toEqual(list);
+    }
+  });
+
+  it("still prunes a lone orphan", () => {
+    const ticks = new Map<string, number>();
+    const present = new Set(["{a}", "{b}", "{c}"]);
+    let out: string[] = [];
+    for (let i = 0; i < 90; i++) out = pruneMissing(["{a}", "{b}", "{c}", "{orphan}"], present, ticks, 90);
+    expect(out).toEqual(["{a}", "{b}", "{c}"]);
   });
 });

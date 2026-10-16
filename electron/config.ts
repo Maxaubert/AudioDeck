@@ -32,6 +32,13 @@ export interface AudioDeckConfig {
    * anything at all is saved, which happens before anyone has read a word.
    */
   guideSeen: boolean;
+  /**
+   * The name each ranked endpoint wore when last seen, id to name. Lets the
+   * daemon recognise a device Windows re-identified (updates and driver
+   * reinstalls do this to every device at once) and slot it back where it was
+   * ranked, instead of treating it as a stranger at the bottom of the list.
+   */
+  rankNames: Record<string, string>;
   /** Endpoint IDs the user has hidden from AudioDeck's lists. */
   hiddenDevices: string[];
   /** User-chosen display aliases, endpoint ID to alias. */
@@ -99,6 +106,7 @@ export function defaultConfig(): AudioDeckConfig {
     pollIntervalMs: 2000,
     guideSeen: false,
     autostart: true,
+    rankNames: {},
     hiddenDevices: [],
     aliases: {},
     excluded: { output: [], mic: [] },
@@ -219,6 +227,7 @@ export function migrateConfig(raw: unknown): AudioDeckConfig {
         ? partial.pollIntervalMs
         : base.pollIntervalMs,
     autostart: typeof partial.autostart === "boolean" ? partial.autostart : base.autostart,
+    rankNames: stringRecord(partial.rankNames) ?? base.rankNames,
     hiddenDevices: stringArray(partial.hiddenDevices) ?? base.hiddenDevices,
     aliases: stringRecord(partial.aliases) ?? base.aliases,
     excluded: {
