@@ -4,7 +4,7 @@
 // override hold, and this loop persists it.
 
 import { evaluateAvailability } from "./availability.js";
-import { decide, diffEvents, pruneMissing, seedPriorityList } from "./rules.js";
+import { decide, diffEvents, pruneMissing, rebindRanks, seedPriorityList } from "./rules.js";
 import { endpointFingerprint, shouldQueryHeadsets } from "./headset-gate.js";
 import { matchesEndpoint } from "./headsetcontrol.js";
 import { dedupeEndpoints } from "./dedupe.js";
@@ -16,6 +16,7 @@ import {
 } from "./contention.js";
 import { migrateIdentities, migrateSupersessions } from "./identity.js";
 import { reapplyCustomizations } from "./reapply.js";
+import type { Supersession } from "./dedupe.js";
 import type { AudioControl, Endpoint, EndpointFlow } from "./audioctl.js";
 import type { AudioDeckConfig } from "./config.js";
 import type { DeviceAvailability } from "./availability.js";
@@ -167,6 +168,13 @@ export class Poller {
       return;
     }
 
+    // Windows mid-update or mid-restart can answer with nothing at all. That is
+    // not "every device was unplugged"; keep what we know and ask again.
+    if (listed.length === 0) {
+      console.error("[poller] audioctl listed no endpoints, keeping last known state");
+      return;
+    }
+
     // One row per physical device: Windows keeps the old id of anything it
     // re-enumerated, so the same device is listed live and as a leftover.
     // Settings the leftover carried move to the live id before anything else
@@ -304,7 +312,29 @@ export class Poller {
 
   /** First-run seeding, new-device append, orphan pruning; persisted on change. */
   private async seedLists(endpoints: Endpoint[]): Promise<AudioDeckConfig> {
-    const config = this.deps.getConfig();
+    let config = this.deps.getConfig();
+
+    // Devices Windows re-identified take back their old rank (and settings)
+    // before seeding can mistake them for strangers.
+    const pairs: Supersession[] = [];
+    for (const { flow, priorityKey, overrideKey } of FLOWS) {
+      const { moved } = rebindRanks(
+        config[priorityKey],
+        endpoints,
+        flow,
+        config.rankNames,
+        config.excluded[overrideKey],
+      );
+      for (const [ghostId, liveId] of Object.entries(moved)) pairs.push({ ghostId, liveId });
+    }
+    if (pairs.length > 0) {
+      const rebound = migrateSupersessions(config, pairs);
+      if (rebound !== null) {
+        config = rebound;
+        await this.deps.saveConfig(config);
+      }
+    }
+
     const presentIds = new Set(endpoints.map((e) => e.id));
     const outputPriority = pruneMissing(
       seedPriorityList(config.outputPriority, endpoints, "render", config.excluded.output),
@@ -318,16 +348,40 @@ export class Poller {
       this.missingTicks,
       Poller.PRUNE_TICKS,
     );
+    const rankNames = rememberNames(config.rankNames, [...outputPriority, ...micPriority], endpoints);
     if (
       sameList(outputPriority, config.outputPriority) &&
-      sameList(micPriority, config.micPriority)
+      sameList(micPriority, config.micPriority) &&
+      rankNames === config.rankNames
     ) {
       return config;
     }
-    const updated = { ...config, outputPriority, micPriority };
+    const updated = { ...config, outputPriority, micPriority, rankNames };
     await this.deps.saveConfig(updated);
     return updated;
   }
+}
+
+/** Record the name of every ranked endpoint on show; same object back when nothing changed. */
+function rememberNames(
+  known: Record<string, string>,
+  ranked: string[],
+  endpoints: Endpoint[],
+): Record<string, string> {
+  const live = new Map(endpoints.map((e) => [e.id, e.name]));
+  const rankedSet = new Set(ranked);
+  let next = known;
+  for (const id of rankedSet) {
+    const name = live.get(id);
+    if (name !== undefined && known[id] !== name) next = { ...next, [id]: name };
+  }
+  for (const id of Object.keys(next)) {
+    if (!rankedSet.has(id)) {
+      if (next === known) next = { ...known };
+      delete next[id];
+    }
+  }
+  return next;
 }
 
 function sameList(a: string[], b: string[]): boolean {

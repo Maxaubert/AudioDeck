@@ -41,6 +41,15 @@ export function pruneMissing(
   missingTicks: Map<string, number>,
   threshold: number,
 ): string[] {
+  // Several ranked devices vanishing together is not orphans piling up, it is
+  // Windows re-enumerating (an update, a driver reinstall, the audio service
+  // restarting). Pruning then would throw the whole ranking away, so hold it.
+  const missing = priority.filter((id) => !presentIds.has(id)).length;
+  if (missing >= 2 && missing * 2 >= priority.length) {
+    for (const id of priority) missingTicks.delete(id);
+    return priority;
+  }
+
   const kept: string[] = [];
   for (const id of priority) {
     if (presentIds.has(id)) {
@@ -57,6 +66,50 @@ export function pruneMissing(
     }
   }
   return kept;
+}
+
+/**
+ * Put a device Windows re-identified back where it ranked. `rankNames` is the
+ * name each ranked id wore when last seen. A ranked id that Windows no longer
+ * lists at all, and exactly one unranked endpoint of this flow wearing the same
+ * name, means the same device came back under a new id: it takes the old slot.
+ * Twins are left alone rather than guessed at. `moved` maps old id to new id so
+ * the caller can carry the other per-device settings across too.
+ */
+export function rebindRanks(
+  priority: string[],
+  endpoints: Endpoint[],
+  flow: EndpointFlow,
+  rankNames: Record<string, string>,
+  excluded: string[],
+): { priority: string[]; moved: Record<string, string> } {
+  const listed = new Set(endpoints.map((e) => e.id));
+  const ranked = new Set(priority);
+  const skip = new Set(excluded);
+  const taken = new Set<string>();
+  const moved: Record<string, string> = {};
+
+  const next = priority.map((id) => {
+    const name = rankNames[id];
+    if (listed.has(id) || name === undefined) return id;
+    const candidates = endpoints.filter(
+      (e) =>
+        e.flow === flow &&
+        e.name === name &&
+        !ranked.has(e.id) &&
+        !skip.has(e.id) &&
+        !taken.has(e.id),
+    );
+    const live = candidates.filter((e) => e.state === "active");
+    const pool = live.length > 0 ? live : candidates;
+    if (pool.length !== 1) return id;
+    const found = (pool[0] as Endpoint).id;
+    taken.add(found);
+    moved[id] = found;
+    return found;
+  });
+
+  return { priority: Object.keys(moved).length === 0 ? priority : next, moved };
 }
 
 export function seedPriorityList(
