@@ -1,6 +1,9 @@
-# CI gate: typecheck + unit on every PR and every push to main.
-# No e2e (needs real windows and local binaries; it stays the local PR gate)
-# and no packaging (release.yml owns that). The repo has no lint script.
+# CI gate: typecheck + unit + headless e2e on every PR and every push to main.
+# The e2e job runs the built app against the mock audio backend with an
+# off-screen window, so it needs no audio hardware or helper binaries. Both
+# jobs are required checks on main (branch protection), so nothing merges
+# without e2e green. No packaging here (release.yml owns that). The repo has no
+# lint script.
 name: ci
 
 on:
@@ -24,3 +27,22 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+
+  e2e:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run e2e
+      - name: Keep the Playwright output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: test-results
+          if-no-files-found: ignore
