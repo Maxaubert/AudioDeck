@@ -1,6 +1,8 @@
 # Auto-release on every push to main.
-# - Reads the version from package.json.
-# - REFUSES to run if release v<version> already exists: bump the version in the PR.
+# - Reads the version from package.json. If release v<version> already exists,
+#   the patch version is bumped automatically for this build only (nothing is
+#   committed back; main's package.json lags). For a minor or major release,
+#   set the version in the PR yourself.
 # - Builds audioctl (NativeAOT, trimmed fallback), fetches the pinned vendor
 #   helpers, packages the installer via `npm run dist`, and publishes
 #   v<version> with GitHub-generated notes.
@@ -40,24 +42,22 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Read version
+      - name: Pick the version (auto-bump the patch when it is already released)
         id: ver
-        shell: pwsh
-        run: |
-          $v = node -p "require('./package.json').version"
-          "version=$v" >> $env:GITHUB_OUTPUT
-
-      - name: Refuse to overwrite an existing release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = "v${{ steps.ver.outputs.version }}"
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Error "Release $tag already exists. Bump the version in package.json (patch for a fix, minor for a feature) and push again."
-            exit 1
+          $v = node -p "require('./package.json').version"
+          while ($true) {
+            gh release view "v$v" *> $null
+            if ($LASTEXITCODE -ne 0) { break }
+            # Build-only bump: package.json on main is not touched, so the
+            # installer and the tag agree and the next run counts up from here.
+            $v = (npm version patch --no-git-tag-version).TrimStart("v")
+            Write-Host "Version was already released; building $v"
           }
+          "version=$v" >> $env:GITHUB_OUTPUT
           # gh exiting 1 (release absent) is the pass case, but the pwsh step
           # wrapper propagates a lingering $LASTEXITCODE as the step result.
           exit 0
