@@ -10,6 +10,8 @@
 // device sitting quietly powered on is exactly the state that precedes it, so
 // "nothing has changed lately" is the worst possible reason to back off.
 
+import { endpointUsbKey } from "./headsetcontrol.js";
+
 /** Re-probe this often when nothing supported was found, to notice a new dongle. */
 export const IDLE_PROBE_MS = 60_000;
 
@@ -49,4 +51,26 @@ export function shouldQueryHeadsets(
   if (state.endpointKey !== endpointKey) return true;
   // Otherwise just often enough to notice a dongle we have not seen.
   return now - state.probedAt >= IDLE_PROBE_MS;
+}
+
+/**
+ * Is the dongle of a headset HeadsetControl has answered for still plugged in?
+ *
+ * Relevance must not hang on one probe alone. When the dongle is replugged
+ * (another USB port, a hub reset) Windows lists the audio endpoint a moment
+ * before the HID interface is ready, so the probe on that tick finds nothing.
+ * Judged on that probe alone, the gate went idle for a full minute, and a
+ * headset switched off in that minute went unseen (observed live 2026-11-10).
+ * The USB ids name the model, not the port, so they survive the move.
+ */
+export function knownHeadsetPresent(
+  endpoints: readonly { state: string; association: string | null }[],
+  known: ReadonlySet<string>,
+): boolean {
+  if (known.size === 0) return false;
+  return endpoints.some((e) => {
+    if (e.state === "notpresent") return false;
+    const key = endpointUsbKey(e.association);
+    return key !== null && known.has(key);
+  });
 }

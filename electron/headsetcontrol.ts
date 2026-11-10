@@ -162,15 +162,26 @@ export function matchesEndpoint(
   );
 }
 
-/** VID/PID out of a device interface path like `{1}.USB\VID_1038&PID_12E0\...`. */
-function matchesEndpointUsbIds(device: HeadsetDevice, association: string | null): boolean {
-  if (association === null) return false;
+/**
+ * "vid:pid" out of a device interface path like `{1}.USB\VID_1038&PID_12E0\...`,
+ * or null when the endpoint carries no USB ids. The key names the model, not
+ * the port: moving the dongle to another USB port keeps it.
+ */
+export function endpointUsbKey(association: string | null): string | null {
+  if (association === null) return null;
   const found = /VID_([0-9a-f]{4})&PID_([0-9a-f]{4})/i.exec(association);
-  if (found === null) return false;
-  return (
-    found[1]?.toLowerCase() === hexId(device.id_vendor) &&
-    found[2]?.toLowerCase() === hexId(device.id_product)
-  );
+  if (found === null || found[1] === undefined || found[2] === undefined) return null;
+  return `${found[1].toLowerCase()}:${found[2].toLowerCase()}`;
+}
+
+/** The same "vid:pid" key for a HeadsetControl device. */
+export function deviceUsbKey(device: HeadsetDevice): string {
+  return `${hexId(device.id_vendor)}:${hexId(device.id_product)}`;
+}
+
+function matchesEndpointUsbIds(device: HeadsetDevice, association: string | null): boolean {
+  const key = endpointUsbKey(association);
+  return key !== null && key === deviceUsbKey(device);
 }
 
 /** "0x12e0", "12E0" and "0X12E0" are the same id. */

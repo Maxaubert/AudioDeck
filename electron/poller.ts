@@ -3,10 +3,10 @@
 // winner with no availability event; the rules engine turns that into an
 // override hold, and this loop persists it.
 
-import { evaluateAvailability } from "./availability.js";
+import { HeadsetPowerMemory, evaluateAvailability } from "./availability.js";
 import { decide, diffEvents, pruneMissing, rebindRanks, seedPriorityList } from "./rules.js";
-import { endpointFingerprint, shouldQueryHeadsets } from "./headset-gate.js";
-import { matchesEndpoint } from "./headsetcontrol.js";
+import { endpointFingerprint, knownHeadsetPresent, shouldQueryHeadsets } from "./headset-gate.js";
+import { deviceUsbKey, matchesEndpoint } from "./headsetcontrol.js";
 import { dedupeEndpoints } from "./dedupe.js";
 import {
   clearContention,
@@ -78,6 +78,10 @@ export class Poller {
   private headsetGate: GateState | null = null;
   /** Last HeadsetControl answer, reused on ticks that skip the query. */
   private headsets: HeadsetSnapshot | null = null;
+  /** USB ids ("vid:pid") of every headset HeadsetControl has matched to an endpoint. */
+  private knownHeadsets = new Set<string>();
+  /** Last power answer per headset endpoint, to ride out a missed query. */
+  private headsetPower = new HeadsetPowerMemory();
 
   constructor(private readonly deps: PollerDeps) {}
 
@@ -197,9 +201,15 @@ export class Poller {
         // HeadsetControl unavailable: fall back to endpoint-state detection.
         headsets = null;
       }
-      const relevant =
-        headsets !== null &&
-        headsets.devices.some((d) => endpoints.some((e) => matchesEndpoint(d, e)));
+      let answered = false;
+      for (const d of headsets?.devices ?? []) {
+        if (!endpoints.some((e) => matchesEndpoint(d, e))) continue;
+        answered = true;
+        this.knownHeadsets.add(deviceUsbKey(d));
+      }
+      // A probe that missed while the known dongle is still plugged in is a
+      // glitch (replug, HID not ready yet), not a reason to stop asking.
+      const relevant = answered || knownHeadsetPresent(endpoints, this.knownHeadsets);
       if (this.headsetGate !== null && this.headsetGate.relevant !== relevant) {
         console.log(`[poller] headset polling ${relevant ? "on" : "idle"}`);
       }
@@ -207,7 +217,7 @@ export class Poller {
       this.headsets = headsets;
     }
 
-    const availability = evaluateAvailability(endpoints, headsets);
+    const availability = evaluateAvailability(endpoints, headsets, this.headsetPower);
     this.last = { endpoints, availability };
 
     // Recreated endpoints (new id, driver-default name) inherit the dead
