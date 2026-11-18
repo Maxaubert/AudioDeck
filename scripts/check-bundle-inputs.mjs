@@ -28,12 +28,6 @@ const inputs = [
     fix: "Fetch it first: powershell -File scripts/fetch-equalizerapo.ps1",
   },
   {
-    // Generated rather than committed: deterministic, so a rebuild reproduces
-    // the same bytes.
-    file: path.join("assets", "ir", "audiodeck-cathedral-48000.wav"),
-    fix: "Generate them first: node scripts/make-reverb-ir.mjs",
-  },
-  {
     // Missing this does not fail the build, it silently ships the stock
     // Electron icon, which is how AudioDeck went its first four versions
     // without an icon of its own.

@@ -92,8 +92,8 @@ jobs:
             exit 1
           }
 
-      # Runs make-reverb-ir, check-bundle-inputs, electron-vite build, and
-      # electron-builder. No code-signing certificate exists on the runner;
+      # Runs check-bundle-inputs, electron-vite build, and scripts/dist.mjs
+      # (electron-builder, Setup and Portable). No code-signing certificate exists on the runner;
       # auto-discovery is off so the build cannot half-sign with a stray cert.
       - name: Package installer
         run: npm run dist

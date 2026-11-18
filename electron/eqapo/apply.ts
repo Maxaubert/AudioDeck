@@ -5,15 +5,15 @@
 //   - our own config is written whole, atomically, and is the only file we own;
 //   - config.txt gains exactly one line and is otherwise never rewritten.
 
-import { copyFile, readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AUDIODECK_CONFIG, ensureIncludeLine, removeIncludeLine } from "./include.js";
 import { IR_RATES, irFileName, renderConfig } from "./render.js";
 import type { DeviceSection } from "./render.js";
 
 export interface ImpulseResponses {
-  /** Absolute path of the generated response for a sample rate. */
-  sourcePath: (rate: number) => string;
+  /** The reverb response for a sample rate, as WAV file bytes. */
+  wav: (rate: number) => Buffer;
 }
 
 export interface FileIo {
@@ -53,7 +53,7 @@ export async function applyProfiles(
     for (const rate of IR_RATES) {
       const target = path.join(configPath, irFileName(rate));
       try {
-        await copyFile(impulses.sourcePath(rate), target);
+        await writeFile(target, impulses.wav(rate));
       } catch (err) {
         // One missing rate is not fatal: the config picks by rate at runtime,
         // and the other may still be the one this device needs.

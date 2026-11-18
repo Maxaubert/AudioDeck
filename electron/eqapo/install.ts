@@ -15,6 +15,9 @@ import { app, shell } from "electron";
 import path from "node:path";
 import { access } from "node:fs/promises";
 
+/** Official project page; its Files tab has the installer. */
+const EQUALIZER_APO_DOWNLOAD = "https://sourceforge.net/projects/equalizerapo/files/";
+
 export function equalizerApoSetupPath(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "vendor", "equalizerapo-setup.exe");
@@ -38,6 +41,17 @@ export async function runEqualizerApoSetup(): Promise<InstallOutcome> {
   try {
     await access(setup);
   } catch {
+    // The Portable build does not bundle the setup (scripts/dist.mjs), so it
+    // sends the user to the official download instead.
+    if (process.env.PORTABLE_EXECUTABLE_DIR !== undefined) {
+      await shell.openExternal(EQUALIZER_APO_DOWNLOAD);
+      return {
+        started: false,
+        error:
+          "The portable AudioDeck does not include the audio effects setup. " +
+          "The Equalizer APO download page has opened in your browser: install it, then come back here.",
+      };
+    }
     return {
       started: false,
       error:

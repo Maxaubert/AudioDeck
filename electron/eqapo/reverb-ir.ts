@@ -1,22 +1,16 @@
 // Generates the cathedral impulse response AudioDeck convolves with.
 //
+// Built at runtime rather than shipped: it is a few dozen lines of seeded
+// noise, and the two WAVs it replaces were 2.6 MB of the installer.
+//
 // Synthesised rather than recorded, which sidesteps the licensing question
 // entirely: a recorded impulse response of a real hall is someone's work, and
 // AudioDeck would be redistributing it. Exponentially decaying noise is what a
 // diffuse reverb tail actually is, so the result is a real cathedral rather
 // than an approximation of one.
 //
-//   node scripts/make-reverb-ir.mjs [outDir]
-
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = process.argv[2] ?? path.join(repoRoot, "assets", "ir");
-
-/** Equalizer APO needs the impulse response at the device's own rate. */
-const RATES = [44100, 48000];
+// The output is deterministic and pinned by a hash in reverb-ir.test.ts, so
+// the reverb sounds the same as it did when these files shipped prebuilt.
 
 /** Seconds for the tail to fall by 60 dB. Cathedral territory. */
 const RT60 = 3.2;
@@ -24,12 +18,23 @@ const RT60 = 3.2;
 const SECONDS = 3.6;
 /** Gap before the first reflection, which is what makes a space sound large. */
 const PREDELAY_MS = 28;
-
+/** Early reflections: [ms after the predelay, gain]. */
+const EARLY_REFLECTIONS: ReadonlyArray<readonly [number, number]> = [
+  [17, 0.5],
+  [29, 0.42],
+  [43, 0.34],
+  [67, 0.26],
+  [93, 0.2],
+];
 /**
- * Deterministic noise, so rebuilding produces the same file and the binary in
- * a release matches the one this script generates.
+ * Different seeds per channel: identical noise in both would collapse the
+ * tail to the centre of the image, which is the opposite of a large space.
  */
-function makeRandom(seed) {
+const SEED_LEFT = 0x5eed1;
+const SEED_RIGHT = 0xb0a71;
+
+/** Deterministic noise, so every run produces the same bytes. */
+function makeRandom(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
     state = (state * 1664525 + 1013904223) >>> 0;
@@ -42,7 +47,7 @@ function makeRandom(seed) {
  * one-pole low pass whose cutoff falls as the tail ages. Air and stone absorb
  * treble faster than bass, and without that the tail sounds like hiss.
  */
-function synthesise(rate, seed) {
+function synthesise(rate: number, seed: number): Float64Array {
   const total = Math.floor(rate * SECONDS);
   const predelay = Math.floor((PREDELAY_MS / 1000) * rate);
   const out = new Float64Array(total);
@@ -63,9 +68,9 @@ function synthesise(rate, seed) {
   // shape of the room. There is deliberately no impulse at time zero, because
   // that would be the dry signal, and the dry signal is mixed separately. An
   // impulse response used for a wet/dry mix must be wet only.
-  for (const [ms, gain] of [[17, 0.5], [29, 0.42], [43, 0.34], [67, 0.26], [93, 0.2]]) {
+  for (const [ms, gain] of EARLY_REFLECTIONS) {
     const at = predelay + Math.floor((ms / 1000) * rate);
-    if (at < total) out[at] += gain;
+    if (at < total) out[at] = (out[at] ?? 0) + gain;
   }
 
   // Normalised by ENERGY, not by peak. Convolution scales a signal by the
@@ -86,7 +91,7 @@ function synthesise(rate, seed) {
  * samples are tiny, and quantising a 3.6 second tail to 16 bits would bury the
  * end of it in quantisation noise.
  */
-function toWav(left, right, rate) {
+function toWav(left: Float64Array, right: Float64Array, rate: number): Buffer {
   const frames = left.length;
   const data = Buffer.alloc(frames * 8);
   for (let i = 0; i < frames; i++) {
@@ -111,13 +116,17 @@ function toWav(left, right, rate) {
   return Buffer.concat([header, data]);
 }
 
-await mkdir(outDir, { recursive: true });
-for (const rate of RATES) {
-  // Different seeds per channel: identical noise in both would collapse the
-  // tail to the centre of the image, which is the opposite of a large space.
-  const wav = toWav(synthesise(rate, 0x5eed1), synthesise(rate, 0xb0a71), rate);
-  // Name must match irFileName() in electron/eqapo/render.ts.
-  const file = path.join(outDir, `audiodeck-cathedral-${rate}.wav`);
-  await writeFile(file, wav);
-  console.log(`${file}  ${(wav.length / 1024 / 1024).toFixed(2)} MB  ${SECONDS}s @ ${rate} Hz`);
+const cache = new Map<number, Buffer>();
+
+/**
+ * The impulse response for one sample rate, as WAV bytes. Built once per rate
+ * and kept: a slider drag re-applies the config many times.
+ */
+export function reverbImpulseWav(rate: number): Buffer {
+  let wav = cache.get(rate);
+  if (wav === undefined) {
+    wav = toWav(synthesise(rate, SEED_LEFT), synthesise(rate, SEED_RIGHT), rate);
+    cache.set(rate, wav);
+  }
+  return wav;
 }

@@ -231,7 +231,7 @@ function renderWidth(widthPercent: number): string[] {
  *
  * The impulse response is generated, not recorded: a real hall's impulse
  * response is someone's work, and this keeps AudioDeck MIT with nothing to
- * attribute. scripts/make-reverb-ir.mjs writes it.
+ * attribute. electron/eqapo/reverb-ir.ts builds it at runtime.
  *
  * Equalizer APO needs the response at the device's own sample rate and will
  * not resample, so both common rates are shipped and chosen at runtime by its
