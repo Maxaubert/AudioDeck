@@ -1,6 +1,6 @@
 {
   "name": "audiodeck",
-  "version": "0.2.2",
+  "version": "0.2.6",
   "description": "Tray-resident Windows audio manager: priority auto-switch, volume mixer, device manager",
   "type": "module",
   "author": "Max",
@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "electron-vite build && playwright test",
-    "reverb-ir": "node scripts/make-reverb-ir.mjs",
-    "dist": "node scripts/make-reverb-ir.mjs && node scripts/check-bundle-inputs.mjs && electron-vite build && electron-builder --win --publish never",
+    "dist": "node scripts/check-bundle-inputs.mjs && electron-vite build && node scripts/dist.mjs",
     "screenshots": "electron-vite build && node scripts/capture-screenshots.mjs",
     "cursors": "electron-vite build && node design/cursor-check.mjs"
   },
@@ -31,6 +30,7 @@
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "js-yaml": "4.3.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
     "vitest": "^4.1.10"
