@@ -15,7 +15,7 @@ const audioctlExe = path.join(
 const inputs = [
   {
     file: audioctlExe,
-    fix: "Build it first: dotnet publish audioctl -c Release (see audioctl.csproj notes)",
+    fix: "Build it first: dotnet publish audioctl -c Release -p:Platform=x64 -p:PublishTrimmed=true -p:PublishSingleFile=true (or the AOT command in audioctl.csproj)",
   },
   {
     file: path.join("vendor", "headsetcontrol.exe"),
@@ -56,7 +56,23 @@ if (ok) {
   if (newestSource.time > exeTime) {
     console.error(
       `Stale bundle input: ${audioctlExe} is older than ${newestSource.file}.\n` +
-        "  Rebuild it: dotnet publish audioctl -c Release (see audioctl.csproj notes)",
+        "  Rebuild it: dotnet publish audioctl -c Release -p:Platform=x64 -p:PublishTrimmed=true -p:PublishSingleFile=true (or the AOT command in audioctl.csproj)",
+    );
+    ok = false;
+  }
+}
+
+if (ok) {
+  // A plain dotnet publish produces a small launcher that loads audioctl.dll
+  // from beside it. Only the exe is bundled, so that build installs fine and
+  // then fails on every call ("audioctl.dll does not exist"). v0.2.6 was
+  // installed that way once. AOT and single-file publishes leave no dll.
+  const dll = path.join(path.dirname(audioctlExe), "audioctl.dll");
+  if (existsSync(path.join(repoRoot, dll))) {
+    console.error(
+      `Not standalone: ${dll} sits beside audioctl.exe, so the exe needs it at runtime.\n` +
+        "  Republish it single-file or AOT: dotnet publish audioctl -c Release -p:Platform=x64 " +
+        "-p:PublishTrimmed=true -p:PublishSingleFile=true (delete the publish folder first)",
     );
     ok = false;
   }
